@@ -111,13 +111,20 @@ export function perfOf(e, win, price = null) {
   return { pct: price / ref - 1, abs: price - ref, ref };
 }
 
+/** Veränderung heute: gegenüber dem Schlusskurs vor Tagesbeginn (wie „heute“ in der Liste und 1D im Chart). */
+export function dayPerf(e, price = null) {
+  const p = price ?? e.last;
+  if (p == null || !e.prev_close) return null;
+  return { pct: p / e.prev_close - 1, abs: p - e.prev_close, ref: e.prev_close };
+}
+
 // ---------- Top/Flop ----------
 const MIN_TURNOVER = { aktie: 500_000, etf: 250_000, krypto: 100_000 };
 const MAX_MOVE = { krypto: 0.8 };
 
 /**
- * Rangliste der letzten 24 Stunden.
- * Ausgeschlossen werden: Werte ohne 24-Std.-Vergleich, illiquide Werte (wenn gewünscht)
+ * Tagesgewinner und -verlierer (Veränderung heute in Prozent).
+ * Ausgeschlossen werden: Werte ohne Vortagesschluss, illiquide Werte (wenn gewünscht)
  * und unplausible Sprünge (> 40 %, bei Krypto > 80 %), die meist Datenfehler sind.
  */
 export function topFlop(entries, { cats, liquidOnly = true, limit = 10, priceOf = () => null } = {}) {
@@ -130,7 +137,7 @@ export function topFlop(entries, { cats, liquidOnly = true, limit = 10, priceOf 
     if (seen.has(key)) continue;
     seen.add(key);
     const live = priceOf(e);
-    const perf = perfOf(e, "24h", live);
+    const perf = dayPerf(e, live);
     if (!perf) { excluded.nodata += 1; continue; }
     const m = e.metrics || {};
     const min = MIN_TURNOVER[e.kind];

@@ -153,6 +153,7 @@ def _summary(loader: _Loader, now: pd.Timestamp, quote=None) -> dict[str, Any]:
             last_ts = min(df.index[-1] + pd.Timedelta(seconds=step), now)
             source = "yahoo"
             break
+    home_close, home_ts = last_close, last_ts  # Kurs der Heimatbörse (Yahoo), für die Einstellung „wie Google“
     if quote is not None and (last_ts is None or quote.time >= last_ts - pd.Timedelta(hours=12)):
         last_close, last_ts, source = quote.last, quote.time, "tradegate"
     prev_close = change = None
@@ -167,6 +168,8 @@ def _summary(loader: _Loader, now: pd.Timestamp, quote=None) -> dict[str, Any]:
         "last_source": source,
         "prev_close": None if prev_close is None else _r(prev_close),
         "change_1d": None if change is None else round(change, 6),
+        "last_home": None if home_close is None else _r(home_close),
+        "last_home_ts": None if home_ts is None else int(home_ts.timestamp()),
     }
 
 

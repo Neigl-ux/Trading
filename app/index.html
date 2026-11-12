@@ -33,6 +33,7 @@
     <header class="topbar">
       <span class="brand"><svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1"/><rect x="8" y="10" width="4" height="12" rx="1"/><rect x="14" y="6" width="4" height="16" rx="1"/><rect x="20" y="2" width="3" height="20" rx="1"/></svg>Trading-Agent</span>
       <span id="freshness" class="freshness"></span>
+      <button type="button" id="gear" class="gear" aria-label="Einstellungen und Status"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></button>
         <label class="search top-search">
           <span class="visually-hidden">Wert suchen</span>
           <input id="search" type="search" placeholder="Suchen, z. B. Apple, SAP oder MSCI" autocomplete="off" enterkeyhint="search">
@@ -59,15 +60,15 @@
         </article>
         <article class="card dash-watch">
           <header class="card-head"><h3>Watchlist</h3><button type="button" class="card-link" data-go="markets" data-filter="fav">Alle anzeigen</button></header>
-          <div class="mini-table-head"><span>Symbol</span><span>Kurs</span><span>24 Std.</span></div>
+          <div class="mini-table-head"><span>Symbol</span><span>Kurs</span><span>Heute</span></div>
           <div id="dash-watch" class="mini-table"></div>
         </article>
         <article class="card dash-top">
-          <header class="card-head"><h3>Top Performer 24h</h3><button type="button" class="card-link" data-go="movers">Alle anzeigen</button></header>
+          <header class="card-head"><h3>Tagesgewinner</h3><button type="button" class="card-link" data-go="movers">Alle anzeigen</button></header>
           <div id="dash-top" class="mini-rank"></div>
         </article>
         <article class="card dash-flop">
-          <header class="card-head"><h3>Flop Performer 24h</h3><button type="button" class="card-link down" data-go="movers">Alle anzeigen</button></header>
+          <header class="card-head"><h3>Tagesverlierer</h3><button type="button" class="card-link down" data-go="movers">Alle anzeigen</button></header>
           <div id="dash-flop" class="mini-rank"></div>
         </article>
         <article class="card dash-screener">
@@ -98,7 +99,17 @@
 
     <!-- Märkte -->
     <section id="view-markets" class="view">
-      <div class="list-tools">
+      <div id="sub-nav" class="sub-nav" role="group" aria-label="Ansicht der Marktübersicht">
+        <button type="button" data-sub="list" aria-pressed="true">Liste</button>
+        <button type="button" data-sub="movers" aria-pressed="false">Top &amp; Flop</button>
+        <button type="button" data-sub="screener" aria-pressed="false">Screener</button>
+      </div>
+      <div class="opts-row">
+        <button type="button" id="opts-btn" class="tool-btn" aria-expanded="false" aria-controls="opts-panel">Optionen</button>
+        <span id="opts-sum" class="opts-sum"></span>
+      </div>
+      <div id="opts-panel" class="opts-panel" hidden>
+        <div class="list-tools">
         <label class="rt-toggle list-rt">
           <input id="rt-list-switch" type="checkbox" role="switch">
           <span class="rt-track" aria-hidden="true"></span>
@@ -109,33 +120,28 @@
           <button type="button" data-cur="$" aria-pressed="false">$</button>
         </div>
       </div>
-      <div id="sub-nav" class="sub-nav" role="group" aria-label="Ansicht der Marktübersicht">
-        <button type="button" data-sub="list" aria-pressed="true">Liste</button>
-        <button type="button" data-sub="movers" aria-pressed="false">Top &amp; Flop</button>
-        <button type="button" data-sub="screener" aria-pressed="false">Screener</button>
+        <p class="opts-label">Kategorien <span>(gelten für „Alle“, Top &amp; Flop und Screener)</span></p>
+        <div class="cat-bar" data-cat-bar role="group" aria-label="Kategorien ein- und ausblenden"></div>
+        <label class="check-line"><input id="movers-liquid" type="checkbox" checked> Top &amp; Flop: nur ausreichend gehandelte Werte</label>
       </div>
 
       <div id="sub-list">
         <nav id="filter-strip" class="tf-strip filter-strip" aria-label="Bereich wählen"></nav>
-        <div class="cat-bar" data-cat-bar role="group" aria-label="Kategorien ein- und ausblenden"></div>
         <p id="list-hint" class="list-hint"></p>
         <div id="market-list" class="market-list"></div>
       </div>
 
       <!-- Top & Flop der letzten 24 Stunden -->
       <div id="sub-movers" hidden>
-        <div class="cat-bar" data-cat-bar role="group" aria-label="Kategorien ein- und ausblenden"></div>
-        <label class="check-line"><input id="movers-liquid" type="checkbox" checked> Nur ausreichend gehandelte Werte</label>
         <p id="movers-note" class="list-hint"></p>
-        <h3 class="rank-title up">Top 10 Gewinner, 24 Stunden</h3>
+        <h3 class="rank-title up">Top 10 Gewinner heute</h3>
         <div id="movers-top" class="rank-list"></div>
-        <h3 class="rank-title down">Top 10 Verlierer, 24 Stunden</h3>
+        <h3 class="rank-title down">Top 10 Verlierer heute</h3>
         <div id="movers-flop" class="rank-list"></div>
       </div>
 
       <!-- Screener -->
       <div id="sub-screener" hidden>
-        <div class="cat-bar" data-cat-bar role="group" aria-label="Kategorien ein- und ausblenden"></div>
         <form id="screener-form" class="screener" autocomplete="off"></form>
         <div class="screener-bar">
           <p id="screener-count" class="screener-count" aria-live="polite"></p>
@@ -161,7 +167,7 @@
           <span id="q-change" class="change"></span>
         </div>
         <dl id="q-stats" class="q-stats"></dl>
-        <p class="meta status-line"><span id="q-status" class="badge"></span></p>
+        <p class="meta status-line"><span id="q-status" class="badge" data-long="1"></span></p>
         <p id="q-meta" class="meta"></p>
         <label id="rt-wrap" class="rt-toggle" hidden>
           <input id="rt-switch" type="checkbox" role="switch">
@@ -208,6 +214,40 @@
       <p id="chart-note" class="note"></p>
     </section>
 
+    <!-- Portfolio (nur auf diesem Gerät, verschlüsselt) -->
+    <section id="view-portfolio" class="view view-wide" hidden>
+      <div class="page-head"><h2>Portfolio</h2><span class="page-sub">Deine Positionen, live bewertet. Gespeichert nur auf diesem Gerät, verschlüsselt mit deinem App-Passwort.</span></div>
+      <div class="pf-kpis">
+        <div class="card kpi"><span class="kpi-label">Gesamtwert</span><span id="pf-total" class="kpi-value">–</span><span id="pf-total-sub" class="kpi-sub"></span></div>
+        <div class="card kpi"><span class="kpi-label">Heute</span><span id="pf-day" class="kpi-value">–</span><span id="pf-day-sub" class="kpi-sub"></span></div>
+        <div class="card kpi"><span class="kpi-label">Gewinn / Verlust</span><span id="pf-gain" class="kpi-value">–</span><span id="pf-gain-sub" class="kpi-sub"></span></div>
+      </div>
+      <div class="pf-grid">
+        <article class="card pf-history"><header class="card-head"><h3>Wertentwicklung (letzte 30 Tage)</h3></header><div id="pf-chart" class="pf-chart"></div><p id="pf-chart-note" class="small"></p></article>
+        <article class="card pf-alloc"><header class="card-head"><h3>Verteilung</h3></header><div id="pf-donut" class="pf-donut"></div></article>
+      </div>
+      <article class="card pf-positions">
+        <header class="card-head"><h3>Positionen</h3><button type="button" id="pf-add-btn" class="card-link">Position hinzufügen</button></header>
+        <form id="pf-form" class="pf-form" autocomplete="off" hidden>
+          <label class="fld pf-wide"><span>Wert (Name, Kürzel, ISIN oder WKN)</span><input id="pf-asset" list="pf-assets" required></label>
+          <datalist id="pf-assets"></datalist>
+          <label class="fld"><span>Stückzahl</span><input id="pf-qty" type="number" step="any" min="0" inputmode="decimal" required></label>
+          <label class="fld"><span>Kaufkurs je Stück in €</span><input id="pf-buy" type="number" step="any" min="0" inputmode="decimal"></label>
+          <label class="fld"><span>Kaufdatum (optional)</span><input id="pf-date" type="date"></label>
+          <div class="pf-form-actions"><button type="submit" class="primary-btn">Speichern</button><button type="button" id="pf-cancel" class="secondary">Abbrechen</button></div>
+          <p id="pf-form-msg" class="small"></p>
+        </form>
+        <div id="pf-table" class="pf-table"></div>
+        <details class="pf-import">
+          <summary>Aus einer CSV-Datei übernehmen (z. B. Depot-Export)</summary>
+          <p class="small">Erwartet wird eine Tabelle mit ISIN, Stückzahl und optional Kaufkurs (Trennzeichen Semikolon oder Komma, Kopfzeile mit Spaltennamen). Die Datei wird nur auf diesem Gerät gelesen.</p>
+          <div class="pf-import-row"><input id="pf-file" type="file" accept=".csv,text/csv,text/plain"><label class="check-line"><input id="pf-replace" type="checkbox"> bestehende Positionen ersetzen</label></div>
+          <p id="pf-import-msg" class="small"></p>
+        </details>
+        <label class="fld pf-cash"><span>Bargeld / Verrechnungskonto in €</span><input id="pf-cash" type="number" step="any" min="0" inputmode="decimal"></label>
+      </article>
+    </section>
+
     <!-- Ratgeber -->
     <section id="view-advisor" class="view" hidden>
       <h2>Ratgeber</h2>
@@ -222,7 +262,18 @@
 
     <!-- Status -->
     <section id="view-status" class="view" hidden>
-      <h2>Status</h2>
+      <h2>Einstellungen</h2>
+      <div class="card settings">
+        <div class="set-row"><span>Design</span><div class="seg" id="set-theme" role="group" aria-label="Design">
+          <button type="button" data-v="light" aria-pressed="false">Hell</button><button type="button" data-v="dark" aria-pressed="true">Dunkel</button><button type="button" data-v="auto" aria-pressed="false">Auto</button></div></div>
+        <div class="set-row"><span>Standard-Zeitraum im Chart</span><select id="set-view" aria-label="Standard-Zeitraum"></select></div>
+        <div class="set-row"><span>Börsenplatz für deutsche und europäische Werte</span><select id="set-venue" aria-label="Börsenplatz">
+          <option value="tradegate">Tradegate, live (8 bis 22 Uhr)</option><option value="home">Heimatbörse wie bei Google, 15 Min verzögert</option></select></div>
+        <div class="set-row"><span>Anzeige-Währung</span><div class="cur-toggle" role="group" aria-label="Währung der Anzeige">
+          <button type="button" data-cur="€" aria-pressed="true">€</button><button type="button" data-cur="$" aria-pressed="false">$</button></div></div>
+        <p class="small" id="set-note"></p>
+      </div>
+      <h2 class="status-title">Status</h2>
       <dl id="status-list" class="status-list"></dl>
       <h3>Hinweise zur Datenqualität</h3>
       <ul id="status-warnings" class="warnings"></ul>
@@ -246,9 +297,10 @@
       <button data-tab="screener" class="desk-only" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 8v6l-4-2v-4z"/></svg><span>Screener</span></button>
       <button data-tab="watch" class="desk-only" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg><span>Watchlist</span></button>
       <button data-tab="movers" class="desk-only" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l6-6 4 4 6-7M14 8h6v6"/></svg><span>Top Performer</span></button>
+      <button data-tab="portfolio" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18v12H3zM8 7V5h8v2M3 12h18"/></svg><span>Portfolio</span></button>
       <button data-tab="advisor" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 1 4 10.5V17H8v-3.5A6 6 0 0 1 12 3zM9 21h6"/></svg><span>Ratgeber</span></button>
       <button data-tab="sim" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><span>Simulator</span></button>
-      <button data-tab="status" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>Status</span></button>
+      <button data-tab="status" class="desk-only" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>Einstellungen</span></button>
       <div class="live-box desk-only" aria-live="polite">
         <span class="live-dot" id="live-dot"></span>
         <div><strong id="live-title">Live-Daten</strong><span id="live-state" class="live-state"></span>

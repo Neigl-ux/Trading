@@ -118,6 +118,28 @@ def turnover_rank(symbols: list[str]) -> dict[str, float]:
     return out
 
 
+def yahoo_names(symbols: list[str]) -> dict[str, str]:
+    """Ausgeschriebene Namen von Yahoo (die Xetra-Liste kürzt stark ab)."""
+    import yfinance as yf
+    from concurrent.futures import ThreadPoolExecutor
+
+    def one(sym):
+        try:
+            info = yf.Ticker(sym).get_info()
+            return sym, info.get("longName") or info.get("shortName")
+        except Exception:
+            return sym, None
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        got = dict(pool.map(one, symbols))
+    names = {k: v.strip() for k, v in got.items() if v and v.strip()}
+    print(f"Namen von Yahoo: {len(names)} von {len(symbols)}")
+    return names
+
+
+US_EXCHANGES = {"NMS", "NYQ", "NGM", "NCM", "ASE", "PCX", "BTS", "NAS", "NYS"}
+
+
 def us_largest(n: int) -> list[dict]:
     import yfinance as yf
     from yfinance import EquityQuery
@@ -126,7 +148,8 @@ def us_largest(n: int) -> list[dict]:
     for offset in range(0, n + 250, 250):
         res = yf.screen(q, size=250, offset=offset, sortField="intradaymarketcap", sortAsc=False)
         quotes = res.get("quotes", [])
-        rows += [x for x in quotes if x.get("quoteType") == "EQUITY" and x.get("currency") == "USD"]
+        rows += [x for x in quotes if x.get("quoteType") == "EQUITY" and x.get("currency") == "USD"
+                 and x.get("exchange") in US_EXCHANGES]  # keine außerbörslichen OTC-Werte
         if len(quotes) < 250 or len(rows) >= n + 60:
             break
     print(f"US-Screener: {len(rows)} Unternehmen")
@@ -180,14 +203,24 @@ def main() -> int:
     pick(etfs, N_ETF, "etf")
     pick(etcs, N_ETC, "etf")
 
+    # Lesbare Namen für die Xetra-Auswahl
+    names = yahoo_names([x["yahoo"] for x in out])
+    for x in out:
+        if names.get(x["yahoo"]):
+            x["name"] = names[x["yahoo"]]
+
     # ---------- USA: größte Unternehmen ----------
     us = us_largest(N_US)
     added = 0
+    seen_names = {i.name.lower() for i in settings.instruments if i.market == "us"}
     for x in us:
         sym = x.get("symbol")
         if not sym or sym in have_yahoo or sym in used_ids or "." in sym and not sym.endswith((".A", ".B")):
             continue
         name = x.get("longName") or x.get("shortName") or sym
+        if name.lower() in seen_names:  # z. B. GOOG und GOOGL: nur eine Aktiengattung
+            continue
+        seen_names.add(name.lower())
         out.append({"id": new_id(sym), "name": name, "market": "us", "kind": "aktie", "unit": "$", "yahoo": sym})
         added += 1
         if added >= N_US:

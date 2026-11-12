@@ -1,6 +1,6 @@
 import { deriveKey, exportKey, importKey, openSealed, sealText, openText } from "./crypto.js";
 import { FinnhubStream, usMarketOpen } from "./finnhub.js";
-import { CATEGORIES, EMPTY_FILTER, SIGNALS, SORTS, STATUS_LABEL, WINDOWS, dataStatus, onQuote, perfOf, pushQuote, quoteOf, screen, topFlop } from "./engine.js";
+import { CATEGORIES, EMPTY_FILTER, SIGNALS, SORTS, STATUS_LABEL, WINDOWS, dataStatus, dayPerf, onQuote, perfOf, pushQuote, quoteOf, screen, topFlop } from "./engine.js";
 import { candleLabel, tickLabel } from "./format.js";
 import { fetchQuote, tradegateOpen } from "./tradegate.js";
 import { VIEWS, STEP, TZ as PERF_TZ, computeAll, formatPct, pctClass, periodStart, berlinParts, berlinToUtc } from "./perf.js";
@@ -81,14 +81,14 @@ async function boot() {
   }
   state.raw = sealed;
   if (!sealed.enc) {
-    state.index = sealed.data;
+    state.index = applyVenue(sealed.data);
     return showMain();
   }
   try {
     const stored = JSON.parse(localStorage.getItem(KEY_STORE) || "null");
     if (stored && stored.salt === sealed.kdf.salt) {
       state.key = await importKey(stored.key);
-      state.index = await openSealed(state.key, sealed);
+      state.index = applyVenue(await openSealed(state.key, sealed));
       return showMain();
     }
   } catch {
@@ -113,7 +113,7 @@ $("lock-form").addEventListener("submit", async (ev) => {
   $("lock-error").textContent = "";
   try {
     const key = await deriveKey($("pass").value, state.raw.kdf);
-    state.index = await openSealed(key, state.raw);
+    state.index = applyVenue(await openSealed(key, state.raw));
     state.key = key;
     if ($("remember").checked) {
       try { localStorage.setItem(KEY_STORE, JSON.stringify({ salt: state.raw.kdf.salt, key: await exportKey(key) })); } catch {}
@@ -181,7 +181,7 @@ async function refreshIndex() {
     const index = sealed.enc ? await openSealed(state.key, sealed) : sealed.data;
     state.raw = sealed;
     if (index.updated !== state.index.updated) {
-      state.index = index;
+      state.index = applyVenue(index);
       files.clear();
       renderCurrentSub();
       renderStatus();
@@ -293,7 +293,6 @@ function renderList() {
       hint.textContent = "";
     }
   }
-  document.querySelector("#sub-list [data-cat-bar]").hidden = Boolean(q) || filterKey !== "all";
   const grouped = !q && filterKey === "all";
   if (grouped) {
     for (const [title, test] of GROUPS) {
@@ -315,8 +314,10 @@ function rowFor(e) {
   item.className = "item";
   const row = document.createElement("button");
   row.type = "button";
-  row.className = "row";
+  row.className = "row with-spark";
   row.innerHTML = `<span class="name"></span><span class="px"></span><span class="sub"></span><span class="chg"></span>`;
+  const spark = sparkline(daySpark(e), trendClass(e.change_1d));
+  row.prepend(spark);
   row.querySelector(".name").textContent = e.name;
   row.querySelector(".px").textContent = fmtPrice(e.last, unitOf(e));
   paintSub(row.querySelector(".sub"), e);
@@ -325,7 +326,7 @@ function rowFor(e) {
   chg.classList.add(trendClass(e.change_1d));
   row.addEventListener("click", () => openChart(e));
   item.dataset.id = e.id;
-  rowEls.set(e.id, { entry: e, item, px: row.querySelector(".px"), chg, sub: row.querySelector(".sub") });
+  rowEls.set(e.id, { entry: e, item, px: row.querySelector(".px"), chg, sub: row.querySelector(".sub"), spark });
   const q = quoteOf(e.id);
   if (q) paintRow(e.id, q.price, q.live); // zuletzt empfangenen Live-Kurs gleich zeigen
   item.append(row, starButton(e.id, () => { if (filterKey === "fav" && !$("search").value) renderList(); }));
@@ -387,7 +388,7 @@ function renderStatus() {
 }
 
 // ---------- Tabs ----------
-const TABS = { home: "view-home", markets: "view-markets", advisor: "view-advisor", sim: "view-sim", status: "view-status" };
+const TABS = { home: "view-home", markets: "view-markets", portfolio: "view-portfolio", advisor: "view-advisor", sim: "view-sim", status: "view-status" };
 // Jeder Wechsel steht im Browserverlauf: Zurück (Handy-Geste oder Pfeil am PC) geht einen Schritt
 // zurück statt die App zu schließen, und Neuladen landet wieder auf derselben Seite.
 const SCROLL_STORE = "ta.scroll";
@@ -437,6 +438,8 @@ function showTab(tab, sub = "list", active = tab) {
   $("view-chart").hidden = true;
   for (const [t, id] of Object.entries(TABS)) $(id).hidden = t !== tab;
   if (tab === "home") renderDash();
+  if (tab === "portfolio") renderPortfolio();
+  if (tab === "status") renderSettings();
   if (tab === "markets") {
     renderCatBars();
     if (sub === "movers") renderMovers();
@@ -987,7 +990,7 @@ const RT_STORE = "ta.realtime.v1";
 const rt = { line: null, failures: 0 };
 // Standard: an. Nur wer ausdrücklich ausschaltet, bekommt verzögerte Kurse.
 function rtWanted() { try { return localStorage.getItem(RT_STORE) !== "0"; } catch { return true; } }
-function rtAvailable(e) { return Boolean(e && e.isin && unitOf(e) === "€"); }
+function rtAvailable(e) { return Boolean(e && e.isin && unitOf(e) === "€") && venuePref() === "tradegate"; }
 function rtActive() { return (Boolean(asset.rtTimer || asset.rtAbort) && rtAvailable(asset.entry)) || fhFresh(asset.entry); }
 
 function setRealtime(on) {
@@ -1427,6 +1430,7 @@ function paintRow(id, price, open) {
   r.px.textContent = priceText(e, price);
   r.chg.textContent = change == null ? "" : `${fmtPct(change)} heute`;
   r.chg.className = "chg " + trendClass(change);
+  if (r.spark) r.spark.replaceWith(r.spark = sparkline(daySpark(e, price), trendClass(change)));
   r.item.classList.toggle("is-live", open);
   paintSub(r.sub, e);
 }
@@ -1645,8 +1649,11 @@ function paintBadge(el, e) {
   const st = dataStatus(e);
   el.className = `badge ${STATUS_CLASS[st.code]}`;
   const when = statusTime(st);
-  el.textContent = when ? `${STATUS_LABEL[st.code]} ${when}` : STATUS_LABEL[st.code];
-  el.title = st.code === "delayed" && e.delay_minutes ? `Kursverlauf ${e.delay_minutes} Minuten verzögert` : "";
+  // in Listen kurz („SCHLUSSKURS“), im Chart ausführlich („LETZTER SCHLUSSKURS“)
+  const label = el.dataset.long ? STATUS_LABEL[st.code] : ({ closed: "SCHLUSSKURS" }[st.code] || STATUS_LABEL[st.code]);
+  el.textContent = when ? `${label} ${when}` : label;
+  el.title = `${STATUS_LABEL[st.code]}${when ? ", Stand " + when + " Uhr" : ""}`;
+  if (st.code === "delayed" && e.delay_minutes) el.title += ` (Kursverlauf ${e.delay_minutes} Minuten verzögert)`;
 }
 function venueLabel(e) {
   const st = dataStatus(e);
@@ -1685,6 +1692,7 @@ function setCat(key, on) {
   else cats.delete(key);
   saveCats();
   renderCatBars();
+  paintOptsSummary();
   // nur neu zeichnen, nichts neu laden
   if (!$("sub-movers").hidden) renderMovers();
   else if (!$("sub-screener").hidden) renderResults();
@@ -1788,7 +1796,7 @@ function rankRow(r, win = "24h") {
   chg.className = `chg ${cls}`;
   const absTxt = r.abs == null ? "" : `${r.abs >= 0 ? "+" : "-"}${fmtPrice(Math.abs(r.abs), unitOf(e))}  `;
   chg.textContent = `${absTxt}${formatPct(r.pct * 100)}`;
-  row.append(sparkline(m.spark, cls), name, px, sub, chg, vol);
+  row.append(sparkline(daySpark(e, r.price), cls), name, px, sub, chg, vol);
   row.addEventListener("click", () => openChart(e));
   item.append(row);
   rowEls.set(e.id, { entry: e, item, rank: true, sub });
@@ -1808,8 +1816,8 @@ function renderMovers({ soft = false } = {}) {
   fill($("movers-top"), res.top, "Kein Wert im Plus in den gewählten Kategorien.");
   fill($("movers-flop"), res.flop, "Kein Wert im Minus in den gewählten Kategorien.");
   const x = res.excluded;
-  const parts = [`${res.considered} Werte verglichen, jeweils mit dem Kurs von vor 24 Stunden.`];
-  if (x.nodata) parts.push(`${x.nodata} ohne 24-Stunden-Vergleich (zu wenig Kursdaten)`);
+  const parts = [`${res.considered} Werte verglichen, jeweils mit dem Schlusskurs des Vortags (Veränderung heute in ${shownUnit("€")} und Prozent).`];
+  if (x.nodata) parts.push(`${x.nodata} ohne Vortagesschluss`);
   if (x.illiquid) parts.push(`${x.illiquid} wegen zu geringem Handel ausgeblendet`);
   if (x.implausible) parts.push(`${x.implausible} mit unplausiblem Sprung ausgeblendet`);
   $("movers-note").textContent = parts.join(" ") + (parts.length > 1 ? "." : "");
@@ -1957,7 +1965,10 @@ function fillScreenerForm() {
   for (const el of form.querySelectorAll("input[name=sig]")) el.checked = scr.signals.includes(el.value);
 }
 
+const SCR_PAGE = 50;
+let scrPage = 0;
 function readScreenerForm() {
+  scrPage = 0;
   const form = $("screener-form");
   const next = { ...EMPTY_FILTER };
   for (const el of form.elements) {
@@ -1987,7 +1998,9 @@ function renderResults() {
   const n = new Intl.NumberFormat("de-DE").format(rows.length);
   $("screener-count").textContent = `${n} Treffer` + (missing ? `, ${missing} Werte ohne ausreichende Daten für die gewählten Kriterien` : "");
   const box = $("screener-results");
-  const shown = rows.slice(0, 200);
+  const pages = Math.max(1, Math.ceil(rows.length / SCR_PAGE));
+  scrPage = Math.min(scrPage, pages - 1);
+  const shown = rows.slice(scrPage * SCR_PAGE, (scrPage + 1) * SCR_PAGE);
   if (scrLayout === "table") {
     const tbl = document.createElement("table");
     tbl.className = "scr-table";
@@ -2025,11 +2038,21 @@ function renderResults() {
   } else {
     box.replaceChildren(...shown.map((r) => rankRow({ e: r.e, pct: r.perf, abs: r.abs, price: r.price })));
   }
-  if (rows.length > shown.length) {
-    const p = document.createElement("p");
-    p.className = "list-hint";
-    p.textContent = `Angezeigt werden die ersten 200 von ${n} Treffern. Grenze die Suche mit weiteren Kriterien ein.`;
-    box.append(p);
+  if (pages > 1) {
+    const nav = document.createElement("div");
+    nav.className = "pager";
+    const btn = (label, page, disabled) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = label;
+      b.disabled = disabled;
+      b.addEventListener("click", () => { scrPage = page; renderResults(); $("screener-count").scrollIntoView({ block: "start" }); });
+      return b;
+    };
+    const info = document.createElement("span");
+    info.textContent = `${scrPage * SCR_PAGE + 1}–${scrPage * SCR_PAGE + shown.length} von ${n}`;
+    nav.append(btn("‹ Zurück", scrPage - 1, scrPage === 0), info, btn("Weiter ›", scrPage + 1, scrPage >= pages - 1));
+    box.append(nav);
   }
   startListLive();
 }
@@ -2134,7 +2157,7 @@ const homeVisible = () => state.index && !$("view-home").hidden && !$("main").hi
 const byId = (id) => state.index.instruments.find((x) => x.id === id);
 const curPriceOf = (e) => { const q = quoteOf(e.id); return q ? q.price : e.last; };
 function pct24(e) {
-  const p = perfOf(e, "24h", livePrice(e));
+  const p = dayPerf(e, livePrice(e));
   return p ? p.pct : e.change_1d ?? null;
 }
 function shortSym(e) {
@@ -2233,7 +2256,7 @@ function renderDashMovers() {
       const chg = document.createElement("span");
       chg.className = `mr-chg ${cls}`;
       chg.textContent = pctText(r.pct);
-      b.append(n, sym, sparkline((r.e.metrics || {}).spark, cls), chg);
+      b.append(n, sym, sparkline(daySpark(r.e, r.price), cls), chg);
       b.addEventListener("click", () => openChart(r.e));
       return b;
     }));
@@ -2429,10 +2452,10 @@ function paintDashQuote() {
   if (!e) return;
   const price = curPriceOf(e);
   $("dc-price").textContent = e.kind === "index" ? `${numFmt(price)} Punkte` : priceText(e, price);
-  const p = perfOf(e, "24h", livePrice(e));
+  const p = dayPerf(e, livePrice(e));
   const ch = $("dc-change");
   ch.className = `dc-chg ${trendClass(p ? p.pct : null)}`;
-  ch.textContent = p ? `${p.abs >= 0 ? "+" : "-"}${e.kind === "index" ? numFmt(Math.abs(p.abs)) : fmtPrice(Math.abs(p.abs), unitOf(e))} (${pctText(p.pct)}) 24 Std.` : "";
+  ch.textContent = p ? `${p.abs >= 0 ? "+" : "-"}${e.kind === "index" ? numFmt(Math.abs(p.abs)) : fmtPrice(Math.abs(p.abs), unitOf(e))} (${pctText(p.pct)}) heute` : "";
   paintBadge($("dc-status"), e);
 }
 $("dc-name").addEventListener("click", () => openChart(dashEntry()));
@@ -2649,3 +2672,374 @@ function hookPaneSync() {
   paneSyncHooked = true;
   state.chart.timeScale().subscribeVisibleLogicalRangeChange(() => syncPanes());
 }
+
+// ---------- Tageschart-Vorschau ----------
+/** Verlauf seit Tagesbeginn; mit Live-Kurs wird der letzte Punkt ersetzt. */
+function daySpark(e, price = null) {
+  const m = e.metrics || {};
+  const base = (m.spark_day && m.spark_day.length >= 3 ? m.spark_day : m.spark) || [];
+  if (price == null || !base.length) return base;
+  return [...base.slice(0, -1), price];
+}
+
+// ---------- Optionen ein- und ausklappen ----------
+const OPTS_STORE = "ta.opts.open.v1";
+function paintOptsSummary() {
+  const off = CATEGORIES.filter((c) => !cats.has(c.key)).length;
+  const parts = [];
+  if (off) parts.push(`${off} ${off === 1 ? "Kategorie" : "Kategorien"} ausgeblendet`);
+  if (!rtWanted()) parts.push("Echtzeit aus");
+  if (currency === "$") parts.push("Anzeige in $");
+  if (!$("movers-liquid").checked) parts.push("auch wenig gehandelte Werte");
+  $("opts-sum").textContent = parts.join(", ");
+}
+function setOptsOpen(open) {
+  $("opts-panel").hidden = !open;
+  $("opts-btn").setAttribute("aria-expanded", String(open));
+  try { localStorage.setItem(OPTS_STORE, open ? "1" : "0"); } catch {}
+}
+$("opts-btn").addEventListener("click", () => setOptsOpen($("opts-panel").hidden));
+setOptsOpen((() => { try { return localStorage.getItem(OPTS_STORE) === "1"; } catch { return false; } })());
+for (const id of ["rt-list-switch", "movers-liquid"]) $(id).addEventListener("change", paintOptsSummary);
+document.querySelectorAll(".cur-toggle button").forEach((b) => b.addEventListener("click", () => setTimeout(paintOptsSummary)));
+setInterval(paintOptsSummary, 2000);
+paintOptsSummary();
+
+// =====================================================================
+// Einstellungen
+// =====================================================================
+const THEME_STORE = "ta.theme.v1";
+const VENUE_STORE = "ta.venue.v1";
+function venuePref() { try { return localStorage.getItem(VENUE_STORE) === "home" ? "home" : "tradegate"; } catch { return "tradegate"; } }
+
+/** Einstellung „Heimatbörse“: Listenkurse von Yahoo (Heimatbörse) statt Tradegate. */
+function applyVenue(index) {
+  if (!index || venuePref() !== "home") return index;
+  for (const e of index.instruments) {
+    if (e.last_source !== "tradegate" || e.last_home == null) continue;
+    e.last = e.last_home;
+    e.last_ts = e.last_home_ts;
+    e.last_source = "yahoo";
+    e.change_1d = e.prev_close ? e.last / e.prev_close - 1 : null;
+  }
+  return index;
+}
+
+function applyTheme() {
+  let t = "dark";
+  try { t = localStorage.getItem(THEME_STORE) || "dark"; } catch {}
+  const light = t === "light" || (t === "auto" && window.matchMedia("(prefers-color-scheme: light)").matches);
+  document.documentElement.dataset.theme = light ? "light" : "dark";
+  document.querySelector('meta[name="theme-color"]').setAttribute("content", light ? "#f5f7fb" : "#07090d");
+  for (const b of document.querySelectorAll("#set-theme button")) b.setAttribute("aria-pressed", String(b.dataset.v === t));
+}
+applyTheme();
+window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", applyTheme);
+
+function renderSettings() {
+  const sel = $("set-view");
+  if (!sel.childElementCount) {
+    for (const v of VIEWS) { const o = document.createElement("option"); o.value = v.key; o.textContent = v.label; sel.append(o); }
+    sel.addEventListener("change", () => { viewKey = sel.value; try { localStorage.setItem(VIEW_STORE, sel.value); } catch {} note("Gespeichert. Gilt beim nächsten Öffnen eines Charts."); });
+    $("set-venue").addEventListener("change", (ev) => {
+      try { localStorage.setItem(VENUE_STORE, ev.target.value); } catch {}
+      note("Gespeichert. Die Kurse werden neu geladen …");
+      setTimeout(() => location.reload(), 600);
+    });
+    for (const b of document.querySelectorAll("#set-theme button")) {
+      b.addEventListener("click", () => {
+        try { localStorage.setItem(THEME_STORE, b.dataset.v); } catch {}
+        applyTheme();
+        note("Gespeichert. Die Charts übernehmen die Farben beim nächsten Öffnen.");
+      });
+    }
+  }
+  sel.value = viewKey;
+  $("set-venue").value = venuePref();
+  paintCurrency();
+}
+function note(text) { $("set-note").textContent = text; }
+$("gear").addEventListener("click", () => navigate("status"));
+
+// =====================================================================
+// Portfolio: Positionen nur auf diesem Gerät, verschlüsselt mit dem App-Schlüssel
+// =====================================================================
+const PF_STORE = "ta.portfolio.v1";
+const pf = { data: { positions: [], cash: 0 }, loaded: false, chart: null, series: null, queued: false };
+
+async function loadPortfolio() {
+  if (pf.loaded) return;
+  pf.loaded = true;
+  try {
+    const box = JSON.parse(localStorage.getItem(PF_STORE) || "null");
+    if (!box) return;
+    const text = box.plain ? box.plain : state.key ? await openText(state.key, box) : null;
+    if (text) pf.data = { positions: [], cash: 0, ...JSON.parse(text) };
+  } catch {
+    $("pf-chart-note").textContent = "Das gespeicherte Portfolio konnte nicht geöffnet werden (anderes Passwort?).";
+  }
+}
+async function savePortfolio() {
+  const text = JSON.stringify(pf.data);
+  const box = state.key ? await sealText(state.key, text) : { plain: text };
+  try { localStorage.setItem(PF_STORE, JSON.stringify(box)); } catch {}
+}
+
+const findEntry = (q) => {
+  if (!q || !state.index) return null;
+  const n = norm(q);
+  const all = state.index.instruments;
+  return all.find((e) => e.isin && e.isin.toLowerCase() === q.trim().toLowerCase())
+    || all.find((e) => e.wkn && e.wkn.toLowerCase() === q.trim().toLowerCase())
+    || all.find((e) => norm(`${e.name} (${e.ticker || e.id})`) === n)
+    || all.find((e) => norm(e.id) === n || norm(e.ticker || "") === n)
+    || all.find((e) => norm(e.name) === n) || null;
+};
+
+function positionValue(p) {
+  const e = p.id ? byId(p.id) : null;
+  const price = e ? curPriceOf(e) : null;
+  const day = e ? dayPerf(e, livePrice(e)) : null;
+  return { e, price, value: price != null ? price * p.qty : null, dayAbs: day ? day.abs * p.qty : null, dayPct: day ? day.pct : null,
+    cost: p.buy ? p.buy * p.qty : null };
+}
+
+async function renderPortfolio() {
+  await loadPortfolio();
+  if (!state.index) return;
+  // Auswahlliste für „Position hinzufügen“
+  const dl = $("pf-assets");
+  if (!dl.childElementCount) {
+    dl.append(...state.index.instruments.filter((e) => e.kind !== "index" && e.kind !== "devisen").map((e) => {
+      const o = document.createElement("option");
+      o.value = `${e.name} (${e.ticker || e.id})`;
+      return o;
+    }));
+  }
+  $("pf-cash").value = pf.data.cash || "";
+  const rows = pf.data.positions.map((p) => ({ p, ...positionValue(p) }));
+  const cash = Number(pf.data.cash) || 0;
+  const total = rows.reduce((a, r) => a + (r.value || 0), 0) + cash;
+  const dayAbs = rows.reduce((a, r) => a + (r.dayAbs || 0), 0);
+  const prevTotal = total - dayAbs;
+  const costRows = rows.filter((r) => r.cost != null && r.value != null);
+  const cost = costRows.reduce((a, r) => a + r.cost, 0);
+  const gain = costRows.reduce((a, r) => a + r.value, 0) - cost;
+  const money = (v) => fmtPrice(v, "€");
+  const signed = (v) => `${v >= 0 ? "+" : "-"}${money(Math.abs(v))}`;
+  $("pf-total").textContent = rows.length || cash ? money(total) : "–";
+  $("pf-total-sub").textContent = rows.length ? `${rows.length} ${rows.length === 1 ? "Position" : "Positionen"}${cash ? ", davon " + money(cash) + " Bargeld" : ""}` : "Noch keine Positionen";
+  $("pf-day").textContent = rows.length ? pctText(prevTotal ? dayAbs / prevTotal : null) : "–";
+  $("pf-day").className = `kpi-value ${trendClass(dayAbs)}`;
+  $("pf-day-sub").textContent = rows.length ? `${signed(dayAbs)} seit Vortagesschluss` : "";
+  $("pf-gain").textContent = costRows.length ? signed(gain) : "–";
+  $("pf-gain").className = `kpi-value ${trendClass(gain)}`;
+  $("pf-gain-sub").textContent = costRows.length ? `${pctText(cost ? gain / cost : null)} gegenüber Kaufkurs${costRows.length < rows.length ? " (nur Positionen mit Kaufkurs)" : ""}` : "Kaufkurse eintragen, um den Gewinn zu sehen";
+
+  // Tabelle
+  const box = $("pf-table");
+  if (!rows.length) {
+    box.innerHTML = `<p class="small">Noch keine Positionen. Tippe auf „Position hinzufügen“ oder übernimm eine CSV-Datei aus deinem Depot.</p>`;
+  } else {
+    const tbl = document.createElement("table");
+    tbl.className = "scr-table pf-tbl";
+    tbl.innerHTML = "<thead><tr><th>Wert</th><th>Stück</th><th>Kurs</th><th>Wert</th><th>Heute</th><th>G/V</th><th>Anteil</th><th></th></tr></thead>";
+    const body = document.createElement("tbody");
+    rows.sort((a, b) => (b.value || 0) - (a.value || 0));
+    for (const r of rows) {
+      const tr = document.createElement("tr");
+      const g = r.cost != null && r.value != null ? r.value - r.cost : null;
+      const cells = [
+        r.e ? r.e.name : `${r.p.name || r.p.isin} (nicht in der App)`,
+        new Intl.NumberFormat("de-DE", { maximumFractionDigits: 6 }).format(r.p.qty),
+        r.price == null ? "–" : priceText(r.e, r.price),
+        r.value == null ? "–" : money(r.value),
+        pctText(r.dayPct),
+        g == null ? "–" : `${signed(g)} (${pctText(r.cost ? g / r.cost : null)})`,
+        r.value == null || !total ? "–" : pctText(r.value / total).replace("+", ""),
+      ];
+      cells.forEach((c, i) => {
+        const td = document.createElement("td");
+        td.textContent = c;
+        if (i === 4) td.className = trendClass(r.dayPct);
+        if (i === 5) td.className = trendClass(g);
+        tr.append(td);
+      });
+      const td = document.createElement("td");
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "row-del";
+      del.textContent = "Entfernen";
+      del.addEventListener("click", async (ev) => {
+        ev.stopPropagation();
+        pf.data.positions = pf.data.positions.filter((x) => x !== r.p);
+        await savePortfolio();
+        renderPortfolio();
+      });
+      td.append(del);
+      tr.append(td);
+      if (r.e) tr.addEventListener("click", () => openChart(r.e));
+      body.append(tr);
+    }
+    tbl.append(body);
+    const wrap = document.createElement("div");
+    wrap.className = "table-wrap";
+    wrap.append(tbl);
+    box.replaceChildren(wrap);
+  }
+  renderDonut(rows, cash, total);
+  renderPfHistory(rows, cash);
+  ensureAllLive();
+}
+
+function renderDonut(rows, cash, total) {
+  const groups = new Map();
+  const label = { aktie: "Aktien", etf: "ETFs", krypto: "Krypto", rohstoff: "Rohstoffe" };
+  for (const r of rows) {
+    if (r.value == null) continue;
+    const k = r.e ? label[r.e.kind] || "Sonstige" : "Sonstige";
+    groups.set(k, (groups.get(k) || 0) + r.value);
+  }
+  if (cash) groups.set("Bargeld", cash);
+  const colors = { Aktien: "#3b82f6", ETFs: "#14b8a6", Krypto: "#f5b041", Rohstoffe: "#a855f7", Bargeld: "#8691a3", Sonstige: "#475569" };
+  const el = $("pf-donut");
+  if (!total) { el.innerHTML = '<p class="small">Noch nichts zu verteilen.</p>'; return; }
+  let acc = 0;
+  const R = 42, C = 2 * Math.PI * R;
+  const arcs = [...groups].map(([k, v]) => {
+    const frac = v / total;
+    const seg = `<circle r="${R}" cx="60" cy="60" fill="none" stroke="${colors[k]}" stroke-width="16" stroke-dasharray="${frac * C} ${C}" stroke-dashoffset="${-acc * C}" transform="rotate(-90 60 60)"/>`;
+    acc += frac;
+    return seg;
+  }).join("");
+  const legend = [...groups].map(([k, v]) => `<li><span class="dot" style="background:${colors[k]}"></span>${k}<b>${pctText(v / total).replace("+", "")}</b></li>`).join("");
+  el.innerHTML = `<svg viewBox="0 0 120 120" class="donut" aria-hidden="true">${arcs}</svg><ul class="donut-legend">${legend}</ul>`;
+}
+
+// Wertentwicklung: Tagesschlusskurse × heutige Stückzahlen (Käufe/Verkäufe der letzten 30 Tage sind nicht bekannt)
+async function renderPfHistory(rows, cash) {
+  const key = JSON.stringify([rows.map((r) => [r.p.id, r.p.qty]), cash]);
+  if (key === pf.histKey && Date.now() - (pf.histAt || 0) < 60_000) return;
+  pf.histKey = key;
+  pf.histAt = Date.now();
+  const withData = rows.filter((r) => r.e);
+  if (!withData.length) { $("pf-chart-note").textContent = ""; if (pf.series) pf.series.setData([]); return; }
+  const since = Date.now() / 1000 - 31 * 86400;
+  const byDay = new Map();
+  for (const r of withData) {
+    let data;
+    try { data = await loadInstrument(r.e); } catch { continue; }
+    const daily = ((data.series || {})["1d"] || []).filter((x) => x[0] >= since);
+    for (const x of daily) {
+      const d = Math.floor(shift(x[0]) / 86400) * 86400;
+      const m = byDay.get(d) || new Map();
+      m.set(r.e.id, x[4] * r.p.qty);
+      byDay.set(d, m);
+    }
+  }
+  // fehlende Tage eines Werts (z. B. Wochenende bei Aktien) mit dem letzten bekannten Wert füllen
+  const days = [...byDay.keys()].sort((a, b) => a - b);
+  const lastVal = new Map();
+  const points = [];
+  for (const d of days) {
+    for (const [id, v] of byDay.get(d)) lastVal.set(id, v);
+    if (lastVal.size < withData.length) continue;
+    points.push({ time: d, value: [...lastVal.values()].reduce((a, b) => a + b, 0) + cash });
+  }
+  if (typeof LightweightCharts === "undefined") return;
+  if (!pf.chart) {
+    const css = getComputedStyle(document.documentElement);
+    const c = (n) => css.getPropertyValue(n).trim();
+    pf.chart = LightweightCharts.createChart($("pf-chart"), {
+      autoSize: true,
+      layout: { background: { color: c("--panel") }, textColor: c("--mute"), fontFamily: "Inter, system-ui, sans-serif" },
+      grid: { vertLines: { visible: false }, horzLines: { color: c("--grid") } },
+      rightPriceScale: { borderColor: c("--line") },
+      timeScale: { borderColor: c("--line") },
+      handleScroll: false, handleScale: false,
+      localization: { locale: "de-DE", priceFormatter: (p) => numFmt(p * curFactor("€")) },
+    });
+    pf.series = pf.chart.addAreaSeries({ lineColor: "#16c784", topColor: "rgba(22,199,132,.25)", bottomColor: "rgba(22,199,132,0)", lineWidth: 2, priceLineVisible: false });
+  }
+  pf.series.setData(points);
+  pf.chart.timeScale().fitContent();
+  $("pf-chart-note").textContent = points.length ? "Berechnet mit deinen heutigen Stückzahlen und den Tagesschlusskursen; Käufe und Verkäufe im Zeitraum sind nicht berücksichtigt." : "Für diese Werte liegen noch keine Tageskurse vor.";
+}
+
+// Hinzufügen
+$("pf-add-btn").addEventListener("click", () => { $("pf-form").hidden = !$("pf-form").hidden; if (!$("pf-form").hidden) $("pf-asset").focus(); });
+$("pf-cancel").addEventListener("click", () => { $("pf-form").hidden = true; });
+$("pf-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const e = findEntry($("pf-asset").value);
+  if (!e) { $("pf-form-msg").textContent = "Diesen Wert gibt es in der App nicht. Wähle einen Eintrag aus der Liste oder gib die ISIN ein."; return; }
+  const qty = Number($("pf-qty").value);
+  if (!(qty > 0)) { $("pf-form-msg").textContent = "Bitte eine Stückzahl größer als 0 eintragen."; return; }
+  const buy = $("pf-buy").value === "" ? null : Number($("pf-buy").value);
+  pf.data.positions.push({ id: e.id, isin: e.isin || null, name: e.name, qty, buy, date: $("pf-date").value || null });
+  await savePortfolio();
+  ev.target.reset();
+  $("pf-form-msg").textContent = `${e.name} hinzugefügt.`;
+  renderPortfolio();
+});
+$("pf-cash").addEventListener("change", async (ev) => {
+  pf.data.cash = Number(ev.target.value) || 0;
+  await savePortfolio();
+  renderPortfolio();
+});
+
+/** CSV einlesen: Spalten werden an den Überschriften erkannt (ISIN, Stück/Anzahl/Menge, Kaufkurs/Einstand). */
+function parseCsv(text) {
+  const lines = text.replace(/^﻿/, "").split(/\r?\n/).filter((l) => l.trim());
+  const sepOf = (l) => (l.split(";").length >= l.split(",").length ? ";" : ",");
+  const num = (v) => {
+    if (v == null) return null;
+    let t = String(v).replace(/["€\s]/g, "");
+    if (/,\d{1,6}$/.test(t)) t = t.replace(/\./g, "").replace(",", ".");
+    const n = Number(t);
+    return Number.isFinite(n) ? n : null;
+  };
+  let headerIdx = lines.findIndex((l) => /isin/i.test(l));
+  if (headerIdx < 0) return { error: "Keine Spalte „ISIN“ gefunden." };
+  const sep = sepOf(lines[headerIdx]);
+  const head = lines[headerIdx].split(sep).map((h) => h.replace(/"/g, "").trim().toLowerCase());
+  const col = (re) => head.findIndex((h) => re.test(h));
+  const ci = col(/isin/), cq = col(/st(ü|ue)ck|anzahl|menge|quantit|nominal|bestand/), cb = col(/kaufkurs|einstand|durchschnitt|avg|purchase/), cn = col(/name|bezeichnung|wertpapier/);
+  if (cq < 0) return { error: "Keine Spalte für die Stückzahl gefunden (z. B. „Stück“ oder „Anzahl“)." };
+  const out = [];
+  for (const l of lines.slice(headerIdx + 1)) {
+    const f = l.split(sep).map((x) => x.replace(/"/g, "").trim());
+    const isin = (f[ci] || "").toUpperCase();
+    if (!/^[A-Z]{2}[A-Z0-9]{9}\d$/.test(isin)) continue;
+    const qty = num(f[cq]);
+    if (!(qty > 0)) continue;
+    out.push({ isin, qty, buy: cb >= 0 ? num(f[cb]) : null, name: cn >= 0 ? f[cn] : null });
+  }
+  return { rows: out };
+}
+$("pf-file").addEventListener("change", async (ev) => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const buf = await file.arrayBuffer();
+  let text = new TextDecoder("utf-8").decode(buf);
+  if (text.includes("�")) text = new TextDecoder("windows-1252").decode(buf);
+  const res = parseCsv(text);
+  if (res.error) { $("pf-import-msg").textContent = res.error; return; }
+  if ($("pf-replace").checked) pf.data.positions = [];
+  let known = 0;
+  for (const r of res.rows) {
+    const e = state.index.instruments.find((x) => x.isin === r.isin);
+    if (e) known += 1;
+    pf.data.positions.push({ id: e ? e.id : null, isin: r.isin, name: e ? e.name : r.name, qty: r.qty, buy: r.buy, date: null });
+  }
+  await savePortfolio();
+  $("pf-import-msg").textContent = `${res.rows.length} Positionen übernommen, davon ${known} mit Live-Kurs in der App.`;
+  ev.target.value = "";
+  renderPortfolio();
+});
+// Live-Kurse: Portfolio höchstens alle 3 Sekunden neu bewerten
+onQuote(() => {
+  if (pf.queued || $("view-portfolio").hidden) return;
+  pf.queued = true;
+  setTimeout(() => { pf.queued = false; if (!$("view-portfolio").hidden) renderPortfolio(); }, 3000);
+});

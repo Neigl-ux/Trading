@@ -158,6 +158,17 @@ def compute(loader, now: pd.Timestamp, last: float | None, last_ts: pd.Timestamp
         out["new_low_24h"] = last <= lo
         out["spark"] = _spark(win["close"], last)
 
+    # Vorschau des Tagescharts: Verlauf seit Tagesbeginn (deutsche Zeit) des Kurszeitpunkts
+    day_start = last_ts.tz_convert("Europe/Berlin").normalize().tz_convert("UTC")
+    for interval in ("5m", "15m", "1h"):
+        df = frames.get(interval)
+        if df.empty:
+            continue
+        today = df[df.index >= day_start]["close"]
+        if len(today) >= 3:
+            out["spark_day"] = _spark(today, last, points=48)
+            break
+
     closes = _closes_daily(frames, last, last_ts)
     daily = frames.get("1d")
     n = len(closes)

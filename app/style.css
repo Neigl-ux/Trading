@@ -438,3 +438,87 @@ main { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
 .pane-title { display: flex; justify-content: space-between; gap: 10px; padding: 6px 12px 0; font-size: .76rem; color: var(--mute); }
 .pane-val { color: var(--ink); font-variant-numeric: tabular-nums; }
 .pane-chart { height: 120px; }
+
+/* Optionen und Tageschart-Vorschau */
+.opts-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.opts-sum { color: var(--mute); font-size: .8rem; }
+.opts-panel { margin-top: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.opts-panel .list-tools { margin-top: 0; }
+.opts-label { margin: 14px 0 0; font-size: .8rem; color: var(--ink); font-weight: 600; }
+.opts-label span { color: var(--mute); font-weight: 400; }
+.opts-panel .cat-bar { margin-top: 8px; }
+.row.with-spark { grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; column-gap: 10px; }
+.row.with-spark > .spark { grid-row: span 2; width: 56px; height: 28px; }
+.row .sub { min-width: 0; overflow: hidden; }
+.row .sub .badge { max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+@media (min-width: 700px) { .row.with-spark { grid-template-columns: 96px minmax(0, 1fr) auto; } .row.with-spark > .spark { width: 96px; height: 32px; } }
+.row.with-spark .name { align-self: end; }
+.row.with-spark .sub { align-self: start; }
+/* Ranglisten kompakt */
+.rank-row { grid-template-columns: 56px minmax(0, 1fr) auto; column-gap: 10px; row-gap: 1px; padding: 10px 6px; }
+.rank-row .spark { width: 56px; height: 26px; }
+.rank-row .name, .rank-row .sub, .rank-row .vol { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.rank-row .sub { font-size: .76rem; }
+.rank-row .px { font-size: .98rem; }
+.rank-row .chg { white-space: nowrap; }
+@media (min-width: 700px) { .rank-row { grid-template-columns: 96px minmax(0, 1fr) auto; } .rank-row .spark { width: 96px; height: 30px; } }
+
+/* Seitenkopf, Zahnrad */
+.page-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin: 4px 0 14px; }
+.page-head h2 { margin: 0; }
+.page-sub { color: var(--mute); font-size: .84rem; }
+.gear { margin-left: 8px; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); display: grid; place-items: center; cursor: pointer; }
+.gear svg { width: 18px; height: 18px; fill: none; stroke: var(--ink); stroke-width: 1.7; stroke-linecap: round; }
+@media (min-width: 1100px) { .gear { display: none; } }
+
+/* Portfolio */
+.pf-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.kpi { display: flex; flex-direction: column; gap: 2px; }
+.kpi-label { color: var(--mute); font-size: .8rem; }
+.kpi-value { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.kpi-sub { color: var(--mute); font-size: .8rem; }
+.pf-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
+.pf-chart { height: 220px; }
+.pf-donut { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.donut { width: 140px; height: 140px; }
+.donut-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: .86rem; flex: 1; min-width: 140px; }
+.donut-legend li { display: flex; align-items: center; gap: 8px; }
+.donut-legend b { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+.donut-legend .dot { width: 9px; height: 9px; border-radius: 50%; }
+.pf-positions { margin-top: 12px; }
+.pf-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 6px 0 12px; }
+.pf-form .pf-wide { grid-column: 1 / -1; }
+.pf-form-actions { display: flex; gap: 8px; align-items: flex-end; }
+.pf-form-actions button { width: auto; margin: 0; min-height: 40px; padding: 0 14px; }
+.pf-form .small { grid-column: 1 / -1; margin: 0; }
+.pf-tbl td:first-child { white-space: normal; min-width: 140px; }
+.row-del { background: none; border: 0; color: var(--mute); cursor: pointer; font-size: .78rem; }
+.row-del:hover { color: var(--down); }
+.pf-import { margin-top: 12px; }
+.pf-import summary { cursor: pointer; color: var(--accent); font-size: .88rem; }
+.pf-import-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.pf-cash { margin-top: 12px; max-width: 260px; }
+@media (min-width: 1100px) { .pf-grid { grid-template-columns: 2fr 1fr; } }
+
+/* Einstellungen */
+.settings { display: grid; gap: 4px; }
+.set-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.set-row:last-of-type { border-bottom: 0; }
+.set-row select { min-height: 38px; border-radius: 9px; background: var(--panel-2); border: 1px solid var(--line); padding: 0 10px; max-width: 100%; }
+.status-title { margin-top: 28px; }
+
+/* Seiten im Screener */
+.pager { display: flex; justify-content: center; align-items: center; gap: 14px; margin: 12px 0; font-size: .86rem; color: var(--mute); }
+.pager button { min-height: 36px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+.pager button:disabled { opacity: .4; cursor: default; }
+
+/* Helles Design */
+:root[data-theme=light] {
+  --bg: #f5f7fb; --panel: #ffffff; --panel-2: #eef2f8; --line: #dde3ec; --grid: rgba(15, 23, 42, .06);
+  --ink: #0f172a; --mute: #5b6779; --up: #059669; --down: #dc2626; --accent: #2563eb; --accent-soft: rgba(37, 99, 235, .1);
+  --warn: #b7791f;
+}
+:root[data-theme=light] .topbar { background: rgba(245, 247, 251, .9); }
+:root[data-theme=light] .tabbar { background: rgba(255, 255, 255, .96); }
+@media (min-width: 1100px) { :root[data-theme=light] .tabbar { background: #ffffff; } }
+:root[data-theme=light] .scr-table th:first-child, :root[data-theme=light] .scr-table td:first-child { background: var(--panel); }

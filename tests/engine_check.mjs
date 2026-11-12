@@ -30,16 +30,19 @@ assert.ok(Math.abs(perfOf(e, "24h", 121).pct - 0.21) < 1e-9);
 assert.equal(perfOf(e, "5m"), null); // fehlt -> null, nicht 0
 
 // Top/Flop: Sortierung, Duplikate, Liquidität, Plausibilität
-const mk = (id, kind, pct, extra = {}) => ({ id, kind, isin: extra.isin, last: 100, metrics: { perf: { "24h": pct }, abs: { "24h": 1 }, avg_turnover_20d: extra.turn ?? 1e7 } });
+const mk = (id, kind, pct, extra = {}) => ({ id, kind, isin: extra.isin, last: 100 * (1 + pct), prev_close: 100, metrics: { avg_turnover_20d: extra.turn ?? 1e7 } });
 const list = [
   mk("A", "aktie", 0.05), mk("B", "aktie", 0.12), mk("C", "aktie", -0.03), mk("D", "aktie", -0.09),
   mk("E", "aktie", 0.5), // unplausibel
   mk("F", "aktie", 0.2, { turn: 1000 }), // illiquide
   mk("G", "krypto", 0.3, { turn: 2e6 }),
   mk("B2", "aktie", 0.12, { isin: "X1" }), mk("B3", "aktie", 0.11, { isin: "X1" }), // gleiche ISIN -> einmal
-  { id: "N", kind: "aktie", last: 5, metrics: {} },
+  { id: "N", kind: "aktie", last: 5, prev_close: null, metrics: {} },
 ];
 const tf = topFlop(list, { cats: new Set(["aktie", "krypto"]) });
+// Live-Kurs verschiebt die Tagesveränderung
+assert.ok(Math.abs(topFlop([mk("L", "aktie", 0.01)], { priceOf: () => 110 }).top[0].pct - 0.1) < 1e-12);
+assert.ok(Math.abs(topFlop([mk("L", "aktie", 0.01)], { priceOf: () => 110 }).top[0].abs - 10) < 1e-9);
 assert.deepEqual(tf.top.map((r) => r.e.id), ["G", "B", "B2", "A"]);
 assert.deepEqual(tf.flop.map((r) => r.e.id), ["D", "C"]);
 assert.equal(tf.excluded.implausible, 1);

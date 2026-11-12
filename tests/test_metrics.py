@@ -102,3 +102,13 @@ def test_golden_and_death_cross():
     assert M._cross(fast, slow) == "golden"
     assert M._cross(slow, fast) == "death"
     assert M._cross(pd.Series([3, 3, 3.0]), pd.Series([1, 1, 1.0])) is None
+
+
+def test_day_spark_starts_at_berlin_midnight():
+    out = M.compute(FakeLoader(crypto_frames()), NOW, 131.0, NOW, crypto=True)
+    sp = out["spark_day"]
+    assert 3 <= len(sp) <= 49 and sp[-1] == 131.0
+    # 20:00 UTC = 21:00 Berlin: Tagesverlauf seit 23:00 UTC des Vortags, also weniger als die 24-Std.-Reihe
+    f5 = crypto_frames()["5m"]
+    start = f5[f5.index >= pd.Timestamp("2026-11-11 23:00", tz="UTC")]["close"].iloc[0]
+    assert sp[0] == pytest.approx(start, rel=1e-4)
