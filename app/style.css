@@ -198,3 +198,78 @@ main { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
 .fh-form button { min-height: 44px; padding: 0 16px; border-radius: 8px; border: 0; background: var(--mark); color: #2a1d00; font: inherit; font-weight: 600; cursor: pointer; }
 .fh-state { margin-top: 8px; }
 .fh-remove { margin-top: 4px; }
+
+/* ---------- Unteransichten: Liste, Top & Flop, Screener ---------- */
+.sub-nav { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 14px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.sub-nav button, .seg button { min-height: 40px; border: 0; background: transparent; color: var(--mute); font: inherit; font-weight: 600; cursor: pointer; }
+.sub-nav button + button, .seg button + button { border-left: 1px solid var(--line); }
+.sub-nav button[aria-pressed=true], .seg button[aria-pressed=true] { background: var(--deck); color: var(--ink); box-shadow: inset 0 -2px 0 var(--mark); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { min-height: 34px; padding: 0 12px; font-size: .9rem; }
+
+/* Kategorien: Mehrfachauswahl */
+.cat-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.cat-bar[hidden] { display: none; }
+.chip { min-height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid var(--line); background: transparent; color: var(--mute); font: inherit; font-size: .88rem; cursor: pointer; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed=true] { border-color: var(--mark); color: var(--ink); background: rgba(242, 181, 68, .14); }
+.chip:disabled { opacity: .45; cursor: default; }
+
+/* Kennzeichnung des Datenstands */
+.badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: .72rem; font-weight: 600; letter-spacing: .02em; vertical-align: 1px; white-space: nowrap; }
+.st-live { background: rgba(60, 201, 160, .16); color: var(--up); }
+.st-delayed { background: rgba(242, 181, 68, .16); color: var(--mark); }
+.st-closed { background: rgba(141, 162, 191, .16); color: var(--mute); }
+.st-none { background: rgba(242, 112, 107, .16); color: var(--down); }
+.status-line { margin: 6px 0 0; }
+
+/* Ranglisten */
+.check-line { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--mute); font-size: .92rem; cursor: pointer; }
+.check-line input { width: 18px; height: 18px; accent-color: var(--mark); }
+.rank-title { margin: 22px 0 2px; font-size: 1rem; }
+.rank-title.up { color: var(--up); }
+.rank-title.down { color: var(--down); }
+.rank-row { grid-template-columns: 64px 1fr auto; align-items: center; }
+.rank-row .spark { grid-row: span 3; width: 64px; height: 22px; }
+.spark polyline { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.spark.up polyline { stroke: var(--up); }
+.spark.down polyline { stroke: var(--down); }
+.spark.flat polyline { stroke: var(--mute); }
+.rank-row .ticker { color: var(--mute); font-weight: 400; font-size: .82rem; }
+.rank-row .vol { grid-column: 2 / 4; color: var(--mute); font-size: .8rem; }
+
+/* Screener */
+.screener { margin-top: 12px; }
+.screener details { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; padding: 0 12px; }
+.screener summary { cursor: pointer; padding: 12px 0; font-weight: 600; }
+.fld-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; padding-bottom: 12px; }
+.fld { display: flex; flex-direction: column; gap: 4px; font-size: .82rem; color: var(--mute); }
+.fld input, .fld select, .scr-actions input, .scr-actions select {
+  min-height: 40px; padding: 0 10px; border-radius: 8px; background: var(--deck); border: 1px solid var(--line); color: var(--ink); font: inherit; font-size: .95rem; min-width: 0;
+}
+.fld-note { grid-column: 1 / -1; margin: 0; color: var(--mute); }
+.presets { display: flex; gap: 6px; align-items: flex-end; flex-wrap: wrap; }
+.presets button { min-height: 40px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; font-size: .88rem; cursor: pointer; }
+.sig-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); padding-bottom: 12px; }
+.sig-list .check-line { margin-top: 8px; color: var(--ink); }
+.sort-row { margin-top: 4px; padding-bottom: 4px; }
+.scr-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.scr-actions > * { flex: 1 1 120px; }
+.scr-actions button { min-height: 40px; border-radius: 8px; border: 0; background: var(--mark); color: #2a1d00; font: inherit; font-weight: 600; cursor: pointer; margin-top: 0; }
+.scr-actions button.secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.scr-actions button:disabled { opacity: .45; cursor: default; }
+.screener-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
+.screener-count { margin: 0; font-weight: 600; }
+.table-wrap { overflow-x: auto; margin-top: 10px; }
+.scr-table { border-collapse: collapse; width: 100%; font-size: .88rem; font-variant-numeric: tabular-nums; }
+.scr-table th, .scr-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.scr-table th:first-child, .scr-table td:first-child { text-align: left; position: sticky; left: 0; background: var(--night); }
+.scr-table th { color: var(--mute); font-weight: 500; }
+.scr-table tbody tr { cursor: pointer; }
+.scr-table tbody tr:hover, .scr-table tbody tr:focus-visible { background: var(--deck); }
+.src-table td, .src-table th { text-align: left; white-space: normal; min-width: 120px; }
+
+/* Schieberegler unter dem Chart */
+.pan { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 8px; margin-top: 8px; }
+.pan button { min-height: 44px; border-radius: 8px; border: 1px solid var(--line); background: var(--deck); color: var(--ink); font-size: 1.4rem; line-height: 1; cursor: pointer; }
+.pan input[type=range] { width: 100%; height: 44px; accent-color: var(--mark); touch-action: pan-x; }
+.pan input:disabled { opacity: .4; }

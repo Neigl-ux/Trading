@@ -1,5 +1,6 @@
 import { deriveKey, exportKey, importKey, openSealed, sealText, openText } from "./crypto.js";
 import { FinnhubStream, usMarketOpen } from "./finnhub.js";
+import { CATEGORIES, EMPTY_FILTER, SIGNALS, SORTS, STATUS_LABEL, WINDOWS, dataStatus, onQuote, perfOf, pushQuote, quoteOf, screen, topFlop } from "./engine.js";
 import { candleLabel, tickLabel } from "./format.js";
 import { fetchQuote, tradegateOpen } from "./tradegate.js";
 import { VIEWS, STEP, TZ as PERF_TZ, computeAll, formatPct, pctClass, periodStart, berlinParts, berlinToUtc } from "./perf.js";
@@ -181,7 +182,7 @@ async function refreshIndex() {
     if (index.updated !== state.index.updated) {
       state.index = index;
       files.clear();
-      renderList();
+      renderCurrentSub();
       renderStatus();
       if (!$("view-chart").hidden && state.entry) {
         const fresh = index.instruments.find((e) => e.id === state.entry.id);
@@ -210,8 +211,8 @@ function toggleFav(id) {
 }
 
 // ---------- Filter und Suche ----------
-const KIND_LABEL = { aktie: "Aktie", etf: "ETF", index: "Index", krypto: "Krypto", devisen: "Devisen" };
-const MARKET_LABEL = { xetra: "Xetra", europe: "Europa", us: "USA", crypto: "Krypto" };
+const KIND_LABEL = { aktie: "Aktie", etf: "ETF", index: "Index", krypto: "Krypto", devisen: "Devisen", rohstoff: "Rohstoff" };
+const MARKET_LABEL = { xetra: "Xetra", europe: "Europa", us: "USA", crypto: "Krypto", uk: "London", japan: "Japan", hongkong: "Hongkong", fx: "Devisen", futures: "Termin" };
 const FILTERS = [
   { key: "fav", label: "Favoriten", test: (e) => isFav(e.id) },
   { key: "all", label: "Alle", test: () => true },
@@ -221,6 +222,8 @@ const FILTERS = [
   { key: "etf", label: "ETFs", test: (e) => e.kind === "etf" },
   { key: "index", label: "Indizes", test: (e) => e.kind === "index" },
   { key: "krypto", label: "Krypto", test: (e) => e.kind === "krypto" },
+  { key: "rohstoff", label: "Rohstoffe", test: (e) => e.kind === "rohstoff" },
+  { key: "devisen", label: "Devisen", test: (e) => e.kind === "devisen" },
 ];
 const GROUPS = [
   ["Indizes", (e) => e.kind === "index"],
@@ -229,6 +232,7 @@ const GROUPS = [
   ["Europäische Aktien", (e) => e.kind === "aktie" && e.market === "europe"],
   ["US-Aktien", (e) => e.kind === "aktie" && e.market === "us"],
   ["Krypto", (e) => e.kind === "krypto"],
+  ["Rohstoffe", (e) => e.kind === "rohstoff"],
   ["Devisen", (e) => e.kind === "devisen"],
 ];
 let filterKey = (() => {
@@ -273,18 +277,22 @@ function renderList() {
   const q = norm($("search").value.trim());
   let items;
   if (q) {
-    items = all.filter((e) => norm(`${e.name} ${e.id}`).includes(q));
+    items = all.filter((e) => norm(`${e.name} ${e.id} ${e.ticker || ""} ${e.isin || ""} ${e.wkn || ""}`).includes(q));
     hint.textContent = items.length ? `${items.length} Treffer in allen Bereichen` : `Kein Wert passt zu „${$("search").value.trim()}“. Versuche den Firmennamen oder das Börsenkürzel.`;
   } else {
     const filter = FILTERS.find((f) => f.key === filterKey) || FILTERS[1];
     items = all.filter(filter.test);
+    if (filter.key === "all") items = items.filter((e) => cats.has(e.kind));
     if (filter.key === "fav") {
       items.sort((a, b) => favs.indexOf(a.id) - favs.indexOf(b.id));
       hint.textContent = items.length ? "" : "Noch keine Favoriten. Tippe unter „Alle“ auf den Stern neben einem Wert, um ihn hier zu sammeln.";
+    } else if (filter.key === "all" && !items.length) {
+      hint.textContent = "Alle Kategorien sind ausgeblendet. Tippe oben auf eine Kategorie, um sie wieder einzublenden.";
     } else {
       hint.textContent = "";
     }
   }
+  document.querySelector("#sub-list [data-cat-bar]").hidden = Boolean(q) || filterKey !== "all";
   const grouped = !q && filterKey === "all";
   if (grouped) {
     for (const [title, test] of GROUPS) {
@@ -310,13 +318,15 @@ function rowFor(e) {
   row.innerHTML = `<span class="name"></span><span class="px"></span><span class="sub"></span><span class="chg"></span>`;
   row.querySelector(".name").textContent = e.name;
   row.querySelector(".px").textContent = fmtPrice(e.last, unitOf(e));
-  row.querySelector(".sub").textContent = subLine(e);
+  paintSub(row.querySelector(".sub"), e);
   const chg = row.querySelector(".chg");
   chg.textContent = e.change_1d == null ? "" : `${fmtPct(e.change_1d)} heute`;
   chg.classList.add(trendClass(e.change_1d));
   row.addEventListener("click", () => openChart(e));
   item.dataset.id = e.id;
   rowEls.set(e.id, { entry: e, item, px: row.querySelector(".px"), chg, sub: row.querySelector(".sub") });
+  const q = quoteOf(e.id);
+  if (q) paintRow(e.id, q.price, q.live); // zuletzt empfangenen Live-Kurs gleich zeigen
   item.append(row, starButton(e.id, () => { if (filterKey === "fav" && !$("search").value) renderList(); }));
   return item;
 }
@@ -339,7 +349,7 @@ function paintStar(b, id) {
 
 // Suchen geht von überall: wer im Chart tippt, landet in der Trefferliste (Zurück führt wieder zum Chart)
 $("search").addEventListener("input", () => {
-  if ($("view-markets").hidden) navigate("markets");
+  if ($("view-markets").hidden || $("sub-list").hidden) navigate("markets");
   else renderList();
 });
 
@@ -403,21 +413,26 @@ function applyRoute(route) {
     history.replaceState({ route: "markets", app: true, depth: (history.state && history.state.depth) || 0 }, "", "#markets");
     return showTab("markets");
   }
+  if (tab === "movers" || tab === "screener") return showTab("markets", tab);
   showTab(TABS[tab] ? tab : "markets");
 }
 window.addEventListener("popstate", () => applyRoute(routeNow()));
 function setTabActive(tab) {
   document.querySelectorAll(".tabbar button").forEach((x) => x.classList.toggle("active", x.dataset.tab === tab));
 }
-function showTab(tab) {
+function showTab(tab, sub = "list") {
   const fromChart = !$("view-chart").hidden;
+  showSub(tab === "markets" ? sub : "list");
   setTabActive(tab);
   stopLive();
   stopListLive();
   $("view-chart").hidden = true;
   for (const [t, id] of Object.entries(TABS)) $(id).hidden = t !== tab;
   if (tab === "markets") {
-    renderList();
+    renderCatBars();
+    if (sub === "movers") renderMovers();
+    else if (sub === "screener") renderScreener();
+    else renderList();
     if (fromChart) requestAnimationFrame(() => window.scrollTo(0, listScroll));
   } else {
     window.scrollTo(0, 0);
@@ -617,6 +632,7 @@ function onKline(interval, row) {
 }
 
 function onTicker(t) {
+  pushQuote(asset.entry.id, { price: t.price, time: t.time, source: "binance", open: true });
   asset.price = t.price;
   asset.asOf = t.time;
   asset.stats = { kind: "24h", high: t.high, low: t.low, volume: t.volume };
@@ -805,7 +821,7 @@ function updateHeader() {
   const e = asset.entry;
   if (!e || asset.price == null) return;
   const unit = unitOf(e);
-  $("q-price").textContent = fmtPrice(asset.price, unit);
+  $("q-price").textContent = priceText(e, asset.price);
   const day = lastPerf["1D"];
   const ch = $("q-change");
   if (day && day.ref) {
@@ -867,6 +883,7 @@ function updateMeta() {
   }
   if (e.converted_from) text += ", von US-Dollar in Euro umgerechnet";
   $("q-meta").textContent = text;
+  paintBadge($("q-status"), e);
 }
 
 // ---------- Echtzeit für Aktien und ETFs (Tradegate) ----------
@@ -890,7 +907,7 @@ $("rt-switch").addEventListener("change", (ev) => {
 $("rt-list-switch").addEventListener("change", (ev) => {
   setRealtime(ev.target.checked);
   if (ev.target.checked) startListLive();
-  else renderList();
+  else { stopAllLive(); renderCurrentSub(); }
 });
 $("rt-list-switch").checked = rtWanted();
 
@@ -914,7 +931,7 @@ function startTradegate() {
   rt.failures = 0;
   pollTradegate();
   // Tradegate aktualisiert alle 10 Sekunden; außerhalb der Handelszeit genügt eine Abfrage pro Minute
-  asset.rtTimer = setInterval(pollTradegate, tradegateOpen() ? 10_000 : 60_000);
+  asset.rtTimer = setInterval(pollTradegate, tradegateOpen() ? LIVE_TICK_MS : 60_000);
   updateMeta();
 }
 
@@ -961,6 +978,7 @@ function applyQuote(q) {
     return;
   }
   const open = tradegateOpen();
+  pushQuote(asset.entry.id, { price: q.last, source: "tradegate", open, time: now });
   asset.price = q.last;
   asset.asOf = open ? now : lastTradegateClose(now);
   asset.stats = { kind: "day", high: q.high, low: q.low, volume: q.volume, volumeUnit: "Stück" };
@@ -1032,6 +1050,7 @@ function ensureChart() {
   applyChartType();
   state.volume = state.chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "", color: "rgba(141,162,191,.35)", lastValueVisible: false, priceLineVisible: false });
   state.volume.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+  state.chart.timeScale().subscribeVisibleLogicalRangeChange(syncPan);
   state.chart.subscribeCrosshairMove((param) => {
     if (touching) return; // Fingersteuerung setzt die Infozeile selbst
     const i = param.time !== undefined ? state.timeIndex.get(param.time) : undefined;
@@ -1138,53 +1157,91 @@ function showLastInLegend() {
 // Alle Zeilen, die gerade auf dem Bildschirm stehen, werden live aktualisiert:
 // Euro-Werte über Tradegate alle 15 Sekunden, Krypto über den Binance-Strom.
 // „Heute“ vergleicht mit demselben Vortageskurs wie die 1D-Anzeige im Chart.
-const listLive = { timer: null, ws: null, run: 0, visible: new Set(), observer: null };
+// Live-Kurse für ALLE Werte, solange die App offen ist (nicht nur die sichtbaren):
+// - Tradegate (Aktien, ETFs): alle 2 Sekunden die sichtbaren Werte und der offene Chart,
+//   dazu reihum 4 weitere Werte, sodass jeder Wert regelmäßig dran ist. Tradegate selbst
+//   aktualisiert seine Kurse etwa alle 10 Sekunden.
+// - Krypto: Binance-Strom (jede Sekunde) für alle Paare, Kraken-Strom für Werte ohne Binance-Paar.
+// - US-Aktien und US-ETFs: Finnhub-Strom (bis zu 50 Werte gleichzeitig, sichtbare zuerst).
+// „Heute“ vergleicht mit demselben Vortageskurs wie die 1D-Anzeige im Chart.
+const LIVE_TICK_MS = 2000;
+const listLive = { timer: null, ws: null, kws: null, run: 0, visible: new Set(), observer: null, rot: 0, busy: false, usd: new Map() };
 
+// Nur die Beobachtung der gerade gezeichneten Zeilen endet; die Live-Abfragen laufen weiter.
 function stopListLive() {
+  if (listLive.observer) { listLive.observer.disconnect(); listLive.observer = null; }
+  listLive.visible.clear();
+}
+
+function stopAllLive() {
+  stopListLive();
   clearInterval(listLive.timer);
   listLive.timer = null;
   listLive.run += 1;
-  if (listLive.ws) { try { listLive.ws.onclose = null; listLive.ws.close(); } catch {} listLive.ws = null; }
-  if (listLive.observer) { listLive.observer.disconnect(); listLive.observer = null; }
-  listLive.visible.clear();
+  for (const k of ["ws", "kws"]) {
+    if (listLive[k]) { try { listLive[k].onclose = null; listLive[k].close(); } catch {} listLive[k] = null; }
+  }
   if (fh.listSyms.size) { fh.listSyms = new Set(); updateFinnhubWant(); }
 }
 
 function startListLive() {
   stopListLive();
-  if (!rtWanted() || $("view-markets").hidden || document.hidden) return;
-  const run = listLive.run;
-  // sichtbare Zeilen beobachten
+  if (!rtWanted() || document.hidden || !state.index) return;
+  // sichtbare Zeilen beobachten: sie kommen bei jeder Runde dran
   if ("IntersectionObserver" in window) {
     listLive.observer = new IntersectionObserver((items) => {
       for (const it of items) {
         const id = it.target.dataset.id;
-        if (it.isIntersecting) {
-          if (!listLive.visible.has(id)) {
-            listLive.visible.add(id);
-            const r = rowEls.get(id);
-            if (r && rtAvailable(r.entry) && !isCrypto(r.entry)) pollOne(r.entry, run);
-          }
-        } else listLive.visible.delete(id);
+        if (it.isIntersecting) listLive.visible.add(id);
+        else listLive.visible.delete(id);
       }
       listFinnhubSymbols();
     }, { rootMargin: "80px 0px" });
     for (const r of rowEls.values()) listLive.observer.observe(r.item);
-  } else {
-    for (const id of rowEls.keys()) listLive.visible.add(id);
-    listFinnhubSymbols();
   }
-  listLive.timer = setInterval(() => pollVisible(run), tradegateOpen() ? 15_000 : 60_000);
-  const crypto = [...rowEls.values()].map((r) => r.entry).filter(isCrypto);
-  if (crypto.length) openCryptoStream(crypto, run);
+  ensureAllLive();
+  listFinnhubSymbols();
 }
 
-async function pollVisible(run) {
-  const entries = [...listLive.visible].map((id) => rowEls.get(id)).filter(Boolean).map((r) => r.entry)
-    .filter((e) => rtAvailable(e) && !isCrypto(e)).slice(0, 15);
-  for (let i = 0; i < entries.length; i += 4) {
-    if (run !== listLive.run) return;
-    await Promise.all(entries.slice(i, i + 4).map((e) => pollOne(e, run)));
+function ensureAllLive() {
+  if (listLive.timer || !rtWanted() || document.hidden || !state.index) return;
+  listLive.run += 1;
+  const run = listLive.run;
+  listLive.timer = setInterval(() => liveTick(run), LIVE_TICK_MS);
+  liveTick(run);
+  const all = state.index.instruments;
+  const binance = all.filter(isCrypto);
+  if (binance.length) openCryptoStream(binance, run);
+  const kraken = all.filter((e) => e.kind === "krypto" && !isCrypto(e));
+  if (kraken.length) openKrakenStream(kraken, run);
+}
+
+const tgEntries = () => state.index.instruments.filter((e) => rtAvailable(e) && !isCrypto(e));
+
+async function liveTick(run) {
+  if (listLive.busy || run !== listLive.run || document.hidden) return;
+  listLive.busy = true;
+  try {
+    const all = tgEntries();
+    const pri = [];
+    for (const id of listLive.visible) {
+      const r = rowEls.get(id);
+      if (r && rtAvailable(r.entry) && !isCrypto(r.entry) && !fhFresh(r.entry)) pri.push(r.entry);
+    }
+    const chosen = new Map(pri.slice(0, 10).map((e) => [e.id, e]));
+    // reihum weitere Werte, auch unsichtbare
+    for (let k = 0; k < all.length && chosen.size < pri.slice(0, 10).length + 4; k++) {
+      const e = all[listLive.rot % all.length];
+      listLive.rot += 1;
+      if (!chosen.has(e.id) && !fhFresh(e)) chosen.set(e.id, e);
+    }
+    const list = [...chosen.values()];
+    for (let i = 0; i < list.length; i += 4) {
+      if (run !== listLive.run) return;
+      await Promise.all(list.slice(i, i + 4).map((e) => pollOne(e, run)));
+    }
+  } finally {
+    listLive.busy = false;
   }
 }
 
@@ -1193,42 +1250,94 @@ async function pollOne(e, run) {
     const q = await fetchQuote(e.isin);
     if (fhFresh(e)) return; // US-Börse ist gerade die Quelle
     if (tradegateOpen()) recordTick(e.id, Date.now() / 1000, q.last);
-    if (run === listLive.run) paintLive(e.id, q.last);
+    if (run === listLive.run) paintLive(e.id, q.last, { source: "tradegate", open: tradegateOpen() });
   } catch {}
 }
 
+// Binance: Euro-Paare für die Kurse, dazu die USDT-Paare für die Dollar-Anzeige
+// (so steht bei „$“ derselbe Kurs wie auf Binance, ohne Umweg über den Wechselkurs).
 function openCryptoStream(entries, run) {
-  const bySymbol = new Map(entries.map((e) => [e.live.binance.toUpperCase(), e.id]));
+  const bySymbol = new Map();
+  for (const e of entries) {
+    const sym = e.live.binance.toUpperCase();
+    bySymbol.set(sym, { id: e.id, usd: false });
+    if (sym.endsWith("EUR")) bySymbol.set(sym.slice(0, -3) + "USDT", { id: e.id, usd: true });
+  }
   const streams = [...bySymbol.keys()].map((s) => `${s.toLowerCase()}@miniTicker`).join("/");
   let ws;
   try { ws = new WebSocket(`wss://stream.binance.com:443/stream?streams=${streams}`); } catch { return; }
   ws.onmessage = (msg) => {
     let d;
     try { d = JSON.parse(msg.data).data; } catch { return; }
-    const id = d && bySymbol.get(d.s);
-    if (id) paintLive(id, +d.c);
+    const hit = d && bySymbol.get(d.s);
+    if (!hit) return;
+    if (hit.usd) { listLive.usd.set(hit.id, { price: +d.c, at: Date.now() / 1000 }); refreshUsdShown(hit.id); }
+    else paintLive(hit.id, +d.c, { source: "binance", open: true });
   };
-  // bei Abbruch nach 3 Sekunden neu verbinden, solange die Liste offen ist
   ws.onclose = () => { if (run === listLive.run) setTimeout(() => { if (run === listLive.run) openCryptoStream(entries, run); }, 3000); };
   listLive.ws = ws;
 }
 
-function paintLive(id, price) {
+// Kraken (WebSocket v2, öffentlich): für Kryptowährungen ohne Binance-Euro-Paar
+function openKrakenStream(entries, run) {
+  const bySymbol = new Map(entries.map((e) => [krakenPair(e), e.id]));
+  let ws;
+  try { ws = new WebSocket("wss://ws.kraken.com/v2"); } catch { return; }
+  ws.onopen = () => ws.send(JSON.stringify({ method: "subscribe", params: { channel: "ticker", symbol: [...bySymbol.keys()] } }));
+  ws.onmessage = (msg) => {
+    let d;
+    try { d = JSON.parse(msg.data); } catch { return; }
+    if (d.channel !== "ticker" || !Array.isArray(d.data)) return;
+    for (const t of d.data) {
+      const id = bySymbol.get(t.symbol);
+      if (id && t.last > 0) paintLive(id, +t.last, { source: "kraken", open: true });
+    }
+  };
+  ws.onclose = () => { if (run === listLive.run) setTimeout(() => { if (run === listLive.run) openKrakenStream(entries, run); }, 3000); };
+  listLive.kws = ws;
+}
+
+/** Dollar-Kurs direkt vom USDT-Paar, wenn „$“ gewählt ist und der Kurs frisch ist. */
+function usdtPrice(e) {
+  if (currency !== "$" || !e || e.kind !== "krypto") return null;
+  const q = listLive.usd.get(e.id);
+  return q && Date.now() / 1000 - q.at < 90 ? q.price : null;
+}
+/** Kurs für die Anzeige: bei Krypto in „$“ der echte USDT-Kurs, sonst umgerechnet. */
+function priceText(e, eur) {
+  const usd = usdtPrice(e);
+  return usd != null ? `${numFmt(usd)} $` : fmtPrice(eur, unitOf(e));
+}
+function refreshUsdShown(id) {
+  if (currency !== "$") return;
   const r = rowEls.get(id);
-  if (!r || price == null) return;
+  if (r && r.px) r.px.textContent = priceText(r.entry, (quoteOf(id) || {}).price ?? r.entry.last);
+  if (asset.entry && asset.entry.id === id && !$("view-chart").hidden) $("q-price").textContent = priceText(asset.entry, asset.price);
+}
+
+function paintLive(id, price, { source = "tradegate", open = true } = {}) {
+  if (price == null) return;
+  pushQuote(id, { price, source, open, time: Date.now() / 1000 });
+  paintRow(id, price, open);
+}
+
+function paintRow(id, price, open) {
+  const r = rowEls.get(id);
+  if (!r) return;
+  if (r.rank) { paintSub(r.sub, r.entry); return; } // Ranglisten ordnen sich selbst neu (siehe onQuote)
   const e = r.entry;
   const change = e.prev_close ? price / e.prev_close - 1 : null;
-  r.px.textContent = fmtPrice(price, unitOf(e));
+  r.px.textContent = priceText(e, price);
   r.chg.textContent = change == null ? "" : `${fmtPct(change)} heute`;
   r.chg.className = "chg " + trendClass(change);
-  r.item.classList.add("is-live");
-  r.sub.textContent = `${subLine(e).split(",")[0]}, live`;
+  r.item.classList.toggle("is-live", open);
+  paintSub(r.sub, e);
 }
 
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && state.index) { refreshIndex(); startListLive(); }
-  if (document.hidden) { stopListLive(); pauseAsset(); }
+  if (document.hidden) { stopAllLive(); pauseAsset(); }
   else if (!$("view-chart").hidden && asset.entry) resumeAsset();
   updateFinnhubWant();
 });
@@ -1254,7 +1363,7 @@ function setCurrency(cur) {
   currency = cur;
   try { localStorage.setItem(CUR_STORE, cur); } catch {}
   paintCurrency();
-  if (state.index) renderList();
+  if (state.index) renderCurrentSub();
   if (state.entry && !$("view-chart").hidden) {
     try {
       updateHeader(); updatePerf(); updateMeta();
@@ -1322,11 +1431,19 @@ function updateFinnhubWant() {
 setInterval(updateFinnhubWant, 60_000); // Börsenbeginn und -schluss mitbekommen
 
 function listFinnhubSymbols() {
+  // sichtbare US-Werte zuerst, dann alle übrigen bis zur Grenze von 50 Werten
   const syms = new Set();
   for (const id of listLive.visible) {
     const r = rowEls.get(id);
     const sym = r && fhSymbol(r.entry);
     if (sym) syms.add(sym);
+  }
+  if (state.index && rtWanted()) {
+    for (const e of state.index.instruments) {
+      if (syms.size >= 49) break; // ein Platz bleibt für den offenen Chart
+      const sym = fhSymbol(e);
+      if (sym) syms.add(sym);
+    }
   }
   fh.listSyms = syms;
   updateFinnhubWant();
@@ -1349,7 +1466,8 @@ function flushFinnhub() {
     for (const e of state.index.instruments) {
       if (fhSymbol(e) !== sym) continue;
       recordTick(e.id, t.time, t.eur);
-      if (!$("view-markets").hidden && rowEls.has(e.id)) paintLive(e.id, t.eur);
+      if (rowEls.has(e.id)) paintLive(e.id, t.eur, { source: "finnhub", open: true });
+      else pushQuote(e.id, { price: t.eur, source: "finnhub", open: true, time: t.time });
       if (asset.entry && asset.entry.id === e.id && !$("view-chart").hidden && fh.chartSym === sym) applyFinnhub(t);
     }
   }
@@ -1357,6 +1475,7 @@ function flushFinnhub() {
 }
 
 function applyFinnhub(t) {
+  pushQuote(asset.entry.id, { price: t.eur, time: t.time, source: "finnhub", open: true });
   asset.price = t.eur;
   asset.asOf = t.time;
   asset.ticks = tickStore.get(asset.entry.id) || [];
@@ -1416,3 +1535,477 @@ $("fh-remove").addEventListener("click", () => {
   try { localStorage.removeItem(FH_STORE); } catch {}
   startFinnhub(null);
 });
+
+// ---------- Datenstatus (LIVE / VERZÖGERT / LETZTER SCHLUSSKURS / KEINE DATEN) ----------
+const STATUS_CLASS = { live: "st-live", delayed: "st-delayed", closed: "st-closed", none: "st-none" };
+function statusTime(st) {
+  if (!st.time) return "";
+  const age = Date.now() / 1000 - st.time;
+  return age > 20 * 3600 ? fmtTime(st.time, true) : fmtTime(st.time);
+}
+function paintBadge(el, e) {
+  if (!el || !e) return;
+  const st = dataStatus(e);
+  el.className = `badge ${STATUS_CLASS[st.code]}`;
+  const when = statusTime(st);
+  el.textContent = when ? `${STATUS_LABEL[st.code]} ${when}` : STATUS_LABEL[st.code];
+  el.title = st.code === "delayed" && e.delay_minutes ? `Kursverlauf ${e.delay_minutes} Minuten verzögert` : "";
+}
+function venueLabel(e) {
+  const st = dataStatus(e);
+  if (st.code === "live" && st.source === "finnhub") return "US-Börse";
+  if (st.source === "tradegate") return "Tradegate";
+  if (st.source === "binance") return "Binance";
+  return e.venue || MARKET_LABEL[e.market] || "";
+}
+function paintSub(el, e) {
+  const kind = e.kind === "aktie" ? `Aktie ${MARKET_LABEL[e.market] || ""}`.trim() : KIND_LABEL[e.kind] || "";
+  const badge = document.createElement("span");
+  paintBadge(badge, e);
+  el.replaceChildren(document.createTextNode(`${kind}, ${venueLabel(e)} `), badge);
+}
+// Kennzeichnung regelmäßig neu bewerten: ein Kurs ohne Nachschub ist nach 90 Sekunden nicht mehr „live“
+setInterval(() => {
+  if (document.hidden) return;
+  for (const r of rowEls.values()) if (r.sub) paintSub(r.sub, r.entry);
+  if (asset.entry && !$("view-chart").hidden) paintBadge($("q-status"), asset.entry);
+}, 15_000);
+
+// ---------- Kategorien: zentraler Filter für Liste, Top/Flop und Screener ----------
+const CAT_STORE = "ta.cats.v1";
+const cats = (() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CAT_STORE) || "null");
+    if (Array.isArray(saved)) return new Set(saved);
+  } catch {}
+  return new Set(CATEGORIES.map((c) => c.key));
+})();
+function saveCats() { try { localStorage.setItem(CAT_STORE, JSON.stringify([...cats])); } catch {} }
+function setCat(key, on) {
+  if (key === "all") CATEGORIES.forEach((c) => cats.add(c.key));
+  else if (on) cats.add(key);
+  else cats.delete(key);
+  saveCats();
+  renderCatBars();
+  // nur neu zeichnen, nichts neu laden
+  if (!$("sub-movers").hidden) renderMovers();
+  else if (!$("sub-screener").hidden) renderResults();
+  else renderList();
+}
+function renderCatBars() {
+  if (!state.index) return;
+  const counts = new Map();
+  for (const e of state.index.instruments) counts.set(e.kind, (counts.get(e.kind) || 0) + 1);
+  const all = CATEGORIES.every((c) => cats.has(c.key));
+  for (const bar of document.querySelectorAll("[data-cat-bar]")) {
+    const chips = [];
+    const allChip = document.createElement("button");
+    allChip.type = "button";
+    allChip.className = "chip";
+    allChip.setAttribute("aria-pressed", String(all));
+    allChip.textContent = `Alle (${new Intl.NumberFormat("de-DE").format(state.index.instruments.length)})`;
+    allChip.addEventListener("click", () => setCat("all", true));
+    chips.push(allChip);
+    for (const c of CATEGORIES) {
+      const n = counts.get(c.key) || 0;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip";
+      b.setAttribute("aria-pressed", String(cats.has(c.key)));
+      b.textContent = `${c.label} (${new Intl.NumberFormat("de-DE").format(n)})`;
+      b.disabled = n === 0;
+      b.addEventListener("click", () => setCat(c.key, !cats.has(c.key)));
+      chips.push(b);
+    }
+    bar.replaceChildren(...chips);
+  }
+}
+
+// ---------- Unteransichten der Marktübersicht ----------
+const SUBS = { list: "sub-list", movers: "sub-movers", screener: "sub-screener" };
+function showSub(sub) {
+  for (const [k, id] of Object.entries(SUBS)) $(id).hidden = k !== sub;
+  for (const b of document.querySelectorAll("#sub-nav button")) b.setAttribute("aria-pressed", String(b.dataset.sub === sub));
+}
+for (const b of document.querySelectorAll("#sub-nav button")) {
+  b.addEventListener("click", () => {
+    const sub = b.dataset.sub;
+    const route = sub === "list" ? "markets" : sub;
+    if (routeNow() === route) return;
+    navigate(route);
+  });
+}
+
+// Mini-Verlauf (Sparkline) als SVG
+function sparkline(values, cls) {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", "0 0 64 22");
+  svg.setAttribute("class", `spark ${cls}`);
+  svg.setAttribute("aria-hidden", "true");
+  if (!values || values.length < 2) return svg;
+  const lo = Math.min(...values), hi = Math.max(...values);
+  const span = hi - lo || 1;
+  const pts = values.map((v, i) => `${(i / (values.length - 1) * 62 + 1).toFixed(1)},${(20 - (v - lo) / span * 18).toFixed(1)}`);
+  const line = document.createElementNS(ns, "polyline");
+  line.setAttribute("points", pts.join(" "));
+  svg.append(line);
+  return svg;
+}
+
+const livePrice = (e) => {
+  const q = quoteOf(e.id);
+  return q && q.live ? q.price : null;
+};
+const fmtMoneyCompact = (v) => (v == null ? "–" : `${new Intl.NumberFormat("de-DE", { notation: "compact", maximumFractionDigits: 1 }).format(v * curFactor("€"))} ${shownUnit("€")}`);
+
+// ---------- Top & Flop ----------
+function rankRow(r, win = "24h") {
+  const e = r.e;
+  const item = document.createElement("div");
+  item.className = "item rank";
+  item.dataset.id = e.id;
+  const row = document.createElement("button");
+  row.type = "button";
+  row.className = "row rank-row";
+  const cls = trendClass(r.pct);
+  const name = document.createElement("span");
+  name.className = "name";
+  name.textContent = e.name;
+  const tick = document.createElement("span");
+  tick.className = "ticker";
+  tick.textContent = ` ${e.ticker || e.id}`;
+  name.append(tick);
+  const px = document.createElement("span");
+  px.className = "px";
+  px.textContent = priceText(e, r.price);
+  const sub = document.createElement("span");
+  sub.className = "sub";
+  paintSub(sub, e);
+  const m = e.metrics || {};
+  const vol = document.createElement("span");
+  vol.className = "vol";
+  vol.textContent = m.turnover_24h != null ? `Umsatz 24 Std. ${fmtMoneyCompact(m.turnover_24h)}` : "Umsatz: nicht verfügbar";
+  const chg = document.createElement("span");
+  chg.className = `chg ${cls}`;
+  const absTxt = r.abs == null ? "" : `${r.abs >= 0 ? "+" : "-"}${fmtPrice(Math.abs(r.abs), unitOf(e))}  `;
+  chg.textContent = `${absTxt}${formatPct(r.pct * 100)}`;
+  row.append(sparkline(m.spark, cls), name, px, sub, chg, vol);
+  row.addEventListener("click", () => openChart(e));
+  item.append(row);
+  rowEls.set(e.id, { entry: e, item, rank: true, sub });
+  return item;
+}
+
+let moversQueued = false;
+function renderMovers({ soft = false } = {}) {
+  if (!state.index || $("sub-movers").hidden) return;
+  if (!soft) stopListLive();
+  rowEls.clear();
+  const res = topFlop(state.index.instruments, { cats, liquidOnly: $("movers-liquid").checked, priceOf: livePrice });
+  const fill = (el, rows, empty) => {
+    el.replaceChildren(...rows.map((r) => rankRow(r)));
+    if (!rows.length) { const p = document.createElement("p"); p.className = "list-hint"; p.textContent = empty; el.append(p); }
+  };
+  fill($("movers-top"), res.top, "Kein Wert im Plus in den gewählten Kategorien.");
+  fill($("movers-flop"), res.flop, "Kein Wert im Minus in den gewählten Kategorien.");
+  const x = res.excluded;
+  const parts = [`${res.considered} Werte verglichen, jeweils mit dem Kurs von vor 24 Stunden.`];
+  if (x.nodata) parts.push(`${x.nodata} ohne 24-Stunden-Vergleich (zu wenig Kursdaten)`);
+  if (x.illiquid) parts.push(`${x.illiquid} wegen zu geringem Handel ausgeblendet`);
+  if (x.implausible) parts.push(`${x.implausible} mit unplausiblem Sprung ausgeblendet`);
+  $("movers-note").textContent = parts.join(" ") + (parts.length > 1 ? "." : "");
+  // weich: Live-Abfragen laufen weiter, nur neue Zeilen werden zusätzlich beobachtet
+  if (soft && listLive.observer) for (const r of rowEls.values()) listLive.observer.observe(r.item);
+  else startListLive();
+}
+$("movers-liquid").addEventListener("change", renderMovers);
+// Neue Live-Kurse: Rangliste höchstens alle 3 Sekunden neu ordnen
+onQuote(() => {
+  if (moversQueued || $("sub-movers").hidden || $("view-markets").hidden) return;
+  moversQueued = true;
+  setTimeout(() => { moversQueued = false; renderMovers({ soft: true }); }, 3000);
+});
+
+// ---------- Screener ----------
+const SCR_STORE = "ta.screener.v1";
+const SCR_SAVED = "ta.screener.saved.v1";
+const SCR_LAYOUT = "ta.screener.layout.v1";
+let scr = (() => { try { return { ...EMPTY_FILTER, ...JSON.parse(localStorage.getItem(SCR_STORE) || "{}") }; } catch { return { ...EMPTY_FILTER }; } })();
+let scrLayout = (() => { try { return localStorage.getItem(SCR_LAYOUT) || "list"; } catch { return "list"; } })();
+const savedFilters = () => { try { return JSON.parse(localStorage.getItem(SCR_SAVED) || "{}"); } catch { return {}; } };
+const WIN_LABEL = { "5m": "5 Minuten", "15m": "15 Minuten", "1h": "1 Stunde", "4h": "4 Stunden", "24h": "24 Stunden", "7d": "7 Tage", "30d": "30 Tage" };
+
+function numField(name, label, { step = "any", placeholder = "" } = {}) {
+  return `<label class="fld"><span>${label}</span><input name="${name}" type="number" inputmode="decimal" step="${step}" placeholder="${placeholder}"></label>`;
+}
+
+function buildScreenerForm() {
+  const form = $("screener-form");
+  if (form.dataset.built) return;
+  form.dataset.built = "1";
+  const winOpts = WINDOWS.map((w) => `<option value="${w}">${WIN_LABEL[w]}</option>`).join("");
+  const sortOpts = Object.entries(SORTS).map(([k, s]) => `<option value="${k}"${k === "mcap" ? " disabled" : ""}>${s.label}</option>`).join("");
+  const sig = Object.entries(SIGNALS).map(([k, s]) => `<label class="check-line"><input type="checkbox" name="sig" value="${k}"> ${s.label}</label>`).join("");
+  form.innerHTML = `
+    <details open><summary>Performance</summary>
+      <div class="fld-row">
+        <label class="fld"><span>Zeitraum</span><select name="window">${winOpts}</select></label>
+        ${numField("perfMin", "mindestens %", { placeholder: "z. B. 3" })}
+        ${numField("perfMax", "höchstens %")}
+      </div>
+    </details>
+    <details><summary>Volumen und Liquidität</summary>
+      <div class="fld-row">
+        ${numField("turnoverMin", "Umsatz 24 Std. ab €")}
+        ${numField("turnoverMax", "Umsatz 24 Std. bis €")}
+        ${numField("relVolMin", "Relatives Volumen ab", { placeholder: "z. B. 1,5" })}
+        ${numField("volRiseMin", "Volumenanstieg ab %")}
+        ${numField("liquidityMin", "Ø Tagesumsatz (20 T.) ab €")}
+      </div>
+    </details>
+    <details><summary>Preis</summary>
+      <div class="fld-row">
+        ${numField("priceMin", "Kurs ab €")}
+        ${numField("priceMax", "Kurs bis €")}
+        <p class="small fld-note">Marktkapitalisierung: keine kostenlose Quelle verfügbar, daher nicht filterbar.</p>
+      </div>
+    </details>
+    <details><summary>Technische Signale (Tageskerzen)</summary>
+      <div class="fld-row">
+        ${numField("rsiMin", "RSI ab", { step: "1" })}
+        ${numField("rsiMax", "RSI bis", { step: "1" })}
+        <div class="presets"><button type="button" data-rsi="0,30">RSI unter 30</button><button type="button" data-rsi="70,100">RSI über 70</button></div>
+      </div>
+      <div class="sig-list">${sig}</div>
+    </details>
+    <div class="fld-row sort-row">
+      <label class="fld"><span>Sortieren nach</span><select name="sort">${sortOpts}</select></label>
+      <label class="fld"><span>Reihenfolge</span><select name="dir"><option value="desc">absteigend</option><option value="asc">aufsteigend</option></select></label>
+    </div>
+    <div class="scr-actions">
+      <button type="button" id="scr-reset" class="secondary">Zurücksetzen</button>
+      <input id="scr-name" type="text" placeholder="Name für diesen Filter" aria-label="Name für diesen Filter">
+      <button type="button" id="scr-save">Speichern</button>
+    </div>
+    <div class="scr-actions">
+      <select id="scr-saved" aria-label="Gespeicherte Filter"></select>
+      <button type="button" id="scr-load" class="secondary">Laden</button>
+      <button type="button" id="scr-delete" class="secondary">Löschen</button>
+    </div>`;
+  form.addEventListener("input", readScreenerForm);
+  form.addEventListener("change", readScreenerForm);
+  form.addEventListener("submit", (ev) => ev.preventDefault());
+  form.querySelectorAll("[data-rsi]").forEach((b) => b.addEventListener("click", () => {
+    const [lo, hi] = b.dataset.rsi.split(",");
+    form.rsiMin.value = lo === "0" ? "" : lo;
+    form.rsiMax.value = hi === "100" ? "" : hi;
+    readScreenerForm();
+  }));
+  $("scr-reset").addEventListener("click", () => { scr = { ...EMPTY_FILTER }; fillScreenerForm(); readScreenerForm(); });
+  $("scr-save").addEventListener("click", () => {
+    const name = $("scr-name").value.trim();
+    if (!name) { $("scr-name").focus(); return; }
+    const all = savedFilters();
+    all[name] = scr;
+    try { localStorage.setItem(SCR_SAVED, JSON.stringify(all)); } catch {}
+    $("scr-name").value = "";
+    fillSaved(name);
+  });
+  $("scr-load").addEventListener("click", () => {
+    const f = savedFilters()[$("scr-saved").value];
+    if (!f) return;
+    scr = { ...EMPTY_FILTER, ...f };
+    fillScreenerForm();
+    readScreenerForm();
+  });
+  $("scr-delete").addEventListener("click", () => {
+    const all = savedFilters();
+    delete all[$("scr-saved").value];
+    try { localStorage.setItem(SCR_SAVED, JSON.stringify(all)); } catch {}
+    fillSaved();
+  });
+  for (const b of document.querySelectorAll("#sub-screener [data-layout]")) {
+    b.addEventListener("click", () => {
+      scrLayout = b.dataset.layout;
+      try { localStorage.setItem(SCR_LAYOUT, scrLayout); } catch {}
+      renderResults();
+    });
+  }
+  fillScreenerForm();
+  fillSaved();
+}
+
+function fillSaved(select) {
+  const names = Object.keys(savedFilters()).sort((a, b) => a.localeCompare(b, "de"));
+  const sel = $("scr-saved");
+  sel.replaceChildren(...(names.length ? names : ["Noch keine gespeicherten Filter"]).map((n) => {
+    const o = document.createElement("option");
+    o.value = names.length ? n : "";
+    o.textContent = n;
+    return o;
+  }));
+  sel.disabled = !names.length;
+  $("scr-load").disabled = $("scr-delete").disabled = !names.length;
+  if (select) sel.value = select;
+}
+
+function fillScreenerForm() {
+  const form = $("screener-form");
+  for (const el of form.elements) {
+    if (!el.name || el.name === "sig") continue;
+    if (el.name in scr) el.value = scr[el.name] ?? "";
+  }
+  for (const el of form.querySelectorAll("input[name=sig]")) el.checked = scr.signals.includes(el.value);
+}
+
+function readScreenerForm() {
+  const form = $("screener-form");
+  const next = { ...EMPTY_FILTER };
+  for (const el of form.elements) {
+    if (!el.name || el.name === "sig" || !(el.name in next)) continue;
+    next[el.name] = el.type === "number" ? (el.value === "" ? null : Number(el.value)) : el.value;
+  }
+  next.signals = [...form.querySelectorAll("input[name=sig]:checked")].map((el) => el.value);
+  // Kurs- und Umsatzgrenzen gibt man in der Anzeigewährung ein; intern wird in Euro gerechnet
+  const k = curFactor("€");
+  for (const key of ["priceMin", "priceMax", "turnoverMin", "turnoverMax", "liquidityMin"]) if (next[key] != null) next[key] = next[key] / k;
+  scr = next;
+  try { localStorage.setItem(SCR_STORE, JSON.stringify(scr)); } catch {}
+  renderResults();
+}
+
+function renderScreener() {
+  buildScreenerForm();
+  renderResults();
+}
+
+function renderResults() {
+  if (!state.index || $("sub-screener").hidden) return;
+  stopListLive();
+  rowEls.clear();
+  for (const b of document.querySelectorAll("#sub-screener [data-layout]")) b.setAttribute("aria-pressed", String(b.dataset.layout === scrLayout));
+  const { rows, missing } = screen(state.index.instruments, scr, { cats, priceOf: livePrice });
+  const n = new Intl.NumberFormat("de-DE").format(rows.length);
+  $("screener-count").textContent = `${n} Treffer` + (missing ? `, ${missing} Werte ohne ausreichende Daten für die gewählten Kriterien` : "");
+  const box = $("screener-results");
+  const shown = rows.slice(0, 200);
+  if (scrLayout === "table") {
+    const tbl = document.createElement("table");
+    tbl.className = "scr-table";
+    tbl.innerHTML = `<thead><tr><th>Wert</th><th>Kurs</th><th>${WIN_LABEL[scr.window]}</th><th>Umsatz 24 Std.</th><th>Rel. Vol.</th><th>RSI</th><th>Volatilität</th><th>Status</th></tr></thead>`;
+    const body = document.createElement("tbody");
+    for (const r of shown) {
+      const tr = document.createElement("tr");
+      const ind = r.m.ind || {};
+      const cells = [
+        `${r.e.name}`, fmtPrice(r.price, unitOf(r.e)), r.perf == null ? "–" : formatPct(r.perf * 100),
+        fmtMoneyCompact(r.m.turnover_24h), r.m.rel_volume == null ? "–" : nf(2).format(r.m.rel_volume),
+        ind.rsi14 == null ? "–" : new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 }).format(ind.rsi14), ind.volatility == null ? "–" : formatPct(ind.volatility * 100).replace("+", ""),
+      ];
+      cells.forEach((c, i) => {
+        const td = document.createElement("td");
+        td.textContent = c;
+        if (i === 2) td.className = pctClass(r.perf == null ? null : r.perf * 100);
+        tr.append(td);
+      });
+      const td = document.createElement("td");
+      const badge = document.createElement("span");
+      paintBadge(badge, r.e);
+      td.append(badge);
+      tr.append(td);
+      tr.tabIndex = 0;
+      tr.addEventListener("click", () => openChart(r.e));
+      tr.addEventListener("keydown", (ev) => { if (ev.key === "Enter") openChart(r.e); });
+      body.append(tr);
+    }
+    tbl.append(body);
+    const wrap = document.createElement("div");
+    wrap.className = "table-wrap";
+    wrap.append(tbl);
+    box.replaceChildren(wrap);
+  } else {
+    box.replaceChildren(...shown.map((r) => rankRow({ e: r.e, pct: r.perf, abs: r.abs, price: r.price })));
+  }
+  if (rows.length > shown.length) {
+    const p = document.createElement("p");
+    p.className = "list-hint";
+    p.textContent = `Angezeigt werden die ersten 200 von ${n} Treffern. Grenze die Suche mit weiteren Kriterien ein.`;
+    box.append(p);
+  }
+  startListLive();
+}
+
+// ---------- Datenquellen (Status) ----------
+const SOURCES = [
+  ["Kryptowährungen", "Binance (Live-Strom, öffentlich), Kraken (Kerzen und Ersatz-Strom)", "laufend, Kerze wächst mit jedem Handel", "kostenlos", "Paare in Euro; Werte ohne Binance-Paar nur im 15-Minuten-Takt"],
+  ["Deutsche und europäische Aktien, ETFs", "Tradegate (Live-Kurs), Yahoo Finance (Kursverlauf)", "Tradegate alle 10–15 s, Kerzen alle 15 Min", "kostenlos", "Live-Kurs ist Tradegate, nicht Xetra/Paris; Kerzen der Heimatbörse 15 Min verzögert"],
+  ["US-Aktien und US-ETFs", "Finnhub (Live-Strom, eigener Schlüssel), Tradegate, Yahoo Finance", "Finnhub laufend während 15:30–22:00 Uhr", "kostenlos", "Finnhub kostenlos: nur US-Börsen, höchstens 50 Werte gleichzeitig"],
+  ["Indizes", "Yahoo Finance", "alle 15 Minuten", "kostenlos", "15 Min verzögert (US-Indizes nahezu aktuell); reine Referenzwerte, nicht handelbar"],
+  ["Rohstoffe", "Yahoo Finance (Terminkontrakte CME/ICE)", "alle 15 Minuten", "kostenlos", "ca. 10 Min verzögert; Sprünge beim Kontraktwechsel möglich"],
+  ["Devisen", "Yahoo Finance", "alle 15 Minuten", "kostenlos", "Referenzkurs, kein Handelskurs einer Bank"],
+  ["Geprüft, nicht genutzt", "Alpaca (kostenlos nur Börse IEX, wenige Prozent des US-Handels), Xetra-Echtzeit und Finnhub international (kostenpflichtig)", "", "", ""],
+];
+function renderSources() {
+  const tbl = document.createElement("table");
+  tbl.className = "scr-table src-table";
+  tbl.innerHTML = "<thead><tr><th>Anlageklasse</th><th>Anbieter</th><th>Aktualisierung</th><th>Kosten</th><th>Einschränkungen</th></tr></thead>";
+  const body = document.createElement("tbody");
+  for (const row of SOURCES) {
+    const tr = document.createElement("tr");
+    for (const c of row) { const td = document.createElement("td"); td.textContent = c; tr.append(td); }
+    body.append(tr);
+  }
+  tbl.append(body);
+  const wrap = document.createElement("div");
+  wrap.className = "table-wrap";
+  wrap.append(tbl);
+  $("sources").replaceChildren(wrap);
+}
+renderSources();
+
+function renderCurrentSub() {
+  renderCatBars();
+  if (!$("sub-movers").hidden) renderMovers();
+  else if (!$("sub-screener").hidden) renderResults();
+  else renderList();
+}
+
+// ---------- Chart verschieben: Schieberegler unter dem Chart ----------
+// Auf dem Handy ist Wischen mit einem Finger für die Werte-Anzeige reserviert. Der Regler
+// verschiebt den sichtbaren Ausschnitt, ohne den Zoom zu ändern; die Pfeile springen um eine halbe Breite.
+let panBusy = false;
+function panGeometry() {
+  if (!state.chart || !state.rows.length) return null;
+  const r = state.chart.timeScale().getVisibleLogicalRange();
+  if (!r) return null;
+  const width = r.to - r.from;
+  const n = state.rows.length;
+  const min = 0, max = Math.max(0, n - 1 - width + 3); // +3: Abstand rechts wie rightOffset
+  return { r, width, min, max };
+}
+function syncPan() {
+  if (panBusy) return;
+  const g = panGeometry();
+  const pan = $("pan");
+  if (!g || g.max <= g.min) { pan.disabled = true; pan.value = 1000; return; }
+  pan.disabled = false;
+  pan.value = String(Math.round(Math.min(1, Math.max(0, (g.r.from - g.min) / (g.max - g.min))) * 1000));
+}
+function panTo(fraction) {
+  const g = panGeometry();
+  if (!g) return;
+  const from = g.min + Math.min(1, Math.max(0, fraction)) * (g.max - g.min);
+  panBusy = true;
+  state.chart.timeScale().setVisibleLogicalRange({ from, to: from + g.width });
+  panBusy = false;
+}
+$("pan").addEventListener("input", (ev) => panTo(Number(ev.target.value) / 1000));
+for (const [id, dir] of [["pan-left", -1], ["pan-right", 1]]) {
+  $(id).addEventListener("click", () => {
+    const g = panGeometry();
+    if (!g || g.max <= g.min) return;
+    const from = Math.min(g.max, Math.max(g.min, g.r.from + dir * g.width / 2));
+    state.chart.timeScale().setVisibleLogicalRange({ from, to: from + g.width });
+  });
+}

@@ -150,3 +150,18 @@ def test_yahoo_prefetch_failure_is_reported_per_symbol():
     p.prefetch(["SAP.DE"], "15m", NOW - pd.Timedelta(days=1), NOW)
     with pytest.raises(ProviderError, match="Sammelabruf"):
         p.fetch("SAP.DE", "15m", NOW - pd.Timedelta(days=1), NOW)
+
+
+def test_kraken_waits_and_retries_on_rate_limit():
+    from tradingagent.data.providers.kraken import KrakenProvider
+    calls, sleeps = [], []
+    answers = [{"error": ["EAPI:Rate limit exceeded"]}, {"error": [], "result": {"XXBTZEUR": [[1700000000, "1", "2", "0.5", "1.5", "1", "3", 5]], "last": 1}}]
+
+    def get(url, params):
+        calls.append(params)
+        return answers[len(calls) - 1]
+
+    p = KrakenProvider(http_get=get, sleep=sleeps.append, clock=lambda: 0.0)
+    df = p.fetch("XBTEUR", "1h", pd.Timestamp("2023-11-14", tz="UTC"), pd.Timestamp("2023-11-15", tz="UTC"))
+    assert len(calls) == 2 and 2.0 in sleeps
+    assert float(df["close"].iloc[0]) == 1.5

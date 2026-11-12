@@ -23,6 +23,7 @@ import pandas as pd
 
 from .config import Instrument, Settings
 from .crypto_box import Box
+from . import metrics as metrics_mod
 from .data.resample import resample
 from .data.sessions import MARKET_TZ
 from .data.timeframes import CHART_VIEWS, DERIVED_FROM, export_lookbacks
@@ -173,10 +174,42 @@ def live_symbols(inst) -> dict | None:
     """Symbole für Live-Ströme in der App: Binance für Krypto, Finnhub für US-Aktien."""
     if inst.market == "crypto":
         return {"binance": inst.symbol_for("binance")}
-    if inst.market == "us" and inst.kind == "aktie":
+    if inst.market == "us" and inst.kind in ("aktie", "etf"):
         sym = inst.symbol_for("finnhub") or inst.symbol_for("yahoo")
         if sym and not sym.startswith("^"):
             return {"finnhub": sym.replace("-", ".")}  # Finnhub schreibt BRK.B statt BRK-B
+    return None
+
+
+_SUFFIX_VENUE = {".DE": "Xetra", ".F": "Frankfurt", ".PA": "Euronext Paris", ".AS": "Euronext Amsterdam",
+                 ".BR": "Euronext Brüssel", ".MI": "Borsa Italiana", ".MC": "Madrid", ".SW": "SIX Zürich",
+                 ".L": "London", ".CO": "Kopenhagen", ".ST": "Stockholm", ".HE": "Helsinki", ".OL": "Oslo",
+                 ".VI": "Wien", ".LS": "Lissabon", ".T": "Tokio", ".HK": "Hongkong"}
+
+
+def home_venue(inst) -> str:
+    """Börsenplatz, von dem Kerzen und Tageswerte stammen."""
+    if inst.market == "crypto":
+        return "Kraken/Binance"
+    if inst.kind == "index":
+        return "Index"
+    if inst.kind == "devisen":
+        return "Devisenmarkt"
+    sym = inst.symbol_for("yahoo") or ""
+    if "=F" in sym:
+        return "Terminbörse (CME/ICE)"
+    for suf, name in _SUFFIX_VENUE.items():
+        if sym.endswith(suf):
+            return name
+    if inst.market == "us":
+        return "NYSE/Nasdaq"
+    return inst.market
+
+
+def wkn_of(isin: str | None) -> str | None:
+    """Deutsche ISINs enthalten die WKN (DE000 + WKN + Prüfziffer bzw. DE + 3 Ziffern + WKN)."""
+    if isin and isin.startswith("DE") and len(isin) == 12:
+        return isin[5:11]
     return None
 
 
@@ -233,8 +266,12 @@ def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, statu
             "series": series,
         }
         (tmp_dir / "s" / f"{file_id}.json").write_text(json.dumps(wrap(payload), separators=(",", ":")), encoding="utf-8")
+        last_ts = pd.Timestamp(summary["last_ts"], unit="s", tz="UTC") if summary["last_ts"] else None
+        metrics = metrics_mod.compute(loader, now, summary["last"], last_ts, crypto=inst.market == "crypto")
         entries.append({"id": inst.id, "name": inst.name, "market": inst.market, "file": f"s/{file_id}.json",
-                        "unit": loader.unit, "kind": inst.kind, "isin": inst.isin,
+                        "unit": loader.unit, "kind": inst.kind, "isin": inst.isin, "wkn": wkn_of(inst.isin),
+                        "ticker": inst.symbol_for("yahoo") or inst.symbol_for("kraken") or inst.id,
+                        "venue": home_venue(inst), "metrics": metrics,
                         "converted_from": "USD" if loader.convert else None,
                         "delay_minutes": market_cfg.delay_minutes,
                         "live": live_symbols(inst),

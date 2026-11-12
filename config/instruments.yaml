@@ -1,7 +1,8 @@
 # Allgemeine, globale Beobachtungsliste (keine persönlichen Depotwerte!).
 # Deine Favoriten speichert die App nur auf deinem Handy.
 #
-# Felder: id, name, market (crypto|xetra|europe|us), kind (aktie|etf|index|krypto),
+# Felder: id, name, market (crypto|xetra|europe|us|uk|japan|hongkong|fx|futures),
+#         kind (aktie|etf|index|krypto|devisen|rohstoff),
 #         unit (Anzeige-Währung, Standard €), danach Symbole je Anbieter.
 # Werte, die eine Quelle nicht (mehr) kennt, erscheinen im Status der App als Fehler.
 
@@ -13,6 +14,18 @@ instruments:
   - {id: SPX, name: S&P 500, market: us, kind: index, unit: Punkte, yahoo: ^GSPC}
   - {id: NDX, name: Nasdaq 100, market: us, kind: index, unit: Punkte, yahoo: ^NDX}
   - {id: DJI, name: Dow Jones, market: us, kind: index, unit: Punkte, yahoo: ^DJI}
+  - {id: SDAX, name: SDAX, market: xetra, kind: index, unit: Punkte, yahoo: ^SDAXI}
+  - {id: TECDAX, name: TecDAX, market: xetra, kind: index, unit: Punkte, yahoo: ^TECDAX}
+  - {id: RUT, name: Russell 2000, market: us, kind: index, unit: Punkte, yahoo: ^RUT}
+  - {id: VIX, name: VIX Volatilitätsindex, market: us, kind: index, unit: Punkte, yahoo: ^VIX}
+  - {id: CAC, name: CAC 40, market: europe, kind: index, unit: Punkte, yahoo: ^FCHI}
+  - {id: AEX, name: AEX, market: europe, kind: index, unit: Punkte, yahoo: ^AEX}
+  - {id: IBEX, name: IBEX 35, market: europe, kind: index, unit: Punkte, yahoo: ^IBEX}
+  - {id: FTSEMIB, name: FTSE MIB, market: europe, kind: index, unit: Punkte, yahoo: FTSEMIB.MI}
+  - {id: SMI, name: SMI, market: europe, kind: index, unit: Punkte, yahoo: ^SSMI}
+  - {id: FTSE, name: FTSE 100, market: uk, kind: index, unit: Punkte, yahoo: ^FTSE}
+  - {id: N225, name: Nikkei 225, market: japan, kind: index, unit: Punkte, yahoo: ^N225}
+  - {id: HSI, name: Hang Seng, market: hongkong, kind: index, unit: Punkte, yahoo: ^HSI}
 
   # ---------- ETFs und ETCs auf Xetra (in €) ----------
   - {id: EUNL, name: iShares Core MSCI World, market: xetra, kind: etf, isin: IE00B4L5Y983, yahoo: EUNL.DE}
@@ -28,6 +41,24 @@ instruments:
   - {id: QDVE, name: iShares S&P 500 Information Technology, market: xetra, kind: etf, isin: IE00B3WJKG14, yahoo: QDVE.DE}
   - {id: IQQH, name: iShares Global Clean Energy, market: xetra, kind: etf, isin: IE00B1XNHC34, yahoo: IQQH.DE}
   - {id: 4GLD, name: Xetra-Gold (ETC), market: xetra, kind: etf, isin: DE000A0S9GB0, yahoo: 4GLD.DE}
+  - {id: VUAA, name: Vanguard S&P 500 (thesaurierend), market: xetra, kind: etf, isin: IE00BFMXXD54, yahoo: VUAA.DE}
+  - {id: IUSN, name: iShares MSCI World Small Cap, market: xetra, kind: etf, isin: IE00BF4RFH31, yahoo: IUSN.DE}
+  - {id: SXRT, name: iShares Core Euro Stoxx 50, market: xetra, kind: etf, isin: IE00B53L3W79, yahoo: SXRT.DE}
+  - {id: DBXD, name: Xtrackers DAX, market: xetra, kind: etf, isin: LU0274211480, yahoo: DBXD.DE}
+  - {id: EXSA, name: iShares Stoxx Europe 600, market: xetra, kind: etf, isin: DE0002635307, yahoo: EXSA.DE}
+  - {id: EUNH, name: iShares Core Euro Government Bond, market: xetra, kind: etf, isin: IE00B4WXJJ64, yahoo: EUNH.DE}
+  - {id: XEON, name: Xtrackers EUR Overnight Rate Swap (Geldmarkt), market: xetra, kind: etf, isin: LU0290358497, yahoo: XEON.DE}
+  - {id: ISPA, name: iShares Stoxx Global Select Dividend 100, market: xetra, kind: etf, isin: DE000A0F5UH1, yahoo: ISPA.DE}
+  - {id: VGWD, name: Vanguard FTSE All-World High Dividend Yield, market: xetra, kind: etf, isin: IE00B8GKDB10, yahoo: VGWD.DE}
+  - {id: 2B76, name: iShares Automation & Robotics, market: xetra, kind: etf, isin: IE00BYZK4552, yahoo: 2B76.DE}
+  # US-ETFs (in US-Dollar gehandelt, Anzeige in € umgerechnet)
+  - {id: SPY, name: SPDR S&P 500 ETF (USA), market: us, kind: etf, unit: $, isin: US78462F1030, yahoo: SPY}
+  - {id: QQQ, name: Invesco QQQ (Nasdaq 100, USA), market: us, kind: etf, unit: $, isin: US46090E1038, yahoo: QQQ}
+  - {id: GLD, name: SPDR Gold Shares (USA), market: us, kind: etf, unit: $, isin: US78463V1070, yahoo: GLD}
+  - {id: TLT, name: iShares 20+ Year Treasury Bond (USA), market: us, kind: etf, unit: $, isin: US4642874329, yahoo: TLT}
+  - {id: ARKK, name: ARK Innovation ETF (USA), market: us, kind: etf, unit: $, isin: US00214Q1040, yahoo: ARKK}
+  - {id: TQQQ, name: ProShares UltraPro QQQ (3x gehebelt, USA), market: us, kind: etf, unit: $, isin: US74347X8314, yahoo: TQQQ}
+  - {id: SQQQ, name: ProShares UltraPro Short QQQ (−3x invers, USA), market: us, kind: etf, unit: $, yahoo: SQQQ}
 
   # ---------- Deutsche Aktien (Xetra, in €) ----------
   - {id: ADS, name: adidas, market: xetra, kind: aktie, isin: DE000A1EWWW0, yahoo: ADS.DE}
@@ -70,6 +101,49 @@ instruments:
   - {id: VOW3, name: Volkswagen, market: xetra, kind: aktie, isin: DE0007664039, yahoo: VOW3.DE}
   - {id: VNA, name: Vonovia, market: xetra, kind: aktie, isin: DE000A1ML7J1, yahoo: VNA.DE}
   - {id: ZAL, name: Zalando, market: xetra, kind: aktie, isin: DE000ZAL1111, yahoo: ZAL.DE}
+  - {id: G24, name: Scout24, market: xetra, kind: aktie, isin: DE000A12DM80, yahoo: G24.DE}
+  - {id: G1A, name: GEA Group, market: xetra, kind: aktie, isin: DE0006602006, yahoo: G1A.DE}
+  - {id: LHA, name: Lufthansa, market: xetra, kind: aktie, isin: DE0008232125, yahoo: LHA.DE}
+  - {id: PUM, name: Puma, market: xetra, kind: aktie, isin: DE0006969603, yahoo: PUM.DE}
+  - {id: HFG, name: HelloFresh, market: xetra, kind: aktie, isin: DE000A161408, yahoo: HFG.DE}
+  - {id: BOSS, name: Hugo Boss, market: xetra, kind: aktie, isin: DE000A1PHFF7, yahoo: BOSS.DE}
+  - {id: EVK, name: Evonik, market: xetra, kind: aktie, isin: DE000EVNK013, yahoo: EVK.DE}
+  - {id: LEG, name: LEG Immobilien, market: xetra, kind: aktie, isin: DE000LEG1110, yahoo: LEG.DE}
+  - {id: TEG, name: TAG Immobilien, market: xetra, kind: aktie, isin: DE0008303504, yahoo: TEG.DE}
+  - {id: NDA, name: Aurubis, market: xetra, kind: aktie, isin: DE0006766504, yahoo: NDA.DE}
+  - {id: KBX, name: Knorr-Bremse, market: xetra, kind: aktie, isin: DE000KBX1006, yahoo: KBX.DE}
+  - {id: NEM, name: Nemetschek, market: xetra, kind: aktie, isin: DE0006452907, yahoo: NEM.DE}
+  - {id: RAA, name: Rational, market: xetra, kind: aktie, isin: DE0007010803, yahoo: RAA.DE}
+  - {id: DHER, name: Delivery Hero, market: xetra, kind: aktie, isin: DE000A2E4K43, yahoo: DHER.DE}
+  - {id: TKA, name: thyssenkrupp, market: xetra, kind: aktie, isin: DE0007500001, yahoo: TKA.DE}
+  - {id: TLX, name: Talanx, market: xetra, kind: aktie, isin: DE000TLX1005, yahoo: TLX.DE}
+  - {id: HAG, name: Hensoldt, market: xetra, kind: aktie, isin: DE000HAG0005, yahoo: HAG.DE}
+  - {id: R3NK, name: RENK, market: xetra, kind: aktie, isin: DE000RENK730, yahoo: R3NK.DE}
+  - {id: AFX, name: Carl Zeiss Meditec, market: xetra, kind: aktie, isin: DE0005313704, yahoo: AFX.DE}
+  - {id: FRA, name: Fraport, market: xetra, kind: aktie, isin: DE0005773303, yahoo: FRA.DE}
+  - {id: SDF, name: K+S, market: xetra, kind: aktie, isin: DE000KSAG888, yahoo: SDF.DE}
+  - {id: LXS, name: Lanxess, market: xetra, kind: aktie, isin: DE0005470405, yahoo: LXS.DE}
+  - {id: WCH, name: Wacker Chemie, market: xetra, kind: aktie, isin: DE000WCH8881, yahoo: WCH.DE}
+  - {id: BC8, name: Bechtle, market: xetra, kind: aktie, isin: DE0005158703, yahoo: BC8.DE}
+  - {id: EVD, name: CTS Eventim, market: xetra, kind: aktie, isin: DE0005470306, yahoo: EVD.DE}
+  - {id: SIX2, name: Sixt, market: xetra, kind: aktie, isin: DE0007231326, yahoo: SIX2.DE}
+  - {id: WAF, name: Siltronic, market: xetra, kind: aktie, isin: DE000WAF3001, yahoo: WAF.DE}
+  - {id: JEN, name: Jenoptik, market: xetra, kind: aktie, isin: DE000A2NB601, yahoo: JEN.DE}
+  - {id: FNTN, name: freenet, market: xetra, kind: aktie, isin: DE000A0Z2ZZ5, yahoo: FNTN.DE}
+  - {id: UTDI, name: United Internet, market: xetra, kind: aktie, isin: DE0005089031, yahoo: UTDI.DE}
+  - {id: GXI, name: Gerresheimer, market: xetra, kind: aktie, isin: DE000A0LD6E6, yahoo: GXI.DE}
+  - {id: SAX, name: Ströer, market: xetra, kind: aktie, isin: DE0007493991, yahoo: SAX.DE}
+  - {id: NDX1, name: Nordex, market: xetra, kind: aktie, isin: DE000A0D6554, yahoo: NDX1.DE}
+  - {id: S92, name: SMA Solar, market: xetra, kind: aktie, isin: DE000A0DJ6J9, yahoo: S92.DE}
+  - {id: AG1, name: Auto1, market: xetra, kind: aktie, isin: DE000A2LQ884, yahoo: AG1.DE}
+  - {id: TMV, name: TeamViewer, market: xetra, kind: aktie, isin: DE000A2YN900, yahoo: TMV.DE}
+  - {id: KRN, name: Krones, market: xetra, kind: aktie, isin: DE0006335003, yahoo: KRN.DE}
+  - {id: AIXA, name: Aixtron, market: xetra, kind: aktie, isin: DE000A0WMPJ6, yahoo: AIXA.DE}
+  - {id: EVT, name: Evotec, market: xetra, kind: aktie, isin: DE0005664809, yahoo: EVT.DE}
+  - {id: 8TRA, name: Traton, market: xetra, kind: aktie, isin: DE000TRAT0N7, yahoo: 8TRA.DE}
+  - {id: HOT, name: Hochtief, market: xetra, kind: aktie, isin: DE0006070006, yahoo: HOT.DE}
+  - {id: KGX, name: Kion, market: xetra, kind: aktie, isin: DE000KGX8881, yahoo: KGX.DE}
+  - {id: DOU, name: Douglas, market: xetra, kind: aktie, isin: DE000BEAU1Y4, yahoo: DOU.DE}
 
   # ---------- Europäische Aktien (in €) ----------
   - {id: ASML, name: ASML, market: europe, kind: aktie, isin: NL0010273215, yahoo: ASML.AS}
@@ -80,6 +154,32 @@ instruments:
   - {id: AI, name: Air Liquide, market: europe, kind: aktie, isin: FR0000120073, yahoo: AI.PA}
   - {id: SU, name: Schneider Electric, market: europe, kind: aktie, isin: FR0000121972, yahoo: SU.PA}
   - {id: ITX, name: Inditex, market: europe, kind: aktie, isin: ES0148396007, yahoo: ITX.MC}
+  - {id: BNP, name: BNP Paribas, market: europe, kind: aktie, isin: FR0000131104, yahoo: BNP.PA}
+  - {id: CS, name: AXA, market: europe, kind: aktie, isin: FR0000120628, yahoo: CS.PA}
+  - {id: KER, name: Kering, market: europe, kind: aktie, isin: FR0000121485, yahoo: KER.PA}
+  - {id: RMS, name: Hermès, market: europe, kind: aktie, isin: FR0000052292, yahoo: RMS.PA}
+  - {id: SAF, name: Safran, market: europe, kind: aktie, isin: FR0000073272, yahoo: SAF.PA}
+  - {id: DG, name: Vinci, market: europe, kind: aktie, isin: FR0000125486, yahoo: DG.PA}
+  - {id: EL, name: EssilorLuxottica, market: europe, kind: aktie, isin: FR0000121667, yahoo: EL.PA}
+  - {id: BN, name: Danone, market: europe, kind: aktie, isin: FR0000120644, yahoo: BN.PA}
+  - {id: RI, name: Pernod Ricard, market: europe, kind: aktie, isin: FR0000120693, yahoo: RI.PA}
+  - {id: STLAM, name: Stellantis, market: europe, kind: aktie, isin: NL00150001Q9, yahoo: STLAM.MI}
+  - {id: RACE, name: Ferrari, market: europe, kind: aktie, isin: NL0011585146, yahoo: RACE.MI}
+  - {id: ENEL, name: Enel, market: europe, kind: aktie, isin: IT0003128367, yahoo: ENEL.MI}
+  - {id: ENI, name: Eni, market: europe, kind: aktie, isin: IT0003132476, yahoo: ENI.MI}
+  - {id: ISP, name: Intesa Sanpaolo, market: europe, kind: aktie, isin: IT0000072618, yahoo: ISP.MI}
+  - {id: UCG, name: UniCredit, market: europe, kind: aktie, isin: IT0005239360, yahoo: UCG.MI}
+  - {id: IBE, name: Iberdrola, market: europe, kind: aktie, isin: ES0144580Y14, yahoo: IBE.MC}
+  - {id: SAN-ES, name: Banco Santander, market: europe, kind: aktie, isin: ES0113900J37, yahoo: SAN.MC}
+  - {id: BBVA, name: BBVA, market: europe, kind: aktie, isin: ES0113211835, yahoo: BBVA.MC}
+  - {id: ADYEN, name: Adyen, market: europe, kind: aktie, isin: NL0012969182, yahoo: ADYEN.AS}
+  - {id: INGA, name: ING Groep, market: europe, kind: aktie, isin: NL0011821202, yahoo: INGA.AS}
+  - {id: PHIA, name: Philips, market: europe, kind: aktie, isin: NL0000009538, yahoo: PHIA.AS}
+  - {id: HEIA, name: Heineken, market: europe, kind: aktie, isin: NL0000009165, yahoo: HEIA.AS}
+  - {id: PRX, name: Prosus, market: europe, kind: aktie, isin: NL0013654783, yahoo: PRX.AS}
+  - {id: UNA, name: Unilever, market: europe, kind: aktie, yahoo: UNA.AS}
+  - {id: ABI, name: AB InBev, market: europe, kind: aktie, isin: BE0974293251, yahoo: ABI.BR}
+  - {id: NOKIA, name: Nokia, market: europe, kind: aktie, isin: FI0009000681, yahoo: NOKIA.HE}
 
   # ---------- US-Aktien (Kurse in US-Dollar, Anzeige in € umgerechnet) ----------
   - {id: AAPL, name: Apple, market: us, kind: aktie, unit: $, isin: US0378331005, yahoo: AAPL}
@@ -113,9 +213,66 @@ instruments:
   - {id: BA, name: Boeing, market: us, kind: aktie, unit: $, isin: US0970231058, yahoo: BA}
   - {id: MCD, name: McDonald's, market: us, kind: aktie, unit: $, isin: US5801351017, yahoo: MCD}
   - {id: NKE, name: Nike, market: us, kind: aktie, unit: $, isin: US6541061031, yahoo: NKE}
+  - {id: PLTR, name: "Palantir", market: us, kind: aktie, unit: $, isin: US69608A1088, yahoo: PLTR}
+  - {id: AMAT, name: "Applied Materials", market: us, kind: aktie, unit: $, isin: US0382221051, yahoo: AMAT}
+  - {id: QCOM, name: "Qualcomm", market: us, kind: aktie, unit: $, isin: US7475251036, yahoo: QCOM}
+  - {id: TXN, name: "Texas Instruments", market: us, kind: aktie, unit: $, isin: US8825081040, yahoo: TXN}
+  - {id: CSCO, name: "Cisco", market: us, kind: aktie, unit: $, isin: US17275R1023, yahoo: CSCO}
+  - {id: IBM, name: "IBM", market: us, kind: aktie, unit: $, isin: US4592001014, yahoo: IBM}
+  - {id: PYPL, name: "PayPal", market: us, kind: aktie, unit: $, isin: US70450Y1038, yahoo: PYPL}
+  - {id: UBER, name: "Uber", market: us, kind: aktie, unit: $, isin: US90353T1007, yahoo: UBER}
+  - {id: ABNB, name: "Airbnb", market: us, kind: aktie, unit: $, isin: US0090661010, yahoo: ABNB}
+  - {id: MU, name: "Micron", market: us, kind: aktie, unit: $, isin: US5951121038, yahoo: MU}
+  - {id: PFE, name: "Pfizer", market: us, kind: aktie, unit: $, isin: US7170811035, yahoo: PFE}
+  - {id: MRK-US, name: "Merck & Co.", market: us, kind: aktie, unit: $, isin: US58933Y1055, yahoo: MRK}
+  - {id: ABBV, name: "AbbVie", market: us, kind: aktie, unit: $, isin: US00287Y1091, yahoo: ABBV}
+  - {id: CVX, name: "Chevron", market: us, kind: aktie, unit: $, isin: US1667641005, yahoo: CVX}
+  - {id: BAC, name: "Bank of America", market: us, kind: aktie, unit: $, isin: US0605051046, yahoo: BAC}
+  - {id: WFC, name: "Wells Fargo", market: us, kind: aktie, unit: $, isin: US9497461015, yahoo: WFC}
+  - {id: GS, name: "Goldman Sachs", market: us, kind: aktie, unit: $, isin: US38141G1040, yahoo: GS}
+  - {id: MS, name: "Morgan Stanley", market: us, kind: aktie, unit: $, isin: US6174464486, yahoo: MS}
+  - {id: HD, name: "Home Depot", market: us, kind: aktie, unit: $, isin: US4370761029, yahoo: HD}
+  - {id: SBUX, name: "Starbucks", market: us, kind: aktie, unit: $, isin: US8552441094, yahoo: SBUX}
+  - {id: T, name: "AT&T", market: us, kind: aktie, unit: $, isin: US00206R1023, yahoo: T}
+  - {id: VZ, name: "Verizon", market: us, kind: aktie, unit: $, isin: US92343V1044, yahoo: VZ}
+  - {id: CAT, name: "Caterpillar", market: us, kind: aktie, unit: $, isin: US1491231015, yahoo: CAT}
+  - {id: GE, name: "GE Aerospace", market: us, kind: aktie, unit: $, isin: US3696043013, yahoo: GE}
+  - {id: LMT, name: "Lockheed Martin", market: us, kind: aktie, unit: $, isin: US5398301094, yahoo: LMT}
+  - {id: RTX, name: "RTX", market: us, kind: aktie, unit: $, isin: US75513E1010, yahoo: RTX}
+  - {id: UPS, name: "UPS", market: us, kind: aktie, unit: $, isin: US9113121068, yahoo: UPS}
+  - {id: PM, name: "Philip Morris", market: us, kind: aktie, unit: $, isin: US7181721090, yahoo: PM}
+  - {id: AMGN, name: "Amgen", market: us, kind: aktie, unit: $, isin: US0311621009, yahoo: AMGN}
+  - {id: GILD, name: "Gilead", market: us, kind: aktie, unit: $, isin: US3755581036, yahoo: GILD}
+  - {id: TMO, name: "Thermo Fisher", market: us, kind: aktie, unit: $, isin: US8835561023, yahoo: TMO}
+  - {id: ABT, name: "Abbott", market: us, kind: aktie, unit: $, isin: US0028241000, yahoo: ABT}
+  - {id: ISRG, name: "Intuitive Surgical", market: us, kind: aktie, unit: $, isin: US46120E6023, yahoo: ISRG}
+  - {id: NOW, name: "ServiceNow", market: us, kind: aktie, unit: $, isin: US81762P1021, yahoo: NOW}
+  - {id: INTU, name: "Intuit", market: us, kind: aktie, unit: $, isin: US4612021034, yahoo: INTU}
+  - {id: SPOT, name: "Spotify", market: us, kind: aktie, unit: $, isin: LU1778762911, yahoo: SPOT}
+  - {id: COIN, name: "Coinbase", market: us, kind: aktie, unit: $, isin: US19260Q1076, yahoo: COIN}
+  - {id: MSTR, name: "Strategy (MicroStrategy)", market: us, kind: aktie, unit: $, isin: US5949724083, yahoo: MSTR}
+  - {id: ARM, name: "Arm Holdings", market: us, kind: aktie, unit: $, isin: US0420682058, yahoo: ARM}
+  - {id: SHOP, name: "Shopify", market: us, kind: aktie, unit: $, isin: CA82509L1076, yahoo: SHOP}
 
   # ---------- Devisen (für die Umrechnung von Dollar in Euro) ----------
   - {id: EURUSD, name: Euro in US-Dollar, market: fx, kind: devisen, unit: $, yahoo: EURUSD=X}
+  - {id: EURGBP, name: Euro in Britischen Pfund, market: fx, kind: devisen, unit: £, yahoo: EURGBP=X}
+  - {id: EURCHF, name: Euro in Schweizer Franken, market: fx, kind: devisen, unit: CHF, yahoo: EURCHF=X}
+  - {id: EURJPY, name: Euro in Japanischen Yen, market: fx, kind: devisen, unit: ¥, yahoo: EURJPY=X}
+  - {id: GBPUSD, name: Britisches Pfund in US-Dollar, market: fx, kind: devisen, unit: USD, yahoo: GBPUSD=X}
+  - {id: USDJPY, name: US-Dollar in Japanischen Yen, market: fx, kind: devisen, unit: ¥, yahoo: USDJPY=X}
+
+  # ---------- Rohstoffe (Terminkontrakte in US-Dollar, Anzeige in € umgerechnet) ----------
+  # Nur Kontrakte, die Yahoo in Dollar notiert (Getreide, Kaffee und Zucker notieren in US-Cent und fehlen deshalb).
+  - {id: GOLD, name: Gold (je Feinunze), market: futures, kind: rohstoff, unit: $, yahoo: GC=F}
+  - {id: SILVER, name: Silber (je Feinunze), market: futures, kind: rohstoff, unit: $, yahoo: SI=F}
+  - {id: PLATIN, name: Platin (je Feinunze), market: futures, kind: rohstoff, unit: $, yahoo: PL=F}
+  - {id: PALLAD, name: Palladium (je Feinunze), market: futures, kind: rohstoff, unit: $, yahoo: PA=F}
+  - {id: COPPER, name: Kupfer (je Pfund), market: futures, kind: rohstoff, unit: $, yahoo: HG=F}
+  - {id: WTI, name: Rohöl WTI (je Barrel), market: futures, kind: rohstoff, unit: $, yahoo: CL=F}
+  - {id: BRENT, name: Rohöl Brent (je Barrel), market: futures, kind: rohstoff, unit: $, yahoo: BZ=F}
+  - {id: NATGAS, name: Erdgas Henry Hub (je MMBtu), market: futures, kind: rohstoff, unit: $, yahoo: NG=F}
+  - {id: COCOA, name: Kakao (je Tonne), market: futures, kind: rohstoff, unit: $, yahoo: CC=F}
 
   # ---------- Kryptowährungen (in €) ----------
   - {id: BTC-EUR, name: Bitcoin, market: crypto, kind: krypto, kraken: XBTEUR, binance: BTCEUR, yahoo: BTC-EUR}
@@ -130,3 +287,28 @@ instruments:
   - {id: AVAX-EUR, name: Avalanche, market: crypto, kind: krypto, kraken: AVAXEUR, binance: AVAXEUR, yahoo: AVAX-EUR}
   - {id: XLM-EUR, name: Stellar, market: crypto, kind: krypto, kraken: XLMEUR, yahoo: XLM-EUR}
   - {id: BCH-EUR, name: Bitcoin Cash, market: crypto, kind: krypto, kraken: BCHEUR, yahoo: BCH-EUR}
+  - {id: UNI-EUR, name: "Uniswap", market: crypto, kind: krypto, kraken: UNIEUR}
+  - {id: ATOM-EUR, name: "Cosmos", market: crypto, kind: krypto, kraken: ATOMEUR}
+  - {id: AAVE-EUR, name: "Aave", market: crypto, kind: krypto, kraken: AAVEEUR}
+  - {id: POL-EUR, name: "Polygon (POL)", market: crypto, kind: krypto, kraken: POLEUR}
+  - {id: NEAR-EUR, name: "NEAR Protocol", market: crypto, kind: krypto, kraken: NEAREUR}
+  - {id: ALGO-EUR, name: "Algorand", market: crypto, kind: krypto, kraken: ALGOEUR}
+  - {id: FIL-EUR, name: "Filecoin", market: crypto, kind: krypto, kraken: FILEUR}
+  - {id: ARB-EUR, name: "Arbitrum", market: crypto, kind: krypto, kraken: ARBEUR}
+  - {id: OP-EUR, name: "Optimism", market: crypto, kind: krypto, kraken: OPEUR}
+  - {id: TRX-EUR, name: "TRON", market: crypto, kind: krypto, kraken: TRXEUR}
+  - {id: SHIB-EUR, name: "Shiba Inu", market: crypto, kind: krypto, kraken: SHIBEUR}
+  - {id: PEPE-EUR, name: "Pepe", market: crypto, kind: krypto, kraken: PEPEEUR}
+  - {id: SUI-EUR, name: "Sui", market: crypto, kind: krypto, kraken: SUIEUR}
+  - {id: APT-EUR, name: "Aptos", market: crypto, kind: krypto, kraken: APTEUR}
+  - {id: INJ-EUR, name: "Injective", market: crypto, kind: krypto, kraken: INJEUR}
+  - {id: ETC-EUR, name: "Ethereum Classic", market: crypto, kind: krypto, kraken: ETCEUR}
+  - {id: XTZ-EUR, name: "Tezos", market: crypto, kind: krypto, kraken: XTZEUR}
+  - {id: GRT-EUR, name: "The Graph", market: crypto, kind: krypto, kraken: GRTEUR}
+  - {id: LDO-EUR, name: "Lido DAO", market: crypto, kind: krypto, kraken: LDOEUR}
+  - {id: TIA-EUR, name: "Celestia", market: crypto, kind: krypto, kraken: TIAEUR}
+  - {id: FET-EUR, name: "Artificial Superintelligence (FET)", market: crypto, kind: krypto, kraken: FETEUR}
+  - {id: SEI-EUR, name: "Sei", market: crypto, kind: krypto, kraken: SEIEUR}
+  - {id: WIF-EUR, name: "dogwifhat", market: crypto, kind: krypto, kraken: WIFEUR}
+  - {id: RENDER-EUR, name: "Render", market: crypto, kind: krypto, kraken: RENDEREUR}
+  - {id: HBAR-EUR, name: "Hedera", market: crypto, kind: krypto, kraken: HBAREUR}

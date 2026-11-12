@@ -8,6 +8,7 @@ fällt sie aus, bleibt der letzte Yahoo-Kurs stehen.
 from __future__ import annotations
 
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 import pandas as pd
@@ -61,15 +62,15 @@ class Quote:
 
 
 def fetch_quotes(settings: Settings, now: pd.Timestamp | None = None, session=None,
-                 pause: float = 0.25) -> tuple[dict[str, Quote], list[str]]:
+                 pause: float = 0.25, workers: int = 4) -> tuple[dict[str, Quote], list[str]]:
     now = now or pd.Timestamp.now(tz="UTC")
     http = session or requests.Session()
     as_of = now if tradegate_open(now) else last_session_end(now)
     quotes: dict[str, Quote] = {}
     errors: list[str] = []
-    for inst in settings.instruments:
-        if not inst.isin or not settings.markets[inst.market].enabled:
-            continue
+    items = [i for i in settings.instruments if i.isin and settings.markets[i.market].enabled]
+
+    def one(inst):
         try:
             r = http.get(URL, params={"isin": inst.isin}, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
             data = r.json() if r.status_code == 200 else None
@@ -84,4 +85,8 @@ def fetch_quotes(settings: Settings, now: pd.Timestamp | None = None, session=No
             quotes[inst.id] = Quote(last, as_of)
         if pause:
             time.sleep(pause)
+
+    # vier Abrufe gleichzeitig, jeder mit kurzer Pause: schnell genug für ~250 Werte, aber höflich
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        list(pool.map(one, items))
     return quotes, errors

@@ -52,9 +52,43 @@
           <button type="button" data-cur="$" aria-pressed="false">$</button>
         </div>
       </div>
-      <nav id="filter-strip" class="tf-strip filter-strip" aria-label="Bereich wählen"></nav>
-      <p id="list-hint" class="list-hint"></p>
-      <div id="market-list" class="market-list"></div>
+      <div id="sub-nav" class="sub-nav" role="group" aria-label="Ansicht der Marktübersicht">
+        <button type="button" data-sub="list" aria-pressed="true">Liste</button>
+        <button type="button" data-sub="movers" aria-pressed="false">Top &amp; Flop</button>
+        <button type="button" data-sub="screener" aria-pressed="false">Screener</button>
+      </div>
+
+      <div id="sub-list">
+        <nav id="filter-strip" class="tf-strip filter-strip" aria-label="Bereich wählen"></nav>
+        <div class="cat-bar" data-cat-bar role="group" aria-label="Kategorien ein- und ausblenden"></div>
+        <p id="list-hint" class="list-hint"></p>
+        <div id="market-list" class="market-list"></div>
+      </div>
+
+      <!-- Top & Flop der letzten 24 Stunden -->
+      <div id="sub-movers" hidden>
+        <div class="cat-bar" data-cat-bar role="group" aria-label="Kategorien ein- und ausblenden"></div>
+        <label class="check-line"><input id="movers-liquid" type="checkbox" checked> Nur ausreichend gehandelte Werte</label>
+        <p id="movers-note" class="list-hint"></p>
+        <h3 class="rank-title up">Top 10 Gewinner, 24 Stunden</h3>
+        <div id="movers-top" class="rank-list"></div>
+        <h3 class="rank-title down">Top 10 Verlierer, 24 Stunden</h3>
+        <div id="movers-flop" class="rank-list"></div>
+      </div>
+
+      <!-- Screener -->
+      <div id="sub-screener" hidden>
+        <div class="cat-bar" data-cat-bar role="group" aria-label="Kategorien ein- und ausblenden"></div>
+        <form id="screener-form" class="screener" autocomplete="off"></form>
+        <div class="screener-bar">
+          <p id="screener-count" class="screener-count" aria-live="polite"></p>
+          <div class="seg" role="group" aria-label="Darstellung der Treffer">
+            <button type="button" data-layout="list" aria-pressed="true">Liste</button>
+            <button type="button" data-layout="table" aria-pressed="false">Tabelle</button>
+          </div>
+        </div>
+        <div id="screener-results"></div>
+      </div>
     </section>
 
     <!-- Chart -->
@@ -70,6 +104,7 @@
           <span id="q-change" class="change"></span>
         </div>
         <dl id="q-stats" class="q-stats"></dl>
+        <p class="meta status-line"><span id="q-status" class="badge"></span></p>
         <p id="q-meta" class="meta"></p>
         <label id="rt-wrap" class="rt-toggle" hidden>
           <input id="rt-switch" type="checkbox" role="switch">
@@ -102,6 +137,11 @@
         <p class="lg-unit"></p>
       </div>
       <div id="chart" class="chart" role="img" aria-label="Kursverlauf"></div>
+      <div class="pan" id="pan-wrap">
+        <button type="button" id="pan-left" aria-label="Ältere Kurse zeigen">‹</button>
+        <input type="range" id="pan" min="0" max="1000" value="1000" step="1" aria-label="Zeitachse verschieben: links ältere, rechts neuere Kurse">
+        <button type="button" id="pan-right" aria-label="Neuere Kurse zeigen">›</button>
+      </div>
       <p id="chart-note" class="note"></p>
     </section>
 
@@ -124,7 +164,7 @@
       <h3>Hinweise zur Datenqualität</h3>
       <ul id="status-warnings" class="warnings"></ul>
       <h3>Datenquellen</h3>
-      <p class="small">Krypto: Kraken und Binance, live. Deutsche und europäische Werte: Kursverlauf von Yahoo Finance, live über Tradegate. US-Aktien: live über Tradegate oder, mit Schlüssel, über Finnhub. Nur zur privaten Information. Keine Anlageberatung.</p>
+      <div class="sources" id="sources"></div>
       <h3>US-Aktien live (Finnhub)</h3>
       <p class="small">Mit einem kostenlosen Finnhub-Schlüssel kommen US-Aktien während der US-Handelszeit direkt von der US-Börse. Der Schlüssel bleibt verschlüsselt auf diesem Gerät und wird nirgends hochgeladen.</p>
       <form id="fh-form" class="fh-form" autocomplete="off">
