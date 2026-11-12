@@ -1,0 +1,18 @@
+# Einmalig: Chart-Bibliothek (Lightweight Charts, Apache-2.0) als Datei bereitstellen.
+name: Bibliothek holen
+on:
+  workflow_dispatch:
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          npm pack lightweight-charts@4.2.0 fancy-canvas@2.1.0
+          mkdir out && tar -xzf lightweight-charts-4.2.0.tgz
+          cp package/dist/lightweight-charts.standalone.production.js out/
+          cp package/LICENSE out/LICENSE-lightweight-charts.txt
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lwc
+          path: out
