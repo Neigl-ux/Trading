@@ -181,13 +181,16 @@ def collect(settings: Settings, storage: Storage, providers: dict[str, MarketDat
         limit = tier.get("max_new_per_run")
         if not limit:
             continue
+        # Tageskerzen bekommen alle sofort (ein Sammelabruf, dann hat jeder Wert einen Kurs);
+        # nur die feinen Kerzen werden auf mehrere Läufe verteilt.
         new_ids = []
         for job in jobs:
-            if job.inst.tier == tier_name and not job.skip and job.last is None and job.inst.id not in new_ids:
+            if (job.inst.tier == tier_name and job.interval != "1d" and not job.skip and job.last is None
+                    and job.inst.id not in new_ids):
                 new_ids.append(job.inst.id)
         postponed = set(new_ids[int(limit):])
         for job in jobs:
-            if job.inst.id in postponed and not job.skip:
+            if job.inst.id in postponed and job.interval != "1d" and not job.skip:
                 job.skip = "wird in einem der nächsten Läufe erstmals geladen"
         if postponed:
             summary.notes.append(f"{len(postponed)} neue Werte ({tier_name}) folgen in den nächsten Läufen")

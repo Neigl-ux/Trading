@@ -239,7 +239,9 @@ def test_extended_tier_limits_first_backfill(tmp_path):
     store = SQLiteStorage(settings.storage_path)
     now = pd.Timestamp("2026-11-11 12:00", tz="UTC")
     s = collect(settings, store, {"yahoo": Flat()}, now=now)
-    loaded = {log.instrument for log in s.logs if log.skipped is None}
+    loaded = {log.instrument for log in s.logs if log.skipped is None and log.interval == "1h"}
     assert loaded == {"X0", "X1"} and any("folgen" in n for n in s.notes)
+    # Tageskerzen sofort für alle
+    assert {log.instrument for log in s.logs if log.skipped is None and log.interval == "1d"} == {f"X{i}" for i in range(5)}
     s2 = collect(settings, store, {"yahoo": Flat()}, now=now + pd.Timedelta(minutes=15))
     assert {"X2", "X3"} <= {log.instrument for log in s2.logs if log.skipped is None}

@@ -522,3 +522,35 @@ main { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
 :root[data-theme=light] .tabbar { background: rgba(255, 255, 255, .96); }
 @media (min-width: 1100px) { :root[data-theme=light] .tabbar { background: #ffffff; } }
 :root[data-theme=light] .scr-table th:first-child, :root[data-theme=light] .scr-table td:first-child { background: var(--panel); }
+
+/* Gruppen ein-/ausklappen, Sortierung */
+.group-title { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 14px 4px 8px; margin: 10px 0 0; cursor: pointer; text-align: left; color: var(--ink); font-size: .9rem; font-weight: 600; }
+.group-title .group-n { margin-left: auto; color: var(--mute); font-weight: 500; font-size: .8rem; font-variant-numeric: tabular-nums; }
+.group-title .chev { width: 8px; height: 8px; border-right: 2px solid var(--mute); border-bottom: 2px solid var(--mute); transform: rotate(45deg); transition: transform .15s; margin: 0 4px 3px 2px; }
+.group-title[aria-expanded=false] .chev { transform: rotate(-45deg); margin-bottom: 0; }
+.group-title:hover { color: var(--accent); }
+.opts-row { flex-wrap: wrap; }
+.sort-sel { margin-left: auto; }
+.sort-sel select { min-height: 34px; border-radius: 9px; background: var(--panel); border: 1px solid var(--line); padding: 0 8px; font-size: .84rem; max-width: 220px; }
+
+/* Anzeigefehler: Kursleiste und Watchlist überlappten bei schmalen Karten */
+.tick-card { grid-template-columns: 1fr; gap: 2px; position: relative; overflow: hidden; }
+.tick-card > div { padding-right: 0; }
+.tc-price { overflow: hidden; text-overflow: ellipsis; }
+.tc-chg { display: inline-block; }
+.tick-card .spark { position: absolute; right: 12px; bottom: 10px; width: 64px; height: 22px; opacity: .9; }
+.mini-table-head, .mini-row { grid-template-columns: minmax(70px, 1fr) minmax(0, auto) 64px; }
+.mini-row .mr-sym span:last-child { min-width: 28px; }
+.mr-px { overflow: hidden; text-overflow: ellipsis; }
+.mini-row.with-spark { grid-template-columns: minmax(90px, 1fr) minmax(0, auto) 64px 56px; }
+/* Watchlist: Kurs nie abschneiden, lieber den Namen kürzen */
+.mini-table-head, .mini-row { grid-template-columns: minmax(0, 1fr) auto 62px; }
+.mini-row.with-spark { grid-template-columns: minmax(0, 1fr) auto 62px 56px; }
+.mr-px { overflow: visible; font-size: .84rem; }
+.mini-row .mr-sym span:last-child { min-width: 0; }
+@media (min-width: 1100px) and (max-width: 1399px) {
+  .dash-chart-card { grid-column: span 8; }
+  .dash-watch { grid-column: span 4; }
+  .dash-top, .dash-flop { grid-column: span 6; }
+  .dash-screener { grid-column: span 12; }
+}

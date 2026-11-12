@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=16">
+  <link rel="stylesheet" href="style.css?v=17">
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
-  <script type="module" src="app.js?v=16"></script>
+  <script type="module" src="app.js?v=17"></script>
 </head>
 <body>
   <!-- Entsperren -->
@@ -107,6 +107,15 @@
       <div class="opts-row">
         <button type="button" id="opts-btn" class="tool-btn" aria-expanded="false" aria-controls="opts-panel">Optionen</button>
         <span id="opts-sum" class="opts-sum"></span>
+        <label class="sort-sel"><span class="visually-hidden">Sortierung der Liste</span>
+          <select id="sort-sel">
+            <option value="default">Sortierung: Standard</option>
+            <option value="name">Name A–Z</option>
+            <option value="up">Heute: Gewinner zuerst</option>
+            <option value="down">Heute: Verlierer zuerst</option>
+            <option value="price">Kurs: höchster zuerst</option>
+            <option value="turnover">Umsatz: höchster zuerst</option>
+          </select></label>
       </div>
       <div id="opts-panel" class="opts-panel" hidden>
         <div class="list-tools">

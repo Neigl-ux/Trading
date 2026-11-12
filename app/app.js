@@ -293,21 +293,50 @@ function renderList() {
       hint.textContent = "";
     }
   }
+  items = sortEntries(items);
   const grouped = !q && filterKey === "all";
   if (grouped) {
     for (const [title, test] of GROUPS) {
       const group = items.filter(test);
       if (!group.length) continue;
-      const h = document.createElement("h3");
+      // Gruppen lassen sich ein- und ausklappen (z. B. alle ETFs zuklappen); gemerkt auf diesem Gerät
+      const open = !collapsed.has(title);
+      const h = document.createElement("button");
+      h.type = "button";
       h.className = "group-title";
-      h.textContent = title;
-      list.append(h, ...group.map(rowFor));
+      h.setAttribute("aria-expanded", String(open));
+      h.innerHTML = '<span class="chev" aria-hidden="true"></span><span></span><span class="group-n"></span>';
+      h.children[1].textContent = title;
+      h.children[2].textContent = new Intl.NumberFormat("de-DE").format(group.length);
+      h.addEventListener("click", () => {
+        if (collapsed.has(title)) collapsed.delete(title); else collapsed.add(title);
+        try { localStorage.setItem(GROUP_STORE, JSON.stringify([...collapsed])); } catch {}
+        renderList();
+      });
+      list.append(h);
+      // große Gruppen in Etappen zeichnen, damit die Liste flüssig bleibt
+      if (open) list.append(...group.map(rowFor));
     }
   } else {
     list.append(...items.map(rowFor));
   }
   startListLive();
 }
+
+const GROUP_STORE = "ta.groups.collapsed.v1";
+const SORT_STORE = "ta.sort.v1";
+const collapsed = (() => { try { return new Set(JSON.parse(localStorage.getItem(GROUP_STORE) || "[]")); } catch { return new Set(); } })();
+let sortKey = (() => { try { return localStorage.getItem(SORT_STORE) || "default"; } catch { return "default"; } })();
+const SORT_FNS = {
+  default: null,
+  name: (a, b) => a.name.localeCompare(b.name, "de"),
+  up: (a, b) => (dayChange(b) ?? -Infinity) - (dayChange(a) ?? -Infinity),
+  down: (a, b) => (dayChange(a) ?? Infinity) - (dayChange(b) ?? Infinity),
+  price: (a, b) => (curPriceOf(b) ?? -Infinity) - (curPriceOf(a) ?? -Infinity),
+  turnover: (a, b) => (((b.metrics || {}).avg_turnover_20d) ?? -1) - (((a.metrics || {}).avg_turnover_20d) ?? -1),
+};
+function dayChange(e) { const p = dayPerf(e, livePrice(e)); return p ? p.pct : null; }
+function sortEntries(items) { const fn = SORT_FNS[sortKey]; return fn ? items.slice().sort(fn) : items; }
 
 function rowFor(e) {
   const item = document.createElement("div");
@@ -3104,4 +3133,11 @@ onQuote(() => {
   if (pf.queued || $("view-portfolio").hidden) return;
   pf.queued = true;
   setTimeout(() => { pf.queued = false; if (!$("view-portfolio").hidden) renderPortfolio(); }, 3000);
+});
+
+$("sort-sel").value = sortKey;
+$("sort-sel").addEventListener("change", (ev) => {
+  sortKey = ev.target.value;
+  try { localStorage.setItem(SORT_STORE, sortKey); } catch {}
+  renderList();
 });
