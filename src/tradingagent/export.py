@@ -45,35 +45,85 @@ def _r(x: float) -> float:
     return float(f"{x:.6g}")
 
 
-def build_series(storage: Storage, instrument: Instrument, now: pd.Timestamp) -> dict[str, list[list[float]]]:
-    tz = MARKET_TZ[instrument.market]
+FX_ID = "EURUSD"  # Kurs: US-Dollar je Euro
+
+
+def to_eur(df: pd.DataFrame, fx_same: pd.DataFrame, fx_daily: pd.DataFrame) -> pd.DataFrame:
+    """Rechnet Dollar-Kerzen zum Wechselkurs ihres Zeitpunkts in Euro um.
+
+    Genommen wird der letzte bekannte EUR/USD-Kurs derselben Kerzenlänge,
+    sonst der letzte Tageskurs, ganz am Anfang der Historie der erste bekannte.
+    """
+    if df.empty:
+        return df
+    rate = pd.Series(float("nan"), index=df.index)
+    for fx, tol in ((fx_same, pd.Timedelta(days=4)), (fx_daily, pd.Timedelta(days=14))):
+        if fx is None or fx.empty:
+            continue
+        r = fx["close"].reindex(df.index, method="ffill", tolerance=tol)
+        rate = rate.fillna(r)
+    if rate.isna().all():
+        raise ValueError("Kein EUR/USD-Kurs vorhanden")
+    rate = rate.bfill().ffill()
+    out = df.copy()
+    for col in ("open", "high", "low", "close"):
+        out[col] = df[col] / rate
+    return out
+
+
+class _Loader:
+    """Lädt Kerzen eines Werts, bei Dollar-Werten gleich in Euro umgerechnet."""
+
+    def __init__(self, storage: Storage, instrument: Instrument):
+        self.storage = storage
+        self.inst = instrument
+        self.convert = instrument.unit == "$" and instrument.id != FX_ID
+        self._fx: dict[str, pd.DataFrame] = {}
+
+    def fx(self, interval: str) -> pd.DataFrame:
+        if interval not in self._fx:
+            self._fx[interval] = self.storage.load_bars(FX_ID, interval)
+        return self._fx[interval]
+
+    def load(self, interval: str, start: pd.Timestamp | None = None) -> pd.DataFrame:
+        df = self.storage.load_bars(self.inst.id, interval, start)
+        if self.convert and not df.empty:
+            df = to_eur(df, self.fx(interval), self.fx("1d"))
+        return df
+
+    @property
+    def unit(self) -> str:
+        return "€" if self.convert else self.inst.unit
+
+
+def build_series(loader: _Loader, now: pd.Timestamp) -> dict[str, list[list[float]]]:
+    tz = MARKET_TZ[loader.inst.market]
     series: dict[str, list[list[float]]] = {}
     for interval, lookback in export_lookbacks().items():
         start = now - lookback
         if interval in DERIVED_FROM:
             src = DERIVED_FROM[interval]
             # etwas mehr laden, damit die erste Woche/der erste Monat vollständig ist
-            raw = storage.load_bars(instrument.id, src, start - timedelta(days=35))
+            raw = loader.load(src, start - timedelta(days=35))
             df = resample(raw, interval, tz=tz)
             df = df[df.index >= start - timedelta(days=31)]
         else:
-            df = storage.load_bars(instrument.id, interval, start)
+            df = loader.load(interval, start)
         series[interval] = _rows(df)
     return series
 
 
-def _summary(storage: Storage, instrument: Instrument) -> dict[str, Any]:
-    daily = storage.load_bars(instrument.id, "1d")
-    intraday = storage.load_bars(instrument.id, "15m")
+def _summary(loader: _Loader) -> dict[str, Any]:
+    daily = loader.load("1d")
+    intraday = loader.load("15m")
     last_close = None
     last_ts = None
     if not intraday.empty:
         last_close, last_ts = float(intraday["close"].iloc[-1]), intraday.index[-1] + pd.Timedelta(minutes=15)
     elif not daily.empty:
         last_close, last_ts = float(daily["close"].iloc[-1]), daily.index[-1] + pd.Timedelta(days=1)
-    prev_close = float(daily["close"].iloc[-2]) if len(daily) >= 2 else None
     change = None
-    if last_close is not None and prev_close:
+    if last_close is not None and len(daily) >= 2:
         # Vergleich mit dem letzten abgeschlossenen Tagesschluss vor heute
         ref = daily[daily.index + pd.Timedelta(days=1) <= (last_ts or daily.index[-1])]
         if len(ref):
@@ -120,20 +170,30 @@ def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, statu
             continue
         file_id = hashlib.sha256(f"{salt_hex}:{inst.id}".encode()).hexdigest()[:20]
         market_cfg = settings.markets[inst.market]
+        loader = _Loader(storage, inst)
+        try:
+            series = build_series(loader, now)
+            summary = _summary(loader)
+        except ValueError:  # noch kein Wechselkurs vorhanden: vorerst in Dollar zeigen
+            loader.convert = False
+            series = build_series(loader, now)
+            summary = _summary(loader)
         payload = {
             "id": inst.id,
             "name": inst.name,
             "market": inst.market,
             "delay_minutes": market_cfg.delay_minutes,
             "updated": int(now.timestamp()),
-            "series": build_series(storage, inst, now),
+            "converted_from": "USD" if loader.convert else None,
+            "series": series,
         }
         (tmp_dir / "s" / f"{file_id}.json").write_text(json.dumps(wrap(payload), separators=(",", ":")), encoding="utf-8")
         entries.append({"id": inst.id, "name": inst.name, "market": inst.market, "file": f"s/{file_id}.json",
-                        "unit": inst.unit, "kind": inst.kind, "isin": inst.isin,
+                        "unit": loader.unit, "kind": inst.kind, "isin": inst.isin,
+                        "converted_from": "USD" if loader.convert else None,
                         "delay_minutes": market_cfg.delay_minutes,
                         "live": {"binance": inst.symbol_for("binance")} if inst.market == "crypto" else None,
-                        **_summary(storage, inst)})
+                        **summary})
 
     index_payload = {
         "updated": int(now.timestamp()),

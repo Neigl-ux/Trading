@@ -93,6 +93,8 @@ main { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
 .rt-toggle input:checked + .rt-track::after { transform: translateX(18px); background: var(--mark); }
 .rt-toggle input:focus-visible + .rt-track { outline: 2px solid var(--mark); outline-offset: 2px; }
 .rt-info:empty { display: none; }
+.list-rt { margin-top: 12px; font-size: .92rem; color: var(--mute); }
+.item.is-live .px::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--mark); margin-right: 7px; vertical-align: middle; }
 .quote-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .quote-title h2 { margin: 0; }
 .quote-title .star { padding: 6px 0 6px 12px; }

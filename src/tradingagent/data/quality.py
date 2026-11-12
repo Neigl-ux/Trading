@@ -65,6 +65,8 @@ _JUMP_THRESHOLD = {
     ("europe", "daily"): 0.20,
     ("us", "intraday"): 0.06,
     ("us", "daily"): 0.20,
+    ("fx", "intraday"): 0.02,
+    ("fx", "daily"): 0.05,
 }
 
 

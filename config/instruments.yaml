@@ -81,38 +81,41 @@ instruments:
   - {id: SU, name: Schneider Electric, market: europe, kind: aktie, isin: FR0000121972, yahoo: SU.PA}
   - {id: ITX, name: Inditex, market: europe, kind: aktie, isin: ES0148396007, yahoo: ITX.MC}
 
-  # ---------- US-Aktien (in US-Dollar) ----------
-  - {id: AAPL, name: Apple, market: us, kind: aktie, unit: $, yahoo: AAPL}
-  - {id: MSFT, name: Microsoft, market: us, kind: aktie, unit: $, yahoo: MSFT}
-  - {id: NVDA, name: Nvidia, market: us, kind: aktie, unit: $, yahoo: NVDA}
-  - {id: AMZN, name: Amazon, market: us, kind: aktie, unit: $, yahoo: AMZN}
-  - {id: GOOGL, name: Alphabet (Google), market: us, kind: aktie, unit: $, yahoo: GOOGL}
-  - {id: META, name: Meta Platforms, market: us, kind: aktie, unit: $, yahoo: META}
-  - {id: TSLA, name: Tesla, market: us, kind: aktie, unit: $, yahoo: TSLA}
-  - {id: BRK-B, name: Berkshire Hathaway, market: us, kind: aktie, unit: $, yahoo: BRK-B}
-  - {id: AVGO, name: Broadcom, market: us, kind: aktie, unit: $, yahoo: AVGO}
-  - {id: LLY, name: Eli Lilly, market: us, kind: aktie, unit: $, yahoo: LLY}
-  - {id: JPM, name: JPMorgan Chase, market: us, kind: aktie, unit: $, yahoo: JPM}
-  - {id: V, name: Visa, market: us, kind: aktie, unit: $, yahoo: V}
-  - {id: MA, name: Mastercard, market: us, kind: aktie, unit: $, yahoo: MA}
-  - {id: UNH, name: UnitedHealth, market: us, kind: aktie, unit: $, yahoo: UNH}
-  - {id: XOM, name: Exxon Mobil, market: us, kind: aktie, unit: $, yahoo: XOM}
-  - {id: JNJ, name: Johnson & Johnson, market: us, kind: aktie, unit: $, yahoo: JNJ}
-  - {id: PG, name: Procter & Gamble, market: us, kind: aktie, unit: $, yahoo: PG}
-  - {id: KO, name: Coca-Cola, market: us, kind: aktie, unit: $, yahoo: KO}
-  - {id: PEP, name: PepsiCo, market: us, kind: aktie, unit: $, yahoo: PEP}
-  - {id: COST, name: Costco, market: us, kind: aktie, unit: $, yahoo: COST}
-  - {id: WMT, name: Walmart, market: us, kind: aktie, unit: $, yahoo: WMT}
-  - {id: AMD, name: AMD, market: us, kind: aktie, unit: $, yahoo: AMD}
-  - {id: NFLX, name: Netflix, market: us, kind: aktie, unit: $, yahoo: NFLX}
-  - {id: DIS, name: Walt Disney, market: us, kind: aktie, unit: $, yahoo: DIS}
-  - {id: ORCL, name: Oracle, market: us, kind: aktie, unit: $, yahoo: ORCL}
-  - {id: ADBE, name: Adobe, market: us, kind: aktie, unit: $, yahoo: ADBE}
-  - {id: CRM, name: Salesforce, market: us, kind: aktie, unit: $, yahoo: CRM}
-  - {id: INTC, name: Intel, market: us, kind: aktie, unit: $, yahoo: INTC}
-  - {id: BA, name: Boeing, market: us, kind: aktie, unit: $, yahoo: BA}
-  - {id: MCD, name: McDonald's, market: us, kind: aktie, unit: $, yahoo: MCD}
-  - {id: NKE, name: Nike, market: us, kind: aktie, unit: $, yahoo: NKE}
+  # ---------- US-Aktien (Kurse in US-Dollar, Anzeige in € umgerechnet) ----------
+  - {id: AAPL, name: Apple, market: us, kind: aktie, unit: $, isin: US0378331005, yahoo: AAPL}
+  - {id: MSFT, name: Microsoft, market: us, kind: aktie, unit: $, isin: US5949181045, yahoo: MSFT}
+  - {id: NVDA, name: Nvidia, market: us, kind: aktie, unit: $, isin: US67066G1040, yahoo: NVDA}
+  - {id: AMZN, name: Amazon, market: us, kind: aktie, unit: $, isin: US0231351067, yahoo: AMZN}
+  - {id: GOOGL, name: Alphabet (Google), market: us, kind: aktie, unit: $, isin: US02079K3059, yahoo: GOOGL}
+  - {id: META, name: Meta Platforms, market: us, kind: aktie, unit: $, isin: US30303M1027, yahoo: META}
+  - {id: TSLA, name: Tesla, market: us, kind: aktie, unit: $, isin: US88160R1014, yahoo: TSLA}
+  - {id: BRK-B, name: Berkshire Hathaway, market: us, kind: aktie, unit: $, isin: US0846707026, yahoo: BRK-B}
+  - {id: AVGO, name: Broadcom, market: us, kind: aktie, unit: $, isin: US11135F1012, yahoo: AVGO}
+  - {id: LLY, name: Eli Lilly, market: us, kind: aktie, unit: $, isin: US5324571083, yahoo: LLY}
+  - {id: JPM, name: JPMorgan Chase, market: us, kind: aktie, unit: $, isin: US46625H1005, yahoo: JPM}
+  - {id: V, name: Visa, market: us, kind: aktie, unit: $, isin: US92826C8394, yahoo: V}
+  - {id: MA, name: Mastercard, market: us, kind: aktie, unit: $, isin: US57636Q1040, yahoo: MA}
+  - {id: UNH, name: UnitedHealth, market: us, kind: aktie, unit: $, isin: US91324P1021, yahoo: UNH}
+  - {id: XOM, name: Exxon Mobil, market: us, kind: aktie, unit: $, isin: US30231G1022, yahoo: XOM}
+  - {id: JNJ, name: Johnson & Johnson, market: us, kind: aktie, unit: $, isin: US4781601046, yahoo: JNJ}
+  - {id: PG, name: Procter & Gamble, market: us, kind: aktie, unit: $, isin: US7427181091, yahoo: PG}
+  - {id: KO, name: Coca-Cola, market: us, kind: aktie, unit: $, isin: US1912161007, yahoo: KO}
+  - {id: PEP, name: PepsiCo, market: us, kind: aktie, unit: $, isin: US7134481081, yahoo: PEP}
+  - {id: COST, name: Costco, market: us, kind: aktie, unit: $, isin: US22160K1051, yahoo: COST}
+  - {id: WMT, name: Walmart, market: us, kind: aktie, unit: $, isin: US9311421039, yahoo: WMT}
+  - {id: AMD, name: AMD, market: us, kind: aktie, unit: $, isin: US0079031078, yahoo: AMD}
+  - {id: NFLX, name: Netflix, market: us, kind: aktie, unit: $, isin: US64110L1061, yahoo: NFLX}
+  - {id: DIS, name: Walt Disney, market: us, kind: aktie, unit: $, isin: US2546871060, yahoo: DIS}
+  - {id: ORCL, name: Oracle, market: us, kind: aktie, unit: $, isin: US68389X1054, yahoo: ORCL}
+  - {id: ADBE, name: Adobe, market: us, kind: aktie, unit: $, isin: US00724F1012, yahoo: ADBE}
+  - {id: CRM, name: Salesforce, market: us, kind: aktie, unit: $, isin: US79466L3024, yahoo: CRM}
+  - {id: INTC, name: Intel, market: us, kind: aktie, unit: $, isin: US4581401001, yahoo: INTC}
+  - {id: BA, name: Boeing, market: us, kind: aktie, unit: $, isin: US0970231058, yahoo: BA}
+  - {id: MCD, name: McDonald's, market: us, kind: aktie, unit: $, isin: US5801351017, yahoo: MCD}
+  - {id: NKE, name: Nike, market: us, kind: aktie, unit: $, isin: US6541061031, yahoo: NKE}
+
+  # ---------- Devisen (für die Umrechnung von Dollar in Euro) ----------
+  - {id: EURUSD, name: Euro in US-Dollar, market: fx, kind: devisen, unit: $, yahoo: EURUSD=X}
 
   # ---------- Kryptowährungen (in €) ----------
   - {id: BTC-EUR, name: Bitcoin, market: crypto, kind: krypto, kraken: XBTEUR, binance: BTCEUR, yahoo: BTC-EUR}

@@ -33,6 +33,12 @@ markets:
     intervals: [5m, 15m, 1h]
     daily_providers: [yahoo]
     delay_minutes: 15
+  fx:
+    enabled: true
+    providers: [yahoo]
+    intervals: [5m, 15m, 1h]
+    daily_providers: [yahoo]
+    delay_minutes: 0
   us:
     enabled: true
     providers: [yahoo]

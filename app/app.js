@@ -183,7 +183,7 @@ function toggleFav(id) {
 }
 
 // ---------- Filter und Suche ----------
-const KIND_LABEL = { aktie: "Aktie", etf: "ETF", index: "Index", krypto: "Krypto" };
+const KIND_LABEL = { aktie: "Aktie", etf: "ETF", index: "Index", krypto: "Krypto", devisen: "Devisen" };
 const MARKET_LABEL = { xetra: "Xetra", europe: "Europa", us: "USA", crypto: "Krypto" };
 const FILTERS = [
   { key: "fav", label: "Favoriten", test: (e) => isFav(e.id) },
@@ -202,6 +202,7 @@ const GROUPS = [
   ["Europäische Aktien", (e) => e.kind === "aktie" && e.market === "europe"],
   ["US-Aktien", (e) => e.kind === "aktie" && e.market === "us"],
   ["Krypto", (e) => e.kind === "krypto"],
+  ["Devisen", (e) => e.kind === "devisen"],
 ];
 let filterKey = (() => {
   try { return localStorage.getItem(FILTER_STORE) || (favs.length ? "fav" : "all"); } catch { return "all"; }
@@ -231,11 +232,13 @@ function buildFilterStrip() {
 
 function subLine(e) {
   const kind = e.kind === "aktie" ? `Aktie ${MARKET_LABEL[e.market] || ""}`.trim() : KIND_LABEL[e.kind] || "";
-  const timing = e.kind === "krypto" ? "live im Chart" : e.delay_minutes ? `${e.delay_minutes} Min verzögert` : "nahezu Echtzeit";
-  return `${kind}, ${timing}`;
+  const timing = e.kind === "krypto" ? "live im Chart" : e.delay_minutes ? `${e.delay_minutes} Min verzögert` : "Stand letzter Lauf";
+  return e.converted_from ? `${kind}, in € umgerechnet` : `${kind}, ${timing}`;
 }
 
+const rowEls = new Map();
 function renderList() {
+  rowEls.clear();
   const list = $("market-list");
   const hint = $("list-hint");
   list.replaceChildren();
@@ -268,6 +271,7 @@ function renderList() {
   } else {
     list.append(...items.map(rowFor));
   }
+  startListLive();
 }
 
 function rowFor(e) {
@@ -284,6 +288,7 @@ function rowFor(e) {
   chg.textContent = e.change_1d == null ? "" : `${fmtPct(e.change_1d)} heute`;
   chg.classList.add(trendClass(e.change_1d));
   row.addEventListener("click", () => openChart(e));
+  rowEls.set(e.id, { entry: e, item, px: row.querySelector(".px"), chg, sub: row.querySelector(".sub") });
   item.append(row, starButton(e.id, () => { if (filterKey === "fav" && !$("search").value) renderList(); }));
   return item;
 }
@@ -344,6 +349,7 @@ document.querySelectorAll(".tabbar button").forEach((b) =>
   b.addEventListener("click", () => {
     document.querySelectorAll(".tabbar button").forEach((x) => x.classList.toggle("active", x === b));
     stopLive();
+    stopListLive();
     $("view-chart").hidden = true;
     for (const [tab, id] of Object.entries(TABS)) $(id).hidden = tab !== b.dataset.tab;
     if (b.dataset.tab === "markets") renderList();
@@ -367,12 +373,14 @@ $("logout").addEventListener("click", () => {
 
 // ---------- Chart ----------
 async function openChart(entry) {
+  stopListLive();
   state.entry = entry;
   $("view-markets").hidden = true;
   $("view-chart").hidden = false;
   $("q-name").textContent = entry.name;
   $("rt-wrap").hidden = !rtAvailable(entry);
   $("rt-switch").checked = rtWanted();
+  $("rt-list-switch").checked = rtWanted();
   paintStar($("q-star"), entry.id);
   $("q-price").textContent = fmtPrice(entry.last, unitOf(entry));
   $("q-change").textContent = "";
@@ -510,7 +518,8 @@ async function selectView(key) {
   let interval = view.interval;
   let note = "";
   let rows = null;
-  let source = entry.delay_minutes ? `Yahoo Finance, ${entry.delay_minutes} Min verzögert` : "gesammelte Daten";
+  let source = entry.delay_minutes ? `Yahoo Finance, ${entry.delay_minutes} Min verzögert` : "Yahoo Finance, Stand letzter Lauf";
+  if (entry.converted_from) source += ", von US-Dollar in Euro umgerechnet";
 
   const binance = entry.live && entry.live.binance;
   if (binance && LIVE_INTERVALS.has(interval)) {
@@ -634,11 +643,87 @@ const rt = { timer: null, abort: null, line: null, failures: 0 };
 function rtWanted() { try { return localStorage.getItem(RT_STORE) === "1"; } catch { return false; } }
 function rtAvailable(e) { return Boolean(e && e.isin && unitOf(e) === "€"); }
 
+function setRealtime(on) {
+  try { localStorage.setItem(RT_STORE, on ? "1" : "0"); } catch {}
+  $("rt-switch").checked = on;
+  $("rt-list-switch").checked = on;
+}
 $("rt-switch").addEventListener("change", (ev) => {
-  try { localStorage.setItem(RT_STORE, ev.target.checked ? "1" : "0"); } catch {}
+  setRealtime(ev.target.checked);
   if (ev.target.checked) startRealtime();
   else { stopRealtime(); selectView(state.viewKey); }
 });
+$("rt-list-switch").addEventListener("change", (ev) => {
+  setRealtime(ev.target.checked);
+  if (ev.target.checked) startListLive();
+  else renderList();
+});
+$("rt-list-switch").checked = rtWanted();
+
+// ---------- Echtzeit in der Liste ----------
+// Favoriten und Suchtreffer (bei kurzen Listen alle Einträge) werden live
+// aktualisiert: Euro-Werte über Tradegate alle 20 Sekunden, Krypto über Binance.
+const listLive = { timer: null, ws: null, run: 0 };
+function stopListLive() {
+  clearInterval(listLive.timer);
+  listLive.timer = null;
+  listLive.run += 1;
+  if (listLive.ws) { try { listLive.ws.close(); } catch {} listLive.ws = null; }
+}
+
+function startListLive() {
+  stopListLive();
+  if (!rtWanted() || $("view-markets").hidden || document.hidden) return;
+  const shown = [...rowEls.values()].map((r) => r.entry);
+  const many = shown.length > 20;
+  const pick = (e) => !many || isFav(e.id);
+  const tg = shown.filter((e) => rtAvailable(e) && pick(e)).slice(0, 25);
+  const cr = shown.filter((e) => e.live && e.live.binance && pick(e));
+  if (tg.length) {
+    const run = listLive.run;
+    pollList(tg, run);
+    if (tradegateOpen()) listLive.timer = setInterval(() => pollList(tg, run), 20_000);
+  }
+  if (cr.length) openCryptoStream(cr);
+}
+
+async function pollList(entries, run) {
+  for (let i = 0; i < entries.length; i += 4) {
+    if (run !== listLive.run) return;
+    await Promise.all(entries.slice(i, i + 4).map(async (e) => {
+      try {
+        const q = await fetchQuote(e.isin);
+        if (run === listLive.run) paintLive(e.id, q.last, q.prevClose ? q.last / q.prevClose - 1 : null, "heute");
+      } catch {}
+    }));
+  }
+}
+
+function openCryptoStream(entries) {
+  const bySymbol = new Map(entries.map((e) => [e.live.binance.toUpperCase(), e.id]));
+  const streams = [...bySymbol.keys()].map((s) => `${s.toLowerCase()}@miniTicker`).join("/");
+  try {
+    const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+    ws.onmessage = (msg) => {
+      const d = JSON.parse(msg.data).data;
+      const id = d && bySymbol.get(d.s);
+      if (!id) return;
+      const close = +d.c, open = +d.o;
+      paintLive(id, close, open ? close / open - 1 : null, "24 Std");
+    };
+    listLive.ws = ws;
+  } catch {}
+}
+
+function paintLive(id, price, change, label) {
+  const r = rowEls.get(id);
+  if (!r || price == null) return;
+  r.px.textContent = fmtPrice(price, unitOf(r.entry));
+  r.chg.textContent = change == null ? "" : `${fmtPct(change)} ${label}`;
+  r.chg.className = "chg " + trendClass(change);
+  r.item.classList.add("is-live");
+  r.sub.textContent = `${subLine(r.entry).split(",")[0]}, live`;
+}
 
 function stopRealtime() {
   clearInterval(rt.timer);
@@ -716,8 +801,8 @@ function updateLiveCandle(price) {
 }
 
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && state.index) refreshIndex();
-  if (document.hidden) stopLive();
+  if (!document.hidden && state.index) { refreshIndex(); startListLive(); }
+  if (document.hidden) { stopLive(); stopListLive(); }
   else if (!$("view-chart").hidden && state.data) selectView(state.viewKey);
 });
 

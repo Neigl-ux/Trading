@@ -134,3 +134,21 @@ def test_prefetch_groups_and_refresh_throttle(settings):
     skipped = {(l.instrument, l.interval): l.skipped for l in summary.logs}
     assert skipped[("SAP", "1d")] == "kürzlich abgerufen"
     assert skipped[("SAP", "15m")] is None
+
+
+def test_to_eur_uses_rate_at_candle_time():
+    from tradingagent.export import to_eur
+    idx = pd.date_range("2026-01-05 14:00", periods=4, freq="15min", tz="UTC")
+    usd = pd.DataFrame({"open": [110.0] * 4, "high": [121.0] * 4, "low": [99.0] * 4, "close": [110.0] * 4,
+                        "volume": [5.0] * 4}, index=idx)
+    fx = pd.DataFrame({"open": 1.1, "high": 1.1, "low": 1.1, "close": [1.10, 1.10, 1.25, 1.25], "volume": 0.0}, index=idx)
+    daily = pd.DataFrame({"open": 1.0, "high": 1.0, "low": 1.0, "close": [1.0], "volume": 0.0},
+                         index=pd.DatetimeIndex(["2026-01-01"], tz="UTC"))
+    eur = to_eur(usd, fx, daily)
+    assert eur["close"].round(4).tolist() == [100.0, 100.0, 88.0, 88.0]
+    assert eur["volume"].tolist() == [5.0] * 4
+    # ohne passenden Intraday-Kurs greift der Tageskurs
+    eur2 = to_eur(usd, pd.DataFrame(), daily)
+    assert eur2["close"].iloc[0] == pytest.approx(110.0)
+    with pytest.raises(ValueError):
+        to_eur(usd, pd.DataFrame(), pd.DataFrame())

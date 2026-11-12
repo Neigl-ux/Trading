@@ -46,9 +46,11 @@ SESSIONS: dict[str, Session] = {
     "europe": Session(tz="Europe/Berlin", open=time(9, 0), close=time(17, 30), weekdays_only=True),
     # NYSE/Nasdaq: 9:30-16:00 Uhr New Yorker Zeit (15:30-22:00 Uhr deutscher Zeit)
     "us": Session(tz="America/New_York", open=time(9, 30), close=time(16, 0), weekdays_only=True),
+    # Devisen: werktags rund um die Uhr (vereinfacht Montag bis Freitag UTC)
+    "fx": Session(tz="UTC", open=time(0, 0), close=time(23, 59, 59), weekdays_only=True),
 }
 
-MARKET_TZ = {"crypto": "UTC", "xetra": "Europe/Berlin", "europe": "Europe/Berlin", "us": "America/New_York"}
+MARKET_TZ = {"crypto": "UTC", "xetra": "Europe/Berlin", "europe": "Europe/Berlin", "us": "America/New_York", "fx": "UTC"}
 
 
 def session_for(market: str) -> Session:
