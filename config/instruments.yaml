@@ -96,7 +96,7 @@ instruments:
   - {id: V, name: Visa, market: us, kind: aktie, unit: $, isin: US92826C8394, yahoo: V}
   - {id: MA, name: Mastercard, market: us, kind: aktie, unit: $, isin: US57636Q1040, yahoo: MA}
   - {id: UNH, name: UnitedHealth, market: us, kind: aktie, unit: $, isin: US91324P1021, yahoo: UNH}
-  - {id: XOM, name: Exxon Mobil, market: us, kind: aktie, unit: $, isin: US30231G1022, yahoo: XOM}
+  - {id: XOM, name: Exxon Mobil, market: us, kind: aktie, unit: $, yahoo: XOM}
   - {id: JNJ, name: Johnson & Johnson, market: us, kind: aktie, unit: $, isin: US4781601046, yahoo: JNJ}
   - {id: PG, name: Procter & Gamble, market: us, kind: aktie, unit: $, isin: US7427181091, yahoo: PG}
   - {id: KO, name: Coca-Cola, market: us, kind: aktie, unit: $, isin: US1912161007, yahoo: KO}
