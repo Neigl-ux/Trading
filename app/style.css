@@ -113,7 +113,14 @@ main { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
 }
 .tf-strip button[aria-pressed=true] { color: var(--ink); }
 .tf-strip button[aria-pressed=true]::after { height: 3px; width: 70%; left: 15%; background: var(--mark); }
-.chart { height: min(58vh, 460px); margin: 8px calc(-1 * var(--pad)) 0; }
+.legend { margin-top: 10px; }
+.lg-head { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 6px; font-size: .92rem; }
+.lg-date { color: var(--ink); font-weight: 500; }
+.lg-unit { color: var(--mute); font-size: .82rem; }
+.lg-values { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0; }
+.lg-values dt { color: var(--mute); font-size: .78rem; }
+.lg-values dd { margin: 0; font: 500 1.05rem/1.2 var(--figure); font-variant-numeric: tabular-nums; }
+.chart { height: min(54vh, 440px); margin: 6px calc(-1 * var(--pad)) 0; }
 .note { color: var(--mute); font-size: .85rem; min-height: 1.3em; }
 
 /* ---------- Status ---------- */

@@ -1,4 +1,5 @@
 import { deriveKey, exportKey, importKey, openSealed } from "./crypto.js";
+import { candleLabel, tickLabel } from "./format.js";
 
 const KEY_STORE = "ta.key.v1";
 const TZ = "Europe/Berlin";
@@ -6,7 +7,7 @@ const LIVE_INTERVALS = new Set(["1m", "5m", "15m", "30m", "1h"]);
 const SECONDS = { "1m": 60, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600 };
 const MARKET_TITLE = { crypto: "Krypto", xetra: "Deutsche Börse (Xetra)" };
 
-const state = { key: null, raw: null, index: null, entry: null, data: null, viewKey: "1d", chart: null, candles: null, volume: null, ws: null };
+const state = { key: null, raw: null, index: null, entry: null, data: null, viewKey: "1d", interval: "1d", rows: [], hovering: false, chart: null, candles: null, volume: null, ws: null };
 const files = new Map();
 const $ = (id) => document.getElementById(id);
 
@@ -250,15 +251,25 @@ function ensureChart() {
     layout: { background: { color: c("--night") }, textColor: c("--mute"), fontFamily: "Barlow, system-ui, sans-serif" },
     grid: { vertLines: { color: "rgba(36,67,106,.45)" }, horzLines: { color: "rgba(36,67,106,.45)" } },
     rightPriceScale: { borderColor: c("--line") },
-    timeScale: { borderColor: c("--line"), rightOffset: 3 },
+    timeScale: { borderColor: c("--line"), rightOffset: 3, tickMarkFormatter: (t, type) => tickLabel(t, type) },
     crosshair: { mode: 0 },
-    localization: { locale: "de-DE", priceFormatter: (p) => nf(Math.abs(p) >= 1 ? 2 : 6).format(p) },
+    localization: {
+      locale: "de-DE",
+      priceFormatter: (p) => nf(Math.abs(p) >= 1 ? 2 : 6).format(p),
+      timeFormatter: (t) => candleLabel(t, state.interval),
+    },
   });
   state.candles = state.chart.addCandlestickSeries({
     upColor: c("--up"), downColor: c("--down"), borderVisible: false, wickUpColor: c("--up"), wickDownColor: c("--down"),
   });
   state.volume = state.chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "", color: "rgba(141,162,191,.35)" });
   state.volume.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+  state.chart.subscribeCrosshairMove((param) => {
+    const bar = param.time !== undefined && param.seriesData ? param.seriesData.get(state.candles) : null;
+    state.hovering = Boolean(bar);
+    if (bar) renderLegend(param.time, bar.open, bar.high, bar.low, bar.close);
+    else showLastInLegend();
+  });
   return state.chart;
 }
 
@@ -299,6 +310,9 @@ async function selectView(key) {
   }
 
   if (!rows.length) note = "Für diesen Zeitraum liegen noch keine Kerzen vor. Die Historie füllt sich mit jedem Lauf.";
+  state.interval = interval;
+  state.rows = rows;
+  showLastInLegend();
   updateQuote(rows, SECONDS[interval] !== undefined, source);
   $("chart-note").textContent = note;
   if (!ensureChart()) {
@@ -330,6 +344,25 @@ function updateQuote(rows, intraday, source) {
   $("q-meta").textContent = `Letzte ${intraday ? "Kerze" : "abgeschlossene Kerze"} ${when(rows[rows.length - 1][0])}, Quelle ${source}`;
 }
 
+// Infozeile über dem Chart: Datum und Werte der berührten (oder neuesten) Kerze
+function renderLegend(time, open, high, low, close) {
+  const el = $("legend");
+  const unit = unitOf(state.entry);
+  const f = (x) => (Math.abs(x) >= 1 ? nf(2) : nf(6)).format(x);
+  el.querySelector(".lg-date").textContent = candleLabel(time, state.interval);
+  const vals = { open, high, low, close };
+  for (const k of Object.keys(vals)) el.querySelector(`.lg-${k}`).textContent = f(vals[k]);
+  el.querySelector(".lg-unit").textContent = unit === "€" ? "Werte in €" : `Werte in ${unit}`;
+  el.querySelector(".lg-close").className = "lg-close " + trendClass(close - open);
+  el.hidden = false;
+}
+
+function showLastInLegend() {
+  const r = state.rows[state.rows.length - 1];
+  if (!r) { $("legend").hidden = true; return; }
+  renderLegend(shift(r[0]), r[1], r[2], r[3], r[4]);
+}
+
 async function fetchBinance(symbol, interval, limit) {
   const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
   const res = await fetch(url);
@@ -347,6 +380,10 @@ function startLive(symbol, interval) {
       const row = [Math.floor(k.t / 1000), +k.o, +k.h, +k.l, +k.c, +k.v];
       state.candles.update(toCandle(row));
       state.volume.update(toVolume(row));
+      const rows = state.rows;
+      if (rows.length && rows[rows.length - 1][0] === row[0]) rows[rows.length - 1] = row;
+      else rows.push(row);
+      if (!state.hovering) showLastInLegend();
       $("q-price").textContent = fmtPrice(row[4], unitOf(state.entry));
     };
     state.ws = ws;

@@ -1,6 +1,6 @@
 // Service Worker: App-Gerüst offline verfügbar, Daten immer frisch aus dem Netz.
-const CACHE = "ta-shell-v1";
-const SHELL = ["./", "index.html", "style.css", "app.js", "crypto.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
+const CACHE = "ta-shell-v2";
+const SHELL = ["./", "index.html", "style.css", "app.js", "crypto.js", "format.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
