@@ -1,0 +1,37 @@
+# Erzeugt das Verzeichnis config/universe.yaml (über 1000 Werte) aus öffentlichen Listen
+# und speichert es im Repository. Läuft sonntags; manuell über „Run workflow“.
+name: Verzeichnis aktualisieren
+
+on:
+  schedule:
+    - cron: "17 5 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  universe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Verzeichnis erzeugen
+        run: python -m tradingagent universe
+      - name: Speichern, falls geändert
+        run: |
+          git config user.name "trading-agent-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add config/universe.yaml
+          if ! git diff --cached --quiet; then
+            git commit -m "Verzeichnis aktualisiert"
+            git pull --rebase
+            git push
+          fi

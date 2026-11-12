@@ -5,6 +5,7 @@ import { candleLabel, tickLabel } from "./format.js";
 import { fetchQuote, tradegateOpen } from "./tradegate.js";
 import { VIEWS, STEP, TZ as PERF_TZ, computeAll, formatPct, pctClass, periodStart, berlinParts, berlinToUtc } from "./perf.js";
 import { CryptoFeed, binanceKlines, mergeRows } from "./feeds.js";
+import { OVERLAYS, PANES, overlayLines, rsi as rsiCalc, macd as macdCalc, atr as atrCalc, adx as adxCalc } from "./indicators.js";
 
 const KEY_STORE = "ta.key.v1";
 const TZ = "Europe/Berlin";
@@ -888,6 +889,9 @@ function showRows(view = VIEW_BY_KEY[viewKey]) {
     try { state.chart.timeScale().setVisibleRange({ from: shift(from), to: shift(to) }); }
     catch { state.chart.timeScale().fitContent(); }
   }
+  paintResolution();
+  hookPaneSync();
+  renderIndicators();
 }
 
 /** Laufende Kerze im Chart aktualisieren, ohne neu zu laden. */
@@ -900,6 +904,7 @@ function pushToChart(row) {
     state.line.update(toLine(row));
     state.volume.update(toVolume(row));
   } catch {}
+  scheduleIndicators();
   if (!state.hovering) showLastInLegend();
 }
 
@@ -1168,6 +1173,7 @@ document.querySelectorAll("#chart-type button").forEach((b) =>
     chartType = b.dataset.type;
     try { localStorage.setItem(TYPE_STORE, chartType); } catch {}
     applyChartType();
+    paintResolution();
   }),
 );
 applyChartType();
@@ -2466,3 +2472,180 @@ function paintLiveBox() {
     : "Noch kein Live-Kurs";
 }
 setInterval(paintLiveBox, 1000);
+
+// =====================================================================
+// Auflösung der Kerzen und Indikatoren im großen Chart
+// =====================================================================
+const IV_NAME = { "1s": "1 Sekunde", "5s": "5 Sekunden", "15s": "15 Sekunden", "1m": "1 Minute", "5m": "5 Minuten", "15m": "15 Minuten",
+  "30m": "30 Minuten", "1h": "1 Stunde", "4h": "4 Stunden", "12h": "12 Stunden", "1d": "1 Tag", "1w": "1 Woche", "1M": "1 Monat" };
+function paintResolution() {
+  const iv = state.interval;
+  const src = asset.src && asset.src[iv];
+  const what = chartType === "line" ? "Linie aus Schlusskursen je" : "Kerzen je";
+  const from = src && src.name && src.name.startsWith("ticks") ? ", gebaut aus Live-Kursen"
+    : src && src.live ? ", live" : "";
+  $("res-label").textContent = IV_NAME[iv] ? `${what} ${IV_NAME[iv]}${from}` : "";
+}
+
+const IND_STORE = "ta.ind.v1";
+const indSel = (() => { try { return new Set(JSON.parse(localStorage.getItem(IND_STORE) || "[]")); } catch { return new Set(); } })();
+const ind = { lines: new Map(), panes: new Map(), queued: false };
+
+function buildIndPanel() {
+  const panel = $("ind-panel");
+  const group = (title, list) => {
+    const box = document.createElement("fieldset");
+    box.className = "ind-group";
+    box.innerHTML = `<legend>${title}</legend>`;
+    for (const d of list) {
+      const l = document.createElement("label");
+      l.className = "check-line";
+      l.innerHTML = `<input type="checkbox" value="${d.key}"> <span class="ind-swatch"></span><span></span>`;
+      l.querySelector("span:last-child").textContent = d.label;
+      if (d.color) l.querySelector(".ind-swatch").style.background = d.color;
+      else l.querySelector(".ind-swatch").remove();
+      const cb = l.querySelector("input");
+      cb.checked = indSel.has(d.key);
+      cb.addEventListener("change", () => {
+        if (cb.checked) indSel.add(d.key); else indSel.delete(d.key);
+        try { localStorage.setItem(IND_STORE, JSON.stringify([...indSel])); } catch {}
+        paintIndBtn();
+        renderIndicators();
+      });
+      box.append(l);
+    }
+    return box;
+  };
+  panel.replaceChildren(group("Im Kurschart", OVERLAYS), group("Eigene Fenster unter dem Chart", PANES));
+  paintIndBtn();
+}
+function paintIndBtn() {
+  $("ind-btn").textContent = indSel.size ? `Indikatoren (${indSel.size})` : "Indikatoren";
+}
+$("ind-btn").addEventListener("click", () => {
+  const open = $("ind-panel").hidden;
+  $("ind-panel").hidden = !open;
+  $("ind-btn").setAttribute("aria-expanded", String(open));
+});
+buildIndPanel();
+
+function scheduleIndicators() {
+  if (ind.queued || !indSel.size) return;
+  ind.queued = true;
+  setTimeout(() => { ind.queued = false; renderIndicators(); }, 1000);
+}
+
+const dayKeyLocal = (t) => Math.floor(shift(t) / 86400);
+const asPoints = (rows, values) => rows.map((r, i) => (values[i] == null ? { time: shift(r[0]) } : { time: shift(r[0]), value: values[i] }));
+
+function renderIndicators() {
+  if (!state.chart) return;
+  const rows = state.rows || [];
+  const wanted = new Map();
+  for (const o of OVERLAYS) {
+    if (!indSel.has(o.key)) continue;
+    for (const line of overlayLines(o.key, rows, dayKeyLocal)) wanted.set(`${o.key}:${line.name}`, line);
+  }
+  for (const [k, series] of ind.lines) {
+    if (!wanted.has(k)) { try { state.chart.removeSeries(series); } catch {} ind.lines.delete(k); }
+  }
+  for (const [k, line] of wanted) {
+    let series = ind.lines.get(k);
+    if (!series) {
+      series = state.chart.addLineSeries({ color: line.color, lineWidth: 1, lineStyle: line.dashed ? 2 : 0, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+      ind.lines.set(k, series);
+    }
+    series.setData(asPoints(rows, line.values));
+  }
+  for (const [k, p] of ind.panes) {
+    if (!indSel.has(k)) { p.chart.remove(); p.box.remove(); ind.panes.delete(k); }
+  }
+  for (const def of PANES) {
+    if (!indSel.has(def.key)) continue;
+    const p = ind.panes.get(def.key) || makePane(def);
+    fillPane(def.key, p, rows);
+  }
+  syncPanes();
+}
+
+function makePane(def) {
+  const css = getComputedStyle(document.documentElement);
+  const c = (n) => css.getPropertyValue(n).trim();
+  const box = document.createElement("div");
+  box.className = "pane";
+  box.innerHTML = `<div class="pane-title"><span></span><span class="pane-val"></span></div><div class="pane-chart"></div>`;
+  box.querySelector("span").textContent = def.label;
+  $("panes").append(box);
+  const chart = LightweightCharts.createChart(box.querySelector(".pane-chart"), {
+    autoSize: true,
+    layout: { background: { color: c("--panel") }, textColor: c("--mute"), fontFamily: "Inter, system-ui, sans-serif" },
+    grid: { vertLines: { color: c("--grid") }, horzLines: { color: c("--grid") } },
+    rightPriceScale: { borderColor: c("--line"), minimumWidth: 72 },
+    timeScale: { visible: false, rightOffset: 3 },
+    crosshair: { mode: 1 },
+    handleScroll: false,
+    handleScale: false,
+    localization: { locale: "de-DE", priceFormatter: (v) => new Intl.NumberFormat("de-DE", { maximumFractionDigits: Math.abs(v) >= 100 ? 1 : 3 }).format(v) },
+  });
+  const p = { box, chart, series: {} };
+  const line = (color, extra = {}) => chart.addLineSeries({ color, lineWidth: 1.5, priceLineVisible: false, lastValueVisible: true, ...extra });
+  if (def.key === "rsi") {
+    p.series.rsi = line("#a855f7");
+    p.series.rsi.createPriceLine({ price: 70, color: "rgba(234,57,67,.6)", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "" });
+    p.series.rsi.createPriceLine({ price: 30, color: "rgba(22,199,132,.6)", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "" });
+  } else if (def.key === "macd") {
+    p.series.hist = chart.addHistogramSeries({ priceLineVisible: false, lastValueVisible: false });
+    p.series.line = line("#3b82f6");
+    p.series.signal = line("#f5b041");
+  } else if (def.key === "atr") {
+    p.series.atr = line("#14b8a6");
+  } else if (def.key === "adx") {
+    p.series.adx = line("#e2e8f0");
+    p.series.pdi = line("#16c784", { lineWidth: 1, lastValueVisible: false });
+    p.series.mdi = line("#ea3943", { lineWidth: 1, lastValueVisible: false });
+  }
+  ind.panes.set(def.key, p);
+  return p;
+}
+
+function fillPane(key, p, rows) {
+  const fmt = (v) => (v == null ? "–" : new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 }).format(v));
+  const last = (arr) => arr[arr.length - 1];
+  let text = "";
+  if (key === "rsi") {
+    const v = rsiCalc(rows);
+    p.series.rsi.setData(asPoints(rows, v));
+    text = fmt(last(v));
+  } else if (key === "macd") {
+    const m = macdCalc(rows);
+    p.series.hist.setData(rows.map((r, i) => (m.hist[i] == null ? { time: shift(r[0]) }
+      : { time: shift(r[0]), value: m.hist[i], color: m.hist[i] >= 0 ? "rgba(22,199,132,.55)" : "rgba(234,57,67,.55)" })));
+    p.series.line.setData(asPoints(rows, m.line));
+    p.series.signal.setData(asPoints(rows, m.signal));
+    text = `MACD ${fmt(last(m.line))}  Signal ${fmt(last(m.signal))}  Hist. ${fmt(last(m.hist))}`;
+  } else if (key === "atr") {
+    const v = atrCalc(rows);
+    p.series.atr.setData(asPoints(rows, v));
+    text = fmt(last(v));
+  } else if (key === "adx") {
+    const a = adxCalc(rows);
+    p.series.adx.setData(asPoints(rows, a.adx));
+    p.series.pdi.setData(asPoints(rows, a.pdi));
+    p.series.mdi.setData(asPoints(rows, a.mdi));
+    text = `ADX ${fmt(last(a.adx))}  +DI ${fmt(last(a.pdi))}  −DI ${fmt(last(a.mdi))}`;
+  }
+  if (rows.length && text === "–") text = "zu wenig Kerzen";
+  p.box.querySelector(".pane-val").textContent = text;
+}
+
+function syncPanes() {
+  if (!state.chart || !ind.panes.size) return;
+  const r = state.chart.timeScale().getVisibleLogicalRange();
+  if (r) for (const p of ind.panes.values()) p.chart.timeScale().setVisibleLogicalRange(r);
+}
+let paneSyncHooked = false;
+function hookPaneSync() {
+  if (paneSyncHooked || !state.chart) return;
+  paneSyncHooked = true;
+  state.chart.timeScale().subscribeVisibleLogicalRangeChange(() => syncPanes());
+}

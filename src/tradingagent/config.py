@@ -24,6 +24,8 @@ class Instrument:
     unit: str = "€"  # Indizes: "Punkte", US-Aktien: "$"
     kind: str = "aktie"  # aktie | etf | index | krypto
     isin: str | None = None  # für Tradegate-Echtzeitkurse in der App
+    tier: str = "core"  # core = handverlesen, alle Kerzenlängen; extended = aus dem Verzeichnis, sparsamer gesammelt
+    wkn: str | None = None
 
     def symbol_for(self, provider: str) -> str | None:
         return self.symbols.get(provider)
@@ -50,13 +52,14 @@ class Settings:
     overlap_bars: int
     instruments: list[Instrument]
     min_refresh_minutes: dict[str, int] = field(default_factory=dict)
+    tiers: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     def instruments_for(self, market: str) -> list[Instrument]:
         return [i for i in self.instruments if i.market == market]
 
 
 # Alle anderen Schlüssel eines Instruments gelten als Anbieter-Symbol (kraken, binance, yahoo, ...).
-_RESERVED_KEYS = ("id", "name", "market", "unit", "kind", "isin")
+_RESERVED_KEYS = ("id", "name", "market", "unit", "kind", "isin", "tier", "wkn")
 
 
 def _resolve(path: str, root: Path) -> Path:
@@ -88,10 +91,32 @@ def load_settings(config_dir: Path | None = None, root: Path | None = None) -> S
 
     instruments = []
     seen = set()
-    for item in inst_raw["instruments"]:
+    seen_isin = set()
+    seen_yahoo = set()
+    items = [dict(x, tier=x.get("tier", "core")) for x in inst_raw["instruments"]]
+    # Verzeichnis (automatisch erzeugt): nur Werte, die es nicht schon handverlesen gibt
+    uni_path = config_dir / "universe.yaml"
+    if uni_path.exists():
+        uni = yaml.safe_load(uni_path.read_text(encoding="utf-8")) or {}
+        core_ids = {x["id"] for x in items}
+        core_isins = {x.get("isin") for x in items if x.get("isin")}
+        core_yahoo = {x.get("yahoo") for x in items if x.get("yahoo")}
+        for x in uni.get("instruments", []):
+            if x["id"] in core_ids or (x.get("isin") and x["isin"] in core_isins) or (x.get("yahoo") and x["yahoo"] in core_yahoo):
+                continue
+            items.append(dict(x, tier="extended"))
+    for item in items:
         if item["id"] in seen:
             raise ValueError(f"Instrument doppelt definiert: {item['id']}")
+        if item.get("isin") and item["isin"] in seen_isin and item["tier"] == "extended":
+            continue
+        if item.get("yahoo") and item["yahoo"] in seen_yahoo and item["tier"] == "extended":
+            continue
         seen.add(item["id"])
+        if item.get("isin"):
+            seen_isin.add(item["isin"])
+        if item.get("yahoo"):
+            seen_yahoo.add(item["yahoo"])
         if item["market"] not in markets:
             raise ValueError(f"Unbekannter Markt '{item['market']}' bei {item['id']}")
         instruments.append(
@@ -103,6 +128,8 @@ def load_settings(config_dir: Path | None = None, root: Path | None = None) -> S
                 unit=str(item.get("unit", "€")),
                 kind=str(item.get("kind", "aktie")),
                 isin=item.get("isin"),
+                tier=str(item.get("tier", "core")),
+                wkn=item.get("wkn"),
             )
         )
 
@@ -122,4 +149,5 @@ def load_settings(config_dir: Path | None = None, root: Path | None = None) -> S
         overlap_bars=int(hist.get("overlap_bars", 3)),
         min_refresh_minutes={k: int(v) for k, v in hist.get("min_refresh_minutes", {}).items()},
         instruments=instruments,
+        tiers=raw.get("tiers", {}),
     )

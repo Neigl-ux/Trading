@@ -35,6 +35,8 @@ def cmd_collect(args) -> int:
     summary = collect(settings, storage, build_providers(names))
     s = summary.as_dict()
     print(f"Lauf {s['started']}: {s['fetches']} Abrufe, {s['failed']} fehlgeschlagen, {s['new_bars']} neue Kerzen")
+    for n in s.get("notes", []):
+        print(f"  {n}")
     for w in s["warnings"]:
         print(f"  Hinweis {w['instrument']} {w['interval']}: {w['detail']}")
     for e in s["errors"]:
@@ -94,6 +96,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("export").set_defaults(func=cmd_export)
     sub.add_parser("status").set_defaults(func=cmd_status)
     sub.add_parser("heartbeat").set_defaults(func=cmd_heartbeat)
+    sub.add_parser("universe", help="Verzeichnis config/universe.yaml aus öffentlichen Listen erzeugen").set_defaults(
+        func=lambda args: __import__("tradingagent.universe", fromlist=["main"]).main())
     sub.add_parser("verify", help="Asset-Datenbank gegen die Quellen prüfen").set_defaults(
         func=lambda args: __import__("tradingagent.verify", fromlist=["main"]).main())
     sub.add_parser("tradegate-check", help="Tradegate-Echtzeitkurse prüfen").set_defaults(

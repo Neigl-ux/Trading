@@ -195,3 +195,51 @@ def test_live_symbols_finnhub_and_binance():
     assert live_symbols(btc) == {"binance": "BTCEUR"}
     sap = Instrument(id="SAP", name="SAP", market="xetra", symbols={"yahoo": "SAP.DE"})
     assert live_symbols(sap) is None
+
+
+def test_universe_merges_without_duplicates(tmp_path):
+    import shutil
+    from tradingagent.config import CONFIG_DIR, load_settings
+    shutil.copy(CONFIG_DIR / "settings.yaml", tmp_path / "settings.yaml")
+    shutil.copy(CONFIG_DIR / "instruments.yaml", tmp_path / "instruments.yaml")
+    (tmp_path / "universe.yaml").write_text(
+        "instruments:\n"
+        "  - {id: SAP-X, name: SAP doppelt, market: xetra, kind: aktie, isin: DE0007164600, yahoo: SAP.DE}\n"
+        "  - {id: HLAG, name: Hapag-Lloyd, market: xetra, kind: aktie, isin: DE000HLAG475, wkn: HLAG47, yahoo: HLAG.DE}\n",
+        encoding="utf-8")
+    s = load_settings(tmp_path, tmp_path)
+    ids = [i.id for i in s.instruments]
+    assert "SAP-X" not in ids  # gleiche ISIN wie der handverlesene Wert
+    hlag = next(i for i in s.instruments if i.id == "HLAG")
+    assert hlag.tier == "extended" and hlag.wkn == "HLAG47"
+    assert s.tiers["extended"]["max_new_per_run"] > 0
+
+
+def test_extended_tier_limits_first_backfill(tmp_path):
+    from tradingagent.collector import collect
+    from tradingagent.config import Instrument, MarketConfig, Settings
+    from tradingagent.storage import SQLiteStorage
+    from tradingagent.data.providers.base import MarketDataProvider
+    import pandas as pd
+
+    class Flat(MarketDataProvider):
+        name = "yahoo"
+        intervals = frozenset({"5m", "1h", "1d"})
+        max_history = {}
+
+        def fetch(self, symbol, interval, start, now):
+            idx = pd.date_range(now - pd.Timedelta(days=2), now - pd.Timedelta(hours=1), freq="1h", tz="UTC")
+            return pd.DataFrame({"open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "volume": 1.0}, index=idx)
+
+    insts = [Instrument(id=f"X{i}", name="x", market="fx", symbols={"yahoo": f"X{i}"}, tier="extended") for i in range(5)]
+    settings = Settings(storage_path=tmp_path / "db.sqlite", export_dir=tmp_path / "out", encrypt=False,
+                        markets={"fx": MarketConfig("fx", True, ["yahoo"], ["5m", "1h"], ["yahoo"])},
+                        backfill_days={}, daily_full_refresh_days=7, overlap_bars=3, instruments=insts,
+                        tiers={"extended": {"intervals": ["1h"], "max_new_per_run": 2}})
+    store = SQLiteStorage(settings.storage_path)
+    now = pd.Timestamp("2026-11-11 12:00", tz="UTC")
+    s = collect(settings, store, {"yahoo": Flat()}, now=now)
+    loaded = {log.instrument for log in s.logs if log.skipped is None}
+    assert loaded == {"X0", "X1"} and any("folgen" in n for n in s.notes)
+    s2 = collect(settings, store, {"yahoo": Flat()}, now=now + pd.Timedelta(minutes=15))
+    assert {"X2", "X3"} <= {log.instrument for log in s2.logs if log.skipped is None}

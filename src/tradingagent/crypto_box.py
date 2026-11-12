@@ -11,6 +11,7 @@ Passwort steht nur als GitHub-Secret APP_PASSPHRASE und in deinem Kopf.
 from __future__ import annotations
 
 import base64
+import gzip
 import json
 import os
 from typing import Any
@@ -50,13 +51,17 @@ class Box:
         return {"name": "PBKDF2", "hash": "SHA-256", "iter": self.iterations, "salt": _b64(self.salt)}
 
     def seal(self, payload: Any) -> dict[str, Any]:
+        """Erst gzip (spart etwa drei Viertel), dann verschlüsseln. Komprimierte Daten tragen "z": 1."""
         iv = os.urandom(12)
         plaintext = json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-        return {"v": 1, "enc": True, "iv": _b64(iv), "ct": _b64(self._aes.encrypt(iv, plaintext, None))}
+        packed = gzip.compress(plaintext, compresslevel=6, mtime=0)
+        return {"v": 1, "enc": True, "z": 1, "iv": _b64(iv), "ct": _b64(self._aes.encrypt(iv, packed, None))}
 
 
 def open_sealed(passphrase: str, kdf: dict[str, Any], sealed: dict[str, Any]) -> Any:
     """Entschlüsseln (für Tests und Kontrolle; die App macht das im Browser)."""
     key = derive_key(passphrase, _unb64(kdf["salt"]), int(kdf["iter"]))
     plaintext = AESGCM(key).decrypt(_unb64(sealed["iv"]), _unb64(sealed["ct"]), None)
+    if sealed.get("z"):
+        plaintext = gzip.decompress(plaintext)
     return json.loads(plaintext)

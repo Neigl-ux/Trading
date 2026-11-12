@@ -39,7 +39,9 @@ export async function importKey(rawB64) {
 // Öffnet eine Datei aus dem Export. Unverschlüsselte Dateien (privater Server) gehen auch.
 export async function openSealed(key, sealed) {
   if (!sealed.enc) return sealed.data;
-  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToBytes(sealed.iv) }, key, b64ToBytes(sealed.ct));
+  let plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToBytes(sealed.iv) }, key, b64ToBytes(sealed.ct));
+  // Export ist vor dem Verschlüsseln mit gzip gepackt ("z": 1)
+  if (sealed.z) plain = await new Response(new Blob([plain]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer();
   return JSON.parse(dec.decode(plain));
 }
 

@@ -41,6 +41,7 @@ class FetchLog:
 class RunSummary:
     started: pd.Timestamp
     logs: list[FetchLog] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
 
     @property
     def attempted(self) -> list[FetchLog]:
@@ -56,6 +57,7 @@ class RunSummary:
         return {
             "started": self.started.isoformat(),
             "fetches": len(attempted),
+            "notes": list(self.notes),
             "failed": sum(1 for log in attempted if log.failed),
             "new_bars": sum(log.new_bars for log in self.logs),
             "warnings": [
@@ -124,15 +126,18 @@ def _plan(settings: Settings, storage: Storage, inst: Instrument, interval: str,
     if interval == "1d":
         last_refresh = storage.get_meta(f"daily_refresh:{inst.id}")
         full_refresh = last_refresh is None or now - pd.Timestamp(last_refresh) > timedelta(days=settings.daily_full_refresh_days)
+    tier = settings.tiers.get(inst.tier, {})
+    min_refresh = {**settings.min_refresh_minutes, **tier.get("min_refresh_minutes", {})}
+    backfill = {**settings.backfill_days, **tier.get("backfill_days", {})}
     if not full_refresh:
-        job.skip = _should_skip(storage, inst, interval, cfg, now, settings.min_refresh_minutes.get(interval, 0))
+        job.skip = _should_skip(storage, inst, interval, cfg, now, min_refresh.get(interval, 0))
         if job.skip:
             return job
     step = interval_delta(interval)
     job.last = storage.last_ts(inst.id, interval)
     job.full_refresh = full_refresh
     if job.last is None or full_refresh:
-        job.start = now - timedelta(days=settings.backfill_days.get(interval, 30))
+        job.start = now - timedelta(days=backfill.get(interval, 30))
     else:
         job.start = job.last - step * settings.overlap_bars
     return job
@@ -164,10 +169,28 @@ def collect(settings: Settings, storage: Storage, providers: dict[str, MarketDat
     for market_name, cfg in settings.markets.items():
         if not cfg.enabled:
             continue
-        intervals = list(dict.fromkeys([*cfg.intervals, "1d"]))
         for inst in settings.instruments_for(market_name):
+            tier = settings.tiers.get(inst.tier, {})
+            intervals = list(dict.fromkeys([*tier.get("intervals", cfg.intervals), "1d"]))
             for interval in intervals:
                 jobs.append(_plan(settings, storage, inst, interval, cfg, now))
+
+    # Neue Verzeichniswerte nicht alle auf einmal nachladen: höchstens N pro Lauf erstmals füllen,
+    # die übrigen kommen in den nächsten Läufen dran (der Lauf bleibt so unter dem Zeitlimit).
+    for tier_name, tier in settings.tiers.items():
+        limit = tier.get("max_new_per_run")
+        if not limit:
+            continue
+        new_ids = []
+        for job in jobs:
+            if job.inst.tier == tier_name and not job.skip and job.last is None and job.inst.id not in new_ids:
+                new_ids.append(job.inst.id)
+        postponed = set(new_ids[int(limit):])
+        for job in jobs:
+            if job.inst.id in postponed and not job.skip:
+                job.skip = "wird in einem der nächsten Läufe erstmals geladen"
+        if postponed:
+            summary.notes.append(f"{len(postponed)} neue Werte ({tier_name}) folgen in den nächsten Läufen")
 
     _prefetch(jobs, providers, now)
     for job in jobs:

@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=14">
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
-  <script type="module" src="app.js?v=13"></script>
+  <script type="module" src="app.js?v=14"></script>
 </head>
 <body>
   <!-- Entsperren -->
@@ -178,9 +178,12 @@
       <div id="legend" class="legend" hidden>
         <div class="lg-head">
           <span class="lg-date"></span>
-          <div id="chart-type" class="chart-type" role="group" aria-label="Darstellung">
-            <button type="button" data-type="candles" aria-pressed="true">Kerzen</button>
-            <button type="button" data-type="line" aria-pressed="false">Linie</button>
+          <div class="lg-tools">
+            <button type="button" id="ind-btn" class="tool-btn" aria-expanded="false" aria-controls="ind-panel">Indikatoren</button>
+            <div id="chart-type" class="chart-type" role="group" aria-label="Darstellung">
+              <button type="button" data-type="candles" aria-pressed="true">Kerzen</button>
+              <button type="button" data-type="line" aria-pressed="false">Linie</button>
+            </div>
           </div>
         </div>
         <dl class="lg-values">
@@ -192,8 +195,11 @@
           <div><dt>zur Vorkerze</dt><dd class="lg-prev"></dd></div>
         </dl>
         <p class="lg-unit"></p>
+        <p id="res-label" class="res-label"></p>
+        <div id="ind-panel" class="ind-panel" hidden></div>
       </div>
       <div id="chart" class="chart" role="img" aria-label="Kursverlauf"></div>
+      <div id="panes" class="panes"></div>
       <div class="pan" id="pan-wrap">
         <button type="button" id="pan-left" aria-label="Ältere Kurse zeigen">‹</button>
         <input type="range" id="pan" min="0" max="1000" value="1000" step="1" aria-label="Zeitachse verschieben: links ältere, rechts neuere Kurse">

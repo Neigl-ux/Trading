@@ -73,6 +73,15 @@ markets:
     daily_providers: [yahoo]
     delay_minutes: 10
 
+# Staffelung: handverlesene Werte (core) mit allen Kerzenlängen, Werte aus dem automatischen
+# Verzeichnis (extended, config/universe.yaml) sparsamer, damit ein Lauf unter 15 Minuten bleibt.
+tiers:
+  extended:
+    intervals: [5m, 1h]
+    backfill_days: {5m: 5, 1h: 60, 1d: 1100}
+    min_refresh_minutes: {5m: 15, 1h: 60, 1d: 360}
+    max_new_per_run: 150
+
 history:
   # Wie weit beim ersten Lauf zurückgeladen wird (Grenzen der kostenlosen Quellen beachtet).
   backfill_days:

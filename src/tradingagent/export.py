@@ -269,7 +269,7 @@ def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, statu
         last_ts = pd.Timestamp(summary["last_ts"], unit="s", tz="UTC") if summary["last_ts"] else None
         metrics = metrics_mod.compute(loader, now, summary["last"], last_ts, crypto=inst.market == "crypto")
         entries.append({"id": inst.id, "name": inst.name, "market": inst.market, "file": f"s/{file_id}.json",
-                        "unit": loader.unit, "kind": inst.kind, "isin": inst.isin, "wkn": wkn_of(inst.isin),
+                        "unit": loader.unit, "kind": inst.kind, "isin": inst.isin, "wkn": inst.wkn or wkn_of(inst.isin), "tier": inst.tier,
                         "ticker": inst.symbol_for("yahoo") or inst.symbol_for("kraken") or inst.id,
                         "venue": home_venue(inst), "metrics": metrics,
                         "converted_from": "USD" if loader.convert else None,

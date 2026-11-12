@@ -420,3 +420,21 @@ main { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
 }
 
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+
+/* Indikatoren und Auflösung */
+.lg-tools { display: flex; gap: 8px; align-items: center; }
+.tool-btn { min-height: 32px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: .82rem; font-weight: 600; cursor: pointer; }
+.tool-btn[aria-expanded=true] { border-color: rgba(59, 130, 246, .55); background: var(--accent-soft); }
+.res-label { margin: 6px 0 0; font-size: .76rem; color: var(--mute); }
+.res-label::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 2px; background: var(--accent); margin-right: 6px; vertical-align: 1px; }
+.res-label:empty { display: none; }
+.ind-panel { margin-top: 10px; padding: 10px 14px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); display: grid; gap: 6px; }
+.ind-group { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0 12px; }
+.ind-group legend { font-size: .76rem; color: var(--mute); padding: 6px 0 0; }
+.ind-group .check-line { margin-top: 8px; color: var(--ink); font-size: .86rem; }
+.ind-swatch { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+.panes { display: grid; gap: 6px; margin-top: 6px; }
+.pane { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); }
+.pane-title { display: flex; justify-content: space-between; gap: 10px; padding: 6px 12px 0; font-size: .76rem; color: var(--mute); }
+.pane-val { color: var(--ink); font-variant-numeric: tabular-nums; }
+.pane-chart { height: 120px; }
