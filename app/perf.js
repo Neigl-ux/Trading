@@ -14,6 +14,7 @@ export const STEP = { "1s": 1, "5s": 5, "15s": 15, "1m": 60, "5m": 300, "15m": 9
 
 // Jede Ansicht zeigt genau ihren Zeitraum (perf), in feineren Kerzen (candle):
 // 1m = letzte Minute in Sekundenkerzen, 1D = heutiger Tag in 5-Minuten-Kerzen usw.
+// 1W, 1M, 6M, 1J … rechnen von heute rückwärts (am 12.11. zeigt 1M ab 12.10., am 13.11. ab 13.10.).
 // „interval“ ist die frühere Kerzenlänge und wird nur noch als Ersatz genutzt.
 export const VIEWS = [
   { key: "1m", label: "1m", candle: "1s", interval: "1m", window: 3 * 3600, perf: { rolling: 60 } },
@@ -24,8 +25,8 @@ export const VIEWS = [
   { key: "4h", label: "4h", candle: "5m", interval: "4h", window: 60 * 86400, perf: { rolling: 14400 } },
   { key: "12h", label: "12h", candle: "15m", interval: "12h", window: 180 * 86400, perf: { rolling: 43200 } },
   { key: "1D", label: "1D", candle: "5m", interval: "1d", window: 365 * 86400, perf: { calendar: "day" } },
-  { key: "1W", label: "1W", candle: "1h", interval: "1w", window: 5 * 365 * 86400, perf: { calendar: "week" } },
-  { key: "1M", label: "1M", candle: "4h", interval: "1M", window: 10 * 365 * 86400, perf: { calendar: "month" } },
+  { key: "1W", label: "1W", candle: "1h", interval: "1w", window: 5 * 365 * 86400, perf: { rolling: 7 * 86400 } },
+  { key: "1M", label: "1M", candle: "4h", interval: "1M", window: 10 * 365 * 86400, perf: { months: 1 } },
   { key: "6M", label: "6 Mon", candle: "1d", interval: "1d", window: 183 * 86400, perf: { months: 6 }, range: true },
   { key: "1J", label: "1 Jahr", candle: "1d", interval: "1d", window: 366 * 86400, perf: { months: 12 }, range: true },
   { key: "3J", label: "3 Jahre", candle: "1w", interval: "1w", window: 3 * 366 * 86400, perf: { months: 36 }, range: true },

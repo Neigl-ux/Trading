@@ -1,5 +1,5 @@
 // Service Worker: App-Gerüst offline verfügbar, Daten immer frisch aus dem Netz.
-const CACHE = "ta-shell-v14";
+const CACHE = "ta-shell-v15";
 const SHELL = ["./", "index.html", "style.css", "app.js", "crypto.js", "format.js", "tradegate.js", "perf.js", "feeds.js", "finnhub.js", "engine.js", "indicators.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "vendor/lightweight-charts.standalone.production.js"];
 
 self.addEventListener("install", (e) => {

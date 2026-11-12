@@ -35,3 +35,17 @@ Der Ablauf „Asset-Datenbank prüfen“ (`python -m tradingagent verify`) kontr
 - Weicht der Tradegate-Kurs höchstens 8 % vom Kurs der Heimatbörse ab? Ist die Abweichung größer, gehört die ISIN vermutlich zu einem anderen Wert.
 
 Letzte Prüfung: 288 Instrumente, alle mit Kursen. Bei zwei Werten kannte Tradegate die ISIN nicht (Unilever, SQQQ); diese laufen ohne Tradegate.
+
+## Verzeichnis mit über 1000 Werten
+
+`config/universe.yaml` wird wöchentlich (sonntags) vom Ablauf „Verzeichnis aktualisieren“ erzeugt:
+
+- **Xetra-Liste der Deutschen Börse** („All tradable instruments“, täglich aktualisiert): Aktien, ETFs und ETCs mit ISIN, WKN und Xetra-Kürzel. Ausgewählt werden die umsatzstärksten, gemessen am durchschnittlichen Tagesumsatz der letzten 20 Handelstage bei Yahoo: 260 Aktien, 260 ETFs und 40 ETCs.
+- **Yahoo-Aktienscreener:** die größten US-Unternehmen nach Börsenwert, nur Werte von NYSE und Nasdaq, keine außerbörslichen OTC-Werte, je Unternehmen nur eine Aktiengattung.
+- Werte, die es schon in `instruments.yaml` gibt (gleiche ISIN oder gleiches Symbol), werden übersprungen.
+
+Gesammelt werden die Werte aus dem Verzeichnis sparsamer: 5-Minuten-, Stunden- und Tageskerzen. Je Lauf werden höchstens 150 neue Werte erstmals geladen, die übrigen folgen in den nächsten Läufen.
+
+## Portfolio
+
+Positionen, Stückzahlen und Kaufkurse liegen nur auf dem Gerät, im Browser-Speicher. Sie sind mit dem aus dem App-Passwort abgeleiteten Schlüssel verschlüsselt (AES-256-GCM). Sie werden nicht hochgeladen, nicht zu GitHub übertragen und nicht an Claude oder Anthropic gesendet. Eine CSV-Datei wird nur im Browser gelesen.
