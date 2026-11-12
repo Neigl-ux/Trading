@@ -124,13 +124,15 @@ def yahoo_names(symbols: list[str]) -> dict[str, str]:
     from concurrent.futures import ThreadPoolExecutor
 
     def one(sym):
+        import time
+        time.sleep(0.3)  # Yahoo begrenzt die Anzahl Anfragen
         try:
             info = yf.Ticker(sym).get_info()
             return sym, info.get("longName") or info.get("shortName")
         except Exception:
             return sym, None
 
-    with ThreadPoolExecutor(max_workers=8) as pool:
+    with ThreadPoolExecutor(max_workers=3) as pool:
         got = dict(pool.map(one, symbols))
     names = {k: v.strip() for k, v in got.items() if v and v.strip()}
     print(f"Namen von Yahoo: {len(names)} von {len(symbols)}")
@@ -145,8 +147,16 @@ def us_largest(n: int) -> list[dict]:
     from yfinance import EquityQuery
     q = EquityQuery("and", [EquityQuery("eq", ["region", "us"]), EquityQuery("gt", ["intradaymarketcap", 2_000_000_000])])
     rows: list[dict] = []
-    for offset in range(0, n + 250, 250):
-        res = yf.screen(q, size=250, offset=offset, sortField="intradaymarketcap", sortAsc=False)
+    import time
+    for offset in range(0, n + 500, 250):
+        res = {}
+        for wait in (0, 30, 90, 180):  # bei Ratenbegrenzung mit wachsender Pause erneut
+            time.sleep(wait)
+            try:
+                res = yf.screen(q, size=250, offset=offset, sortField="intradaymarketcap", sortAsc=False)
+                break
+            except Exception as exc:
+                print(f"  Screener-Abruf {offset}: {exc}")
         quotes = res.get("quotes", [])
         rows += [x for x in quotes if x.get("quoteType") == "EQUITY" and x.get("currency") == "USD"
                  and x.get("exchange") in US_EXCHANGES]  # keine außerbörslichen OTC-Werte
@@ -203,12 +213,6 @@ def main() -> int:
     pick(etfs, N_ETF, "etf")
     pick(etcs, N_ETC, "etf")
 
-    # Lesbare Namen für die Xetra-Auswahl
-    names = yahoo_names([x["yahoo"] for x in out])
-    for x in out:
-        if names.get(x["yahoo"]):
-            x["name"] = names[x["yahoo"]]
-
     # ---------- USA: größte Unternehmen ----------
     us = us_largest(N_US)
     added = 0
@@ -226,6 +230,12 @@ def main() -> int:
         if added >= N_US:
             break
     print(f"  US-Aktien: {added} übernommen")
+
+    # Lesbare Namen für die Xetra-Auswahl (zuletzt, weil viele Einzelabfragen)
+    names = yahoo_names([x["yahoo"] for x in out if x["market"] == "xetra"])
+    for x in out:
+        if names.get(x["yahoo"]):
+            x["name"] = names[x["yahoo"]]
 
     path = CONFIG_DIR / "universe.yaml"
     header = ("# Automatisch erzeugt mit `python -m tradingagent universe` (Ablauf „Verzeichnis aktualisieren“).\n"
