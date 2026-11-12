@@ -1,0 +1,17 @@
+[Unit]
+Description=Trading-Agent: Kurse sammeln und exportieren
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=tradingagent
+WorkingDirectory=/opt/tradingagent/code
+EnvironmentFile=/etc/tradingagent.env
+ExecStart=/opt/tradingagent/venv/bin/python -m tradingagent collect
+TimeoutStartSec=600
+# Sicherheit: nur das eigene Verzeichnis beschreibbar
+ProtectSystem=strict
+ReadWritePaths=/opt/tradingagent
+NoNewPrivileges=true
+PrivateTmp=true

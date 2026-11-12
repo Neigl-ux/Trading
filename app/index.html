@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10233d">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Trading-Agent</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js" defer></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <!-- Entsperren -->
+  <section id="lock" class="lock" hidden>
+    <form id="lock-form" class="lock-form" autocomplete="on">
+      <h1>Trading-Agent</h1>
+      <p>Deine Daten sind verschlüsselt. Gib dein App-Passwort ein, um sie auf diesem Gerät zu öffnen.</p>
+      <label for="pass">App-Passwort</label>
+      <input id="pass" name="password" type="password" autocomplete="current-password" required minlength="12">
+      <label class="check"><input id="remember" type="checkbox" checked> Auf diesem Gerät angemeldet bleiben</label>
+      <button type="submit" id="unlock-btn">Entsperren</button>
+      <p id="lock-error" class="error" role="alert"></p>
+    </form>
+  </section>
+
+  <main id="main" hidden>
+    <header class="topbar">
+      <span class="brand">Trading-Agent</span>
+      <span id="freshness" class="freshness"></span>
+    </header>
+
+    <!-- Märkte -->
+    <section id="view-markets" class="view">
+      <div id="market-list" class="market-list"></div>
+    </section>
+
+    <!-- Chart -->
+    <section id="view-chart" class="view" hidden>
+      <button class="back" id="back-btn" type="button">Zurück zu Märkte</button>
+      <div class="quote">
+        <h2 id="q-name"></h2>
+        <div class="quote-row">
+          <span id="q-price" class="price"></span>
+          <span id="q-change" class="change"></span>
+        </div>
+        <p id="q-meta" class="meta"></p>
+      </div>
+      <nav id="tf-strip" class="tf-strip" aria-label="Zeitraum wählen"></nav>
+      <div id="chart" class="chart" role="img" aria-label="Kursverlauf"></div>
+      <p id="chart-note" class="note"></p>
+    </section>
+
+    <!-- Ratgeber -->
+    <section id="view-advisor" class="view" hidden>
+      <h2>Ratgeber</h2>
+      <p class="placeholder">Hier erscheinen ab Phase 3 Einschätzungen zu deinen Werten: Score, Begründung, Risiko und ein Vorschlag, wie du deinen Sparplan aufteilen könntest. Alles nur zur Information, der Ratgeber greift nicht auf dein Depot zu.</p>
+    </section>
+
+    <!-- Simulator -->
+    <section id="view-sim" class="view" hidden>
+      <h2>Simulator</h2>
+      <p class="placeholder">Der Simulator handelt ab Phase 7 selbstständig mit Spielgeld. Bis dahin sammelt das System im Hintergrund die Kursdaten, auf denen er später lernt und getestet wird.</p>
+    </section>
+
+    <!-- Status -->
+    <section id="view-status" class="view" hidden>
+      <h2>Status</h2>
+      <dl id="status-list" class="status-list"></dl>
+      <h3>Hinweise zur Datenqualität</h3>
+      <ul id="status-warnings" class="warnings"></ul>
+      <h3>Datenquellen</h3>
+      <p class="small">Krypto: Kraken und Binance, live. Deutsche Aktien und ETFs: Yahoo Finance, 15 Minuten verzögert, nur zur privaten Information. Keine Anlageberatung.</p>
+      <button id="logout" type="button" class="secondary">Auf diesem Gerät abmelden</button>
+    </section>
+
+    <nav class="tabbar" aria-label="Bereiche">
+      <button data-tab="markets" class="active" type="button">Märkte</button>
+      <button data-tab="advisor" type="button">Ratgeber</button>
+      <button data-tab="sim" type="button">Simulator</button>
+      <button data-tab="status" type="button">Status</button>
+    </nav>
+  </main>
+</body>
+</html>

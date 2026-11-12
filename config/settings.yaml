@@ -1,0 +1,42 @@
+# Zentrale Einstellungen. Geheimnisse (Passwort, API-Schlüssel) stehen NIE hier,
+# sondern als Umgebungsvariablen bzw. GitHub-Secrets.
+
+storage:
+  # SQLite funktioniert auf GitHub (über den Actions-Cache) und auf dem Oracle-Server.
+  path: data/market.sqlite
+
+export:
+  # Ordner, den die Handy-App liest (wird auf GitHub Pages veröffentlicht).
+  dir: _site/data
+  # true = Daten werden mit APP_PASSPHRASE verschlüsselt (Pflicht bei öffentlichem Projekt).
+  encrypt: true
+
+markets:
+  crypto:
+    enabled: true
+    # Reihenfolge = Fallback-Kette. GitHub-Rechner stehen in den USA, wo Binance
+    # gesperrt ist; deshalb Kraken zuerst. Auf dem Oracle-Server (Frankfurt) kann
+    # Binance nach vorne.
+    providers: [kraken, binance]
+    intervals: [5m, 15m, 1h]
+    # Tageskerzen mit langer Historie (10 Jahre) liefert Yahoo.
+    daily_providers: [yahoo, kraken]
+  xetra:
+    enabled: true
+    providers: [yahoo]
+    intervals: [5m, 15m, 1h]
+    daily_providers: [yahoo]
+    delay_minutes: 15
+
+history:
+  # Wie weit beim ersten Lauf zurückgeladen wird (Grenzen der kostenlosen Quellen beachtet).
+  backfill_days:
+    5m: 55     # Yahoo liefert 5-Minuten-Kerzen nur ca. 60 Tage zurück
+    15m: 55
+    1h: 700    # Yahoo: ca. 730 Tage
+    1d: 3700   # ca. 10 Jahre
+  # Tageskerzen werden regelmäßig komplett neu geladen, damit Splits und
+  # Dividenden-Anpassungen rückwirkend korrekt sind.
+  daily_full_refresh_days: 7
+  # Überlappung beim inkrementellen Abruf (Kerzen), fängt verspätete Korrekturen ab.
+  overlap_bars: 3

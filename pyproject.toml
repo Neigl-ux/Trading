@@ -1,0 +1,9 @@
+[project]
+name = "tradingagent"
+version = "0.2.0"
+description = "KI-Trading-Agent: Ratgeber und Simulator (Phase 2: Dateninfrastruktur)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

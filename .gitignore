@@ -1,0 +1,9 @@
+# Kursdatenbank liegt im GitHub-Cache bzw. auf dem Server, nie im Projekt
+data/
+_site/
+*.sqlite
+*.sqlite-*
+__pycache__/
+.pytest_cache/
+.venv/
+.env

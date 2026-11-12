@@ -1,0 +1,22 @@
+# Prüft bei jeder Code-Änderung automatisch, dass alle Tests grün sind.
+name: Tests
+
+on:
+  push:
+    paths: ["src/**", "tests/**", "requirements.txt"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q

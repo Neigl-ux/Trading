@@ -1,0 +1,97 @@
+# Sammelt alle 15 Minuten Kurse, prüft sie und veröffentlicht die
+# verschlüsselten Daten zusammen mit der App auf GitHub Pages.
+# Läuft komplett im Hintergrund – Handy und PC müssen dafür nicht an sein.
+
+name: Daten sammeln
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # GitHub startet teils einige Minuten später
+  workflow_dispatch:          # manueller Start über den Knopf "Run workflow"
+  push:
+    branches: [main]
+    paths: ["app/**", "src/**", "config/**", ".github/workflows/collect.yml"]
+
+permissions:
+  contents: write   # für den monatlichen Heartbeat-Commit
+  pages: write
+  id-token: write
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      PYTHONPATH: src
+      APP_PASSPHRASE: ${{ secrets.APP_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Bibliotheken installieren
+        run: pip install -r requirements.txt
+
+      - name: Passwort vorhanden?
+        run: |
+          if [ -z "$APP_PASSPHRASE" ]; then
+            echo "::error::Das Secret APP_PASSPHRASE fehlt. Siehe Anleitung, Schritt 4."
+            exit 1
+          fi
+
+      - name: Kursdatenbank aus dem Cache holen
+        uses: actions/cache/restore@v4
+        with:
+          path: data/market.sqlite
+          key: marketdb-${{ github.run_id }}
+          restore-keys: marketdb-
+
+      - name: App-Dateien bereitstellen
+        run: |
+          rm -rf _site
+          cp -r app _site
+
+      - name: Kurse sammeln, prüfen, exportieren
+        run: python -m tradingagent collect
+
+      - name: Kursdatenbank im Cache sichern
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/market.sqlite
+          key: marketdb-${{ github.run_id }}
+
+      - name: Übersicht
+        if: always()
+        run: python -m tradingagent status || true
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Auf GitHub Pages veröffentlichen
+        id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: Monats-Heartbeat (verhindert Abschaltung nach 60 Tagen)
+        run: |
+          python -m tradingagent heartbeat
+          git config user.name "trading-agent-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add status/heartbeat.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Heartbeat $(date +%Y-%m)"
+            git push
+          fi

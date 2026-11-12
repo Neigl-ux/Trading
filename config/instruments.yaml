@@ -1,0 +1,53 @@
+# Allgemeine Beobachtungsliste. Bitte hier KEINE persönlichen Depotwerte eintragen,
+# wenn das Projekt öffentlich ist: Deine eigenen Positionen gibst du nur in der App
+# auf dem Handy ein.
+#
+# id       = interner Name
+# market   = crypto | xetra
+# kraken / binance / yahoo = Symbol beim jeweiligen Anbieter
+
+instruments:
+  - id: BTC-EUR
+    name: Bitcoin
+    market: crypto
+    kraken: XBTEUR
+    binance: BTCEUR
+    yahoo: BTC-EUR
+  - id: ETH-EUR
+    name: Ethereum
+    market: crypto
+    kraken: ETHEUR
+    binance: ETHEUR
+    yahoo: ETH-EUR
+  - id: SOL-EUR
+    name: Solana
+    market: crypto
+    kraken: SOLEUR
+    binance: SOLEUR
+    yahoo: SOL-EUR
+
+  - id: DAX
+    name: DAX (Index)
+    market: xetra
+    unit: Punkte
+    yahoo: ^GDAXI
+  - id: SAP
+    name: SAP
+    market: xetra
+    yahoo: SAP.DE
+  - id: SIE
+    name: Siemens
+    market: xetra
+    yahoo: SIE.DE
+  - id: ALV
+    name: Allianz
+    market: xetra
+    yahoo: ALV.DE
+  - id: DTE
+    name: Deutsche Telekom
+    market: xetra
+    yahoo: DTE.DE
+  - id: EUNL
+    name: iShares Core MSCI World (ETF)
+    market: xetra
+    yahoo: EUNL.DE

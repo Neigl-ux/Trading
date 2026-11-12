@@ -1,0 +1,10 @@
+# Laufzeit
+pandas>=2.2
+numpy>=1.26
+requests>=2.31
+PyYAML>=6.0
+cryptography>=42
+yfinance>=0.2.50
+
+# Tests
+pytest>=8
