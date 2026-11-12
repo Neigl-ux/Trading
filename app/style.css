@@ -70,6 +70,24 @@ main { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
 .tabbar button.active { color: var(--ink); border-top-color: var(--mark); }
 
 /* ---------- Märkte ---------- */
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.search input {
+  width: 100%; padding: 12px 14px; border-radius: 6px; font-size: 1rem;
+  background: var(--deck); border: 1px solid var(--line);
+}
+.search input::placeholder { color: var(--mute); }
+.filter-strip { margin-top: 14px; }
+.list-hint { color: var(--mute); font-size: .88rem; margin: 10px 0 0; min-height: 1.2em; }
+.item { display: grid; grid-template-columns: 1fr auto; align-items: center; border-bottom: 1px solid var(--line); }
+.item .row { border-bottom: 0; }
+.star {
+  background: none; border: 0; cursor: pointer; color: var(--mute);
+  font-size: 1.35rem; line-height: 1; padding: 12px 0 12px 14px; min-width: 44px; min-height: 44px;
+}
+.star[aria-pressed=true] { color: var(--mark); }
+.quote-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.quote-title h2 { margin: 0; }
+.quote-title .star { padding: 6px 0 6px 12px; }
 .market-list { display: flex; flex-direction: column; }
 .group-title { color: var(--mute); font-size: .9rem; margin: 18px 0 4px; }
 .row {

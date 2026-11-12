@@ -21,7 +21,8 @@ class Instrument:
     name: str
     market: str  # "crypto" oder "xetra"
     symbols: dict[str, str] = field(default_factory=dict)  # Anbieter -> Symbol
-    unit: str = "€"  # Indizes: "Punkte"
+    unit: str = "€"  # Indizes: "Punkte", US-Aktien: "$"
+    kind: str = "aktie"  # aktie | etf | index | krypto
 
     def symbol_for(self, provider: str) -> str | None:
         return self.symbols.get(provider)
@@ -47,13 +48,14 @@ class Settings:
     daily_full_refresh_days: int
     overlap_bars: int
     instruments: list[Instrument]
+    min_refresh_minutes: dict[str, int] = field(default_factory=dict)
 
     def instruments_for(self, market: str) -> list[Instrument]:
         return [i for i in self.instruments if i.market == market]
 
 
 # Alle anderen Schlüssel eines Instruments gelten als Anbieter-Symbol (kraken, binance, yahoo, ...).
-_RESERVED_KEYS = ("id", "name", "market", "unit")
+_RESERVED_KEYS = ("id", "name", "market", "unit", "kind")
 
 
 def _resolve(path: str, root: Path) -> Path:
@@ -98,6 +100,7 @@ def load_settings(config_dir: Path | None = None, root: Path | None = None) -> S
                 market=item["market"],
                 symbols={k: str(v) for k, v in item.items() if k not in _RESERVED_KEYS},
                 unit=str(item.get("unit", "€")),
+                kind=str(item.get("kind", "aktie")),
             )
         )
 
@@ -115,5 +118,6 @@ def load_settings(config_dir: Path | None = None, root: Path | None = None) -> S
         backfill_days={k: int(v) for k, v in hist.get("backfill_days", {}).items()},
         daily_full_refresh_days=int(hist.get("daily_full_refresh_days", 7)),
         overlap_bars=int(hist.get("overlap_bars", 3)),
+        min_refresh_minutes={k: int(v) for k, v in hist.get("min_refresh_minutes", {}).items()},
         instruments=instruments,
     )

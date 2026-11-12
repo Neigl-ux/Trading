@@ -106,3 +106,31 @@ def test_all_failed_flag(settings):
     providers = {"fakea": FakeProvider("fakea", fail=True), "fakeb": FakeProvider("fakeb", fail=True)}
     summary = collect(s, SQLiteStorage(":memory:"), providers, now=pd.Timestamp("2026-01-07 12:00", tz="UTC"))
     assert summary.all_failed
+
+
+class BatchFake(FakeProvider):
+    def __init__(self, name):
+        super().__init__(name)
+        self.prefetched = []
+
+    def prefetch(self, symbols, interval, start, now):
+        self.prefetched.append((tuple(symbols), interval))
+
+
+def test_prefetch_groups_and_refresh_throttle(settings):
+    cfg_dir, root = settings
+    s = load_settings(cfg_dir, root)
+    object.__setattr__(s, "min_refresh_minutes", {"1d": 60})
+    storage = SQLiteStorage(":memory:")
+    providers = {"fakea": FakeProvider("fakea"), "fakeb": BatchFake("fakeb")}
+    now = pd.Timestamp("2026-01-07 12:07", tz="UTC")
+    collect(s, storage, providers, now=now)
+    # fakeb ist erste Quelle für Xetra (15m) und für Tageskerzen beider Märkte
+    assert ("SAP.DE",) in [p[0] for p in providers["fakeb"].prefetched if p[1] == "15m"]
+    daily = [p for p in providers["fakeb"].prefetched if p[1] == "1d"][0]
+    assert set(daily[0]) == {"BTC-EUR", "SAP.DE"}
+    # 15 Minuten später: Tageskerzen werden noch nicht erneut geholt
+    summary = collect(s, storage, providers, now=now + pd.Timedelta(minutes=15))
+    skipped = {(l.instrument, l.interval): l.skipped for l in summary.logs}
+    assert skipped[("SAP", "1d")] == "kürzlich abgerufen"
+    assert skipped[("SAP", "15m")] is None

@@ -61,6 +61,10 @@ _JUMP_THRESHOLD = {
     ("crypto", "daily"): 0.30,
     ("xetra", "intraday"): 0.06,
     ("xetra", "daily"): 0.20,
+    ("europe", "intraday"): 0.06,
+    ("europe", "daily"): 0.20,
+    ("us", "intraday"): 0.06,
+    ("us", "daily"): 0.20,
 }
 
 

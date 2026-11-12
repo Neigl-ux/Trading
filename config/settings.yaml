@@ -27,6 +27,19 @@ markets:
     intervals: [5m, 15m, 1h]
     daily_providers: [yahoo]
     delay_minutes: 15
+  europe:
+    enabled: true
+    providers: [yahoo]
+    intervals: [5m, 15m, 1h]
+    daily_providers: [yahoo]
+    delay_minutes: 15
+  us:
+    enabled: true
+    providers: [yahoo]
+    intervals: [5m, 15m, 1h]
+    daily_providers: [yahoo]
+    # Yahoo zeigt US-Kurse nahezu in Echtzeit
+    delay_minutes: 0
 
 history:
   # Wie weit beim ersten Lauf zurückgeladen wird (Grenzen der kostenlosen Quellen beachtet).
@@ -40,3 +53,9 @@ history:
   daily_full_refresh_days: 7
   # Überlappung beim inkrementellen Abruf (Kerzen), fängt verspätete Korrekturen ab.
   overlap_bars: 3
+  # Längere Kerzen seltener abrufen, um die Quellen zu schonen (Minuten).
+  min_refresh_minutes:
+    5m: 0
+    15m: 0
+    1h: 30
+    1d: 60

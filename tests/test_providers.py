@@ -98,3 +98,55 @@ def test_fallback_reports_when_all_fail():
     inst = Instrument("BTC-EUR", "Bitcoin", "crypto", {"a": "BTCEUR"})
     res = fetch_with_fallback(inst, "15m", NOW, NOW, ["a"], {"a": _Broken()})
     assert res.provider is None and res.errors
+
+
+class _FakeYFBatch:
+    """Simuliert yf.download mit MultiIndex-Spalten (Ticker, Feld)."""
+
+    def __init__(self, fail=False):
+        self.download_calls = 0
+        self.ticker_calls = 0
+        self.fail = fail
+        outer = self
+
+        class Ticker:
+            def __init__(self, symbol):
+                outer.ticker_calls += 1
+
+            def history(self, **kw):
+                return pd.DataFrame()
+
+        self.Ticker = Ticker
+
+    def download(self, tickers, **kw):
+        self.download_calls += 1
+        if self.fail:
+            raise RuntimeError("Too Many Requests")
+        idx = pd.date_range("2026-01-05 09:00", periods=4, freq="15min", tz="Europe/Berlin")
+        frames = {}
+        for t in tickers:
+            if t == "GIBTSNICHT.DE":
+                frames[t] = pd.DataFrame({c: [float("nan")] * 4 for c in ["Open", "High", "Low", "Close", "Volume"]}, index=idx)
+            else:
+                frames[t] = pd.DataFrame({"Open": [1.0, 2, 3, 4], "High": [2.0, 3, 4, 5], "Low": [0.5, 1, 2, 3],
+                                          "Close": [1.5, 2.5, 3.5, 4.5], "Volume": [1, 2, 3, 4]}, index=idx)
+        return pd.concat(frames, axis=1)
+
+
+def test_yahoo_prefetch_serves_from_cache():
+    fake = _FakeYFBatch()
+    p = YahooProvider(yf_module=fake)
+    start = NOW - pd.Timedelta(days=2)
+    p.prefetch(["SAP.DE", "SIE.DE", "GIBTSNICHT.DE"], "15m", start, NOW)
+    assert fake.download_calls == 1
+    assert len(p.fetch("SAP.DE", "15m", start, NOW)) == 4
+    assert len(p.fetch("SIE.DE", "15m", start + pd.Timedelta(hours=1), NOW)) == 4
+    assert p.fetch("GIBTSNICHT.DE", "15m", start, NOW).empty
+    assert fake.ticker_calls == 0  # nichts einzeln nachgeladen
+
+
+def test_yahoo_prefetch_failure_is_reported_per_symbol():
+    p = YahooProvider(yf_module=_FakeYFBatch(fail=True))
+    p.prefetch(["SAP.DE"], "15m", NOW - pd.Timedelta(days=1), NOW)
+    with pytest.raises(ProviderError, match="Sammelabruf"):
+        p.fetch("SAP.DE", "15m", NOW - pd.Timedelta(days=1), NOW)

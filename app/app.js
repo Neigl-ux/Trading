@@ -125,36 +125,147 @@ function showMain() {
   fresh.textContent = `Daten von ${fmtTime(state.index.updated, age > 20 * 3600)} Uhr`;
   fresh.style.color = age > 45 * 60 ? "var(--mark)" : "";
   fresh.title = age > 45 * 60 ? "Der letzte Sammel-Lauf liegt länger zurück. Prüfe den Status." : "";
+  buildFilterStrip();
   renderList();
   renderStatus();
 }
 
-function renderList() {
-  const list = $("market-list");
-  list.replaceChildren();
-  for (const market of ["xetra", "crypto"]) {
-    const entries = state.index.instruments.filter((i) => i.market === market);
-    if (!entries.length) continue;
-    const h = document.createElement("h3");
-    h.className = "group-title";
-    h.textContent = MARKET_TITLE[market] || market;
-    list.append(h);
-    for (const e of entries) {
-      const row = document.createElement("button");
-      row.type = "button";
-      row.className = "row";
-      row.innerHTML = `<span class="name"></span><span class="px"></span><span class="sub"></span><span class="chg"></span>`;
-      row.querySelector(".name").textContent = e.name;
-      row.querySelector(".px").textContent = fmtPrice(e.last, unitOf(e));
-      row.querySelector(".sub").textContent = e.delay_minutes ? `${e.delay_minutes} Min verzögert` : "Live in der Detailansicht";
-      const chg = row.querySelector(".chg");
-      chg.textContent = e.change_1d == null ? "" : `${fmtPct(e.change_1d)} heute`;
-      chg.classList.add(trendClass(e.change_1d));
-      row.addEventListener("click", () => openChart(e));
-      list.append(row);
-    }
+// ---------- Favoriten (nur auf diesem Gerät) ----------
+const FAV_STORE = "ta.favs.v1";
+const FILTER_STORE = "ta.filter.v1";
+function loadFavs() {
+  try { return JSON.parse(localStorage.getItem(FAV_STORE) || "[]"); } catch { return []; }
+}
+let favs = loadFavs();
+function isFav(id) { return favs.includes(id); }
+function toggleFav(id) {
+  favs = isFav(id) ? favs.filter((x) => x !== id) : [...favs, id];
+  try { localStorage.setItem(FAV_STORE, JSON.stringify(favs)); } catch {}
+}
+
+// ---------- Filter und Suche ----------
+const KIND_LABEL = { aktie: "Aktie", etf: "ETF", index: "Index", krypto: "Krypto" };
+const MARKET_LABEL = { xetra: "Xetra", europe: "Europa", us: "USA", crypto: "Krypto" };
+const FILTERS = [
+  { key: "fav", label: "Favoriten", test: (e) => isFav(e.id) },
+  { key: "all", label: "Alle", test: () => true },
+  { key: "de", label: "Deutschland", test: (e) => e.kind === "aktie" && e.market === "xetra" },
+  { key: "us", label: "USA", test: (e) => e.kind === "aktie" && e.market === "us" },
+  { key: "eu", label: "Europa", test: (e) => e.kind === "aktie" && e.market === "europe" },
+  { key: "etf", label: "ETFs", test: (e) => e.kind === "etf" },
+  { key: "index", label: "Indizes", test: (e) => e.kind === "index" },
+  { key: "krypto", label: "Krypto", test: (e) => e.kind === "krypto" },
+];
+const GROUPS = [
+  ["Indizes", (e) => e.kind === "index"],
+  ["ETFs und ETCs", (e) => e.kind === "etf"],
+  ["Deutsche Aktien", (e) => e.kind === "aktie" && e.market === "xetra"],
+  ["Europäische Aktien", (e) => e.kind === "aktie" && e.market === "europe"],
+  ["US-Aktien", (e) => e.kind === "aktie" && e.market === "us"],
+  ["Krypto", (e) => e.kind === "krypto"],
+];
+let filterKey = (() => {
+  try { return localStorage.getItem(FILTER_STORE) || (favs.length ? "fav" : "all"); } catch { return "all"; }
+})();
+
+const norm = (t) => t.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ß/g, "ss").replace(/[^a-z0-9]/g, "");
+
+function buildFilterStrip() {
+  const strip = $("filter-strip");
+  strip.replaceChildren();
+  for (const f of FILTERS) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = f.label;
+    b.dataset.key = f.key;
+    b.setAttribute("aria-pressed", String(f.key === filterKey));
+    b.addEventListener("click", () => {
+      filterKey = f.key;
+      try { localStorage.setItem(FILTER_STORE, f.key); } catch {}
+      $("search").value = "";
+      strip.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      renderList();
+    });
+    strip.append(b);
   }
 }
+
+function subLine(e) {
+  const kind = e.kind === "aktie" ? `Aktie ${MARKET_LABEL[e.market] || ""}`.trim() : KIND_LABEL[e.kind] || "";
+  const timing = e.kind === "krypto" ? "live im Chart" : e.delay_minutes ? `${e.delay_minutes} Min verzögert` : "nahezu Echtzeit";
+  return `${kind}, ${timing}`;
+}
+
+function renderList() {
+  const list = $("market-list");
+  const hint = $("list-hint");
+  list.replaceChildren();
+  const all = state.index.instruments;
+  const q = norm($("search").value.trim());
+  let items;
+  if (q) {
+    items = all.filter((e) => norm(`${e.name} ${e.id}`).includes(q));
+    hint.textContent = items.length ? `${items.length} Treffer in allen Bereichen` : `Kein Wert passt zu „${$("search").value.trim()}“. Versuche den Firmennamen oder das Börsenkürzel.`;
+  } else {
+    const filter = FILTERS.find((f) => f.key === filterKey) || FILTERS[1];
+    items = all.filter(filter.test);
+    if (filter.key === "fav") {
+      items.sort((a, b) => favs.indexOf(a.id) - favs.indexOf(b.id));
+      hint.textContent = items.length ? "" : "Noch keine Favoriten. Tippe unter „Alle“ auf den Stern neben einem Wert, um ihn hier zu sammeln.";
+    } else {
+      hint.textContent = "";
+    }
+  }
+  const grouped = !q && filterKey === "all";
+  if (grouped) {
+    for (const [title, test] of GROUPS) {
+      const group = items.filter(test);
+      if (!group.length) continue;
+      const h = document.createElement("h3");
+      h.className = "group-title";
+      h.textContent = title;
+      list.append(h, ...group.map(rowFor));
+    }
+  } else {
+    list.append(...items.map(rowFor));
+  }
+}
+
+function rowFor(e) {
+  const item = document.createElement("div");
+  item.className = "item";
+  const row = document.createElement("button");
+  row.type = "button";
+  row.className = "row";
+  row.innerHTML = `<span class="name"></span><span class="px"></span><span class="sub"></span><span class="chg"></span>`;
+  row.querySelector(".name").textContent = e.name;
+  row.querySelector(".px").textContent = fmtPrice(e.last, unitOf(e));
+  row.querySelector(".sub").textContent = subLine(e);
+  const chg = row.querySelector(".chg");
+  chg.textContent = e.change_1d == null ? "" : `${fmtPct(e.change_1d)} heute`;
+  chg.classList.add(trendClass(e.change_1d));
+  row.addEventListener("click", () => openChart(e));
+  item.append(row, starButton(e.id, () => { if (filterKey === "fav" && !$("search").value) renderList(); }));
+  return item;
+}
+
+function starButton(id, onChange) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "star";
+  paintStar(b, id);
+  b.addEventListener("click", () => { toggleFav(id); paintStar(b, id); onChange && onChange(); });
+  return b;
+}
+
+function paintStar(b, id) {
+  const on = isFav(id);
+  b.textContent = on ? "★" : "☆";
+  b.setAttribute("aria-pressed", String(on));
+  b.setAttribute("aria-label", on ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen");
+}
+
+$("search").addEventListener("input", () => renderList());
 
 function renderStatus() {
   const s = state.index.status || {};
@@ -196,12 +307,19 @@ document.querySelectorAll(".tabbar button").forEach((b) =>
     stopLive();
     $("view-chart").hidden = true;
     for (const [tab, id] of Object.entries(TABS)) $(id).hidden = tab !== b.dataset.tab;
+    if (b.dataset.tab === "markets") renderList();
   }),
 );
 $("back-btn").addEventListener("click", () => {
   stopLive();
   $("view-chart").hidden = true;
   $("view-markets").hidden = false;
+  renderList();
+});
+$("q-star").addEventListener("click", () => {
+  if (!state.entry) return;
+  toggleFav(state.entry.id);
+  paintStar($("q-star"), state.entry.id);
 });
 $("logout").addEventListener("click", () => {
   try { localStorage.removeItem(KEY_STORE); } catch {}
@@ -214,6 +332,7 @@ async function openChart(entry) {
   $("view-markets").hidden = true;
   $("view-chart").hidden = false;
   $("q-name").textContent = entry.name;
+  paintStar($("q-star"), entry.id);
   $("q-price").textContent = fmtPrice(entry.last, unitOf(entry));
   $("q-change").textContent = "";
   $("q-meta").textContent = "Lade Kursverlauf …";

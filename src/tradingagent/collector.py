@@ -85,15 +85,18 @@ def _last_session_close(market: str, now: pd.Timestamp) -> pd.Timestamp | None:
     return None
 
 
-def _should_skip(storage: Storage, inst: Instrument, interval: str, cfg: MarketConfig, now: pd.Timestamp) -> str | None:
-    """Außerhalb der Handelszeit nach dem letzten erfolgreichen Abruf nicht erneut fragen."""
+def _should_skip(storage: Storage, inst: Instrument, interval: str, cfg: MarketConfig, now: pd.Timestamp,
+                 min_refresh: int = 0) -> str | None:
+    """Abruf auslassen, wenn er gerade nichts Neues bringen kann."""
+    last_fetch = storage.get_meta(f"fetched:{inst.id}:{interval}")
+    if last_fetch and min_refresh and now - pd.Timestamp(last_fetch) < pd.Timedelta(minutes=min_refresh):
+        return "kürzlich abgerufen"
     session = session_for(inst.market)
     if session.open is None or interval == "1d":
         return None
     ref = now - pd.Timedelta(minutes=cfg.delay_minutes)
     if session.is_open(ref) or session.is_open(now):
         return None
-    last_fetch = storage.get_meta(f"fetched:{inst.id}:{interval}")
     close = _last_session_close(inst.market, now)
     if last_fetch and close is not None:
         if pd.Timestamp(last_fetch) >= close + pd.Timedelta(minutes=cfg.delay_minutes + 15):
@@ -101,46 +104,90 @@ def _should_skip(storage: Storage, inst: Instrument, interval: str, cfg: MarketC
     return None
 
 
+@dataclass
+class Job:
+    inst: Instrument
+    interval: str
+    cfg: MarketConfig
+    chain: list[str]
+    start: pd.Timestamp | None = None
+    last: pd.Timestamp | None = None
+    full_refresh: bool = False
+    skip: str | None = None
+
+
+def _plan(settings: Settings, storage: Storage, inst: Instrument, interval: str, cfg: MarketConfig,
+          now: pd.Timestamp) -> Job:
+    chain = cfg.daily_providers if interval == "1d" else cfg.providers
+    job = Job(inst, interval, cfg, chain)
+    full_refresh = False
+    if interval == "1d":
+        last_refresh = storage.get_meta(f"daily_refresh:{inst.id}")
+        full_refresh = last_refresh is None or now - pd.Timestamp(last_refresh) > timedelta(days=settings.daily_full_refresh_days)
+    if not full_refresh:
+        job.skip = _should_skip(storage, inst, interval, cfg, now, settings.min_refresh_minutes.get(interval, 0))
+        if job.skip:
+            return job
+    step = interval_delta(interval)
+    job.last = storage.last_ts(inst.id, interval)
+    job.full_refresh = full_refresh
+    if job.last is None or full_refresh:
+        job.start = now - timedelta(days=settings.backfill_days.get(interval, 30))
+    else:
+        job.start = job.last - step * settings.overlap_bars
+    return job
+
+
+def _prefetch(jobs: list[Job], providers: dict[str, MarketDataProvider], now: pd.Timestamp) -> None:
+    """Werte, deren erste Quelle Bündelabrufe kann (Yahoo), gemeinsam holen."""
+    groups: dict[tuple[str, str, bool], list[Job]] = {}
+    for job in jobs:
+        if job.skip or not job.chain:
+            continue
+        name = job.chain[0]
+        provider = providers.get(name)
+        if provider is None or not hasattr(provider, "prefetch") or job.inst.symbol_for(name) is None:
+            continue
+        backfill = job.last is None or job.full_refresh
+        groups.setdefault((name, job.interval, backfill), []).append(job)
+    for (name, interval, _), group in groups.items():
+        start = min(j.start for j in group)
+        providers[name].prefetch([j.inst.symbol_for(name) for j in group], interval, start, now)
+
+
 def collect(settings: Settings, storage: Storage, providers: dict[str, MarketDataProvider],
             now: pd.Timestamp | None = None) -> RunSummary:
     now = (now or pd.Timestamp.now(tz="UTC")).tz_convert("UTC")
     summary = RunSummary(started=now)
 
+    jobs: list[Job] = []
     for market_name, cfg in settings.markets.items():
         if not cfg.enabled:
             continue
         intervals = list(dict.fromkeys([*cfg.intervals, "1d"]))
         for inst in settings.instruments_for(market_name):
             for interval in intervals:
-                summary.logs.append(_collect_one(settings, storage, providers, inst, interval, cfg, now))
+                jobs.append(_plan(settings, storage, inst, interval, cfg, now))
+
+    _prefetch(jobs, providers, now)
+    for job in jobs:
+        summary.logs.append(_run(settings, storage, providers, job, now))
 
     storage.log_run(summary.as_dict())
     return summary
 
 
-def _collect_one(settings: Settings, storage: Storage, providers: dict[str, MarketDataProvider],
-                 inst: Instrument, interval: str, cfg: MarketConfig, now: pd.Timestamp) -> FetchLog:
+def _run(settings: Settings, storage: Storage, providers: dict[str, MarketDataProvider], job: Job,
+         now: pd.Timestamp) -> FetchLog:
+    inst, interval, cfg = job.inst, job.interval, job.cfg
     log = FetchLog(inst.id, interval)
-    skip = _should_skip(storage, inst, interval, cfg, now)
-    if skip:
-        log.skipped = skip
+    if job.skip:
+        log.skipped = job.skip
         return log
 
     step = interval_delta(interval)
-    last = storage.last_ts(inst.id, interval)
-    refresh_key = f"daily_refresh:{inst.id}"
-    full_refresh = False
-    if interval == "1d":
-        last_refresh = storage.get_meta(refresh_key)
-        full_refresh = last_refresh is None or now - pd.Timestamp(last_refresh) > timedelta(days=settings.daily_full_refresh_days)
-
-    if last is None or full_refresh:
-        start = now - timedelta(days=settings.backfill_days.get(interval, 30))
-    else:
-        start = last - step * settings.overlap_bars
-
-    chain = cfg.daily_providers if interval == "1d" else cfg.providers
-    result = fetch_with_fallback(inst, interval, start, now, chain, providers)
+    last, start = job.last, job.start
+    result = fetch_with_fallback(inst, interval, start, now, job.chain, providers)
     log.errors = result.errors
     if result.provider is None:
         return log
@@ -162,6 +209,6 @@ def _collect_one(settings: Settings, storage: Storage, providers: dict[str, Mark
     log.quality = report.as_dict()
 
     storage.set_meta(f"fetched:{inst.id}:{interval}", now.isoformat())
-    if full_refresh:
-        storage.set_meta(refresh_key, now.isoformat())
+    if job.full_refresh:
+        storage.set_meta(f"daily_refresh:{inst.id}", now.isoformat())
     return log

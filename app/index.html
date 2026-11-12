@@ -37,6 +37,12 @@
 
     <!-- Märkte -->
     <section id="view-markets" class="view">
+      <label class="search">
+        <span class="visually-hidden">Wert suchen</span>
+        <input id="search" type="search" placeholder="Suchen, z. B. Apple, SAP oder MSCI" autocomplete="off" enterkeyhint="search">
+      </label>
+      <nav id="filter-strip" class="tf-strip filter-strip" aria-label="Bereich wählen"></nav>
+      <p id="list-hint" class="list-hint"></p>
       <div id="market-list" class="market-list"></div>
     </section>
 
@@ -44,7 +50,10 @@
     <section id="view-chart" class="view" hidden>
       <button class="back" id="back-btn" type="button">Zurück zu Märkte</button>
       <div class="quote">
-        <h2 id="q-name"></h2>
+        <div class="quote-title">
+          <h2 id="q-name"></h2>
+          <button id="q-star" class="star" type="button" aria-pressed="false" aria-label="Zu Favoriten hinzufügen">☆</button>
+        </div>
         <div class="quote-row">
           <span id="q-price" class="price"></span>
           <span id="q-change" class="change"></span>

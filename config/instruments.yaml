@@ -1,53 +1,129 @@
-# Allgemeine Beobachtungsliste. Bitte hier KEINE persönlichen Depotwerte eintragen,
-# wenn das Projekt öffentlich ist: Deine eigenen Positionen gibst du nur in der App
-# auf dem Handy ein.
+# Allgemeine, globale Beobachtungsliste (keine persönlichen Depotwerte!).
+# Deine Favoriten speichert die App nur auf deinem Handy.
 #
-# id       = interner Name
-# market   = crypto | xetra
-# kraken / binance / yahoo = Symbol beim jeweiligen Anbieter
+# Felder: id, name, market (crypto|xetra|europe|us), kind (aktie|etf|index|krypto),
+#         unit (Anzeige-Währung, Standard €), danach Symbole je Anbieter.
+# Werte, die eine Quelle nicht (mehr) kennt, erscheinen im Status der App als Fehler.
 
 instruments:
-  - id: BTC-EUR
-    name: Bitcoin
-    market: crypto
-    kraken: XBTEUR
-    binance: BTCEUR
-    yahoo: BTC-EUR
-  - id: ETH-EUR
-    name: Ethereum
-    market: crypto
-    kraken: ETHEUR
-    binance: ETHEUR
-    yahoo: ETH-EUR
-  - id: SOL-EUR
-    name: Solana
-    market: crypto
-    kraken: SOLEUR
-    binance: SOLEUR
-    yahoo: SOL-EUR
+  # ---------- Indizes ----------
+  - {id: DAX, name: DAX, market: xetra, kind: index, unit: Punkte, yahoo: ^GDAXI}
+  - {id: MDAX, name: MDAX, market: xetra, kind: index, unit: Punkte, yahoo: ^MDAXI}
+  - {id: SX5E, name: Euro Stoxx 50, market: europe, kind: index, unit: Punkte, yahoo: ^STOXX50E}
+  - {id: SPX, name: S&P 500, market: us, kind: index, unit: Punkte, yahoo: ^GSPC}
+  - {id: NDX, name: Nasdaq 100, market: us, kind: index, unit: Punkte, yahoo: ^NDX}
+  - {id: DJI, name: Dow Jones, market: us, kind: index, unit: Punkte, yahoo: ^DJI}
 
-  - id: DAX
-    name: DAX (Index)
-    market: xetra
-    unit: Punkte
-    yahoo: ^GDAXI
-  - id: SAP
-    name: SAP
-    market: xetra
-    yahoo: SAP.DE
-  - id: SIE
-    name: Siemens
-    market: xetra
-    yahoo: SIE.DE
-  - id: ALV
-    name: Allianz
-    market: xetra
-    yahoo: ALV.DE
-  - id: DTE
-    name: Deutsche Telekom
-    market: xetra
-    yahoo: DTE.DE
-  - id: EUNL
-    name: iShares Core MSCI World (ETF)
-    market: xetra
-    yahoo: EUNL.DE
+  # ---------- ETFs und ETCs auf Xetra (in €) ----------
+  - {id: EUNL, name: iShares Core MSCI World, market: xetra, kind: etf, yahoo: EUNL.DE}
+  - {id: XDWD, name: Xtrackers MSCI World, market: xetra, kind: etf, yahoo: XDWD.DE}
+  - {id: VWCE, name: Vanguard FTSE All-World (thesaurierend), market: xetra, kind: etf, yahoo: VWCE.DE}
+  - {id: VGWL, name: Vanguard FTSE All-World (ausschüttend), market: xetra, kind: etf, yahoo: VGWL.DE}
+  - {id: IUSQ, name: iShares MSCI ACWI, market: xetra, kind: etf, yahoo: IUSQ.DE}
+  - {id: IS3N, name: iShares Core MSCI Emerging Markets IMI, market: xetra, kind: etf, yahoo: IS3N.DE}
+  - {id: SXR8, name: iShares Core S&P 500, market: xetra, kind: etf, yahoo: SXR8.DE}
+  - {id: EXXT, name: iShares Nasdaq-100, market: xetra, kind: etf, yahoo: EXXT.DE}
+  - {id: EUNK, name: iShares Core MSCI Europe, market: xetra, kind: etf, yahoo: EUNK.DE}
+  - {id: EXS1, name: iShares Core DAX, market: xetra, kind: etf, yahoo: EXS1.DE}
+  - {id: QDVE, name: iShares S&P 500 Information Technology, market: xetra, kind: etf, yahoo: QDVE.DE}
+  - {id: IQQH, name: iShares Global Clean Energy, market: xetra, kind: etf, yahoo: IQQH.DE}
+  - {id: 4GLD, name: Xetra-Gold (ETC), market: xetra, kind: etf, yahoo: 4GLD.DE}
+
+  # ---------- Deutsche Aktien (Xetra, in €) ----------
+  - {id: ADS, name: adidas, market: xetra, kind: aktie, yahoo: ADS.DE}
+  - {id: AIR, name: Airbus, market: xetra, kind: aktie, yahoo: AIR.DE}
+  - {id: ALV, name: Allianz, market: xetra, kind: aktie, yahoo: ALV.DE}
+  - {id: BAS, name: BASF, market: xetra, kind: aktie, yahoo: BAS.DE}
+  - {id: BAYN, name: Bayer, market: xetra, kind: aktie, yahoo: BAYN.DE}
+  - {id: BEI, name: Beiersdorf, market: xetra, kind: aktie, yahoo: BEI.DE}
+  - {id: BMW, name: BMW, market: xetra, kind: aktie, yahoo: BMW.DE}
+  - {id: BNR, name: Brenntag, market: xetra, kind: aktie, yahoo: BNR.DE}
+  - {id: CBK, name: Commerzbank, market: xetra, kind: aktie, yahoo: CBK.DE}
+  - {id: CON, name: Continental, market: xetra, kind: aktie, yahoo: CON.DE}
+  - {id: DTG, name: Daimler Truck, market: xetra, kind: aktie, yahoo: DTG.DE}
+  - {id: DBK, name: Deutsche Bank, market: xetra, kind: aktie, yahoo: DBK.DE}
+  - {id: DB1, name: Deutsche Börse, market: xetra, kind: aktie, yahoo: DB1.DE}
+  - {id: DHL, name: DHL Group, market: xetra, kind: aktie, yahoo: DHL.DE}
+  - {id: DTE, name: Deutsche Telekom, market: xetra, kind: aktie, yahoo: DTE.DE}
+  - {id: EOAN, name: E.ON, market: xetra, kind: aktie, yahoo: EOAN.DE}
+  - {id: FRE, name: Fresenius, market: xetra, kind: aktie, yahoo: FRE.DE}
+  - {id: FME, name: Fresenius Medical Care, market: xetra, kind: aktie, yahoo: FME.DE}
+  - {id: HNR1, name: Hannover Rück, market: xetra, kind: aktie, yahoo: HNR1.DE}
+  - {id: HEI, name: Heidelberg Materials, market: xetra, kind: aktie, yahoo: HEI.DE}
+  - {id: HEN3, name: Henkel, market: xetra, kind: aktie, yahoo: HEN3.DE}
+  - {id: IFX, name: Infineon, market: xetra, kind: aktie, yahoo: IFX.DE}
+  - {id: MBG, name: Mercedes-Benz Group, market: xetra, kind: aktie, yahoo: MBG.DE}
+  - {id: MRK, name: Merck KGaA, market: xetra, kind: aktie, yahoo: MRK.DE}
+  - {id: MTX, name: MTU Aero Engines, market: xetra, kind: aktie, yahoo: MTX.DE}
+  - {id: MUV2, name: Münchener Rück, market: xetra, kind: aktie, yahoo: MUV2.DE}
+  - {id: P911, name: Porsche AG, market: xetra, kind: aktie, yahoo: P911.DE}
+  - {id: PAH3, name: Porsche SE, market: xetra, kind: aktie, yahoo: PAH3.DE}
+  - {id: QIA, name: Qiagen, market: xetra, kind: aktie, yahoo: QIA.DE}
+  - {id: RHM, name: Rheinmetall, market: xetra, kind: aktie, yahoo: RHM.DE}
+  - {id: RWE, name: RWE, market: xetra, kind: aktie, yahoo: RWE.DE}
+  - {id: SAP, name: SAP, market: xetra, kind: aktie, yahoo: SAP.DE}
+  - {id: SRT3, name: Sartorius, market: xetra, kind: aktie, yahoo: SRT3.DE}
+  - {id: SIE, name: Siemens, market: xetra, kind: aktie, yahoo: SIE.DE}
+  - {id: ENR, name: Siemens Energy, market: xetra, kind: aktie, yahoo: ENR.DE}
+  - {id: SHL, name: Siemens Healthineers, market: xetra, kind: aktie, yahoo: SHL.DE}
+  - {id: SY1, name: Symrise, market: xetra, kind: aktie, yahoo: SY1.DE}
+  - {id: VOW3, name: Volkswagen, market: xetra, kind: aktie, yahoo: VOW3.DE}
+  - {id: VNA, name: Vonovia, market: xetra, kind: aktie, yahoo: VNA.DE}
+  - {id: ZAL, name: Zalando, market: xetra, kind: aktie, yahoo: ZAL.DE}
+
+  # ---------- Europäische Aktien (in €) ----------
+  - {id: ASML, name: ASML, market: europe, kind: aktie, yahoo: ASML.AS}
+  - {id: MC, name: LVMH, market: europe, kind: aktie, yahoo: MC.PA}
+  - {id: OR, name: L'Oréal, market: europe, kind: aktie, yahoo: OR.PA}
+  - {id: TTE, name: TotalEnergies, market: europe, kind: aktie, yahoo: TTE.PA}
+  - {id: SAN, name: Sanofi, market: europe, kind: aktie, yahoo: SAN.PA}
+  - {id: AI, name: Air Liquide, market: europe, kind: aktie, yahoo: AI.PA}
+  - {id: SU, name: Schneider Electric, market: europe, kind: aktie, yahoo: SU.PA}
+  - {id: ITX, name: Inditex, market: europe, kind: aktie, yahoo: ITX.MC}
+
+  # ---------- US-Aktien (in US-Dollar) ----------
+  - {id: AAPL, name: Apple, market: us, kind: aktie, unit: $, yahoo: AAPL}
+  - {id: MSFT, name: Microsoft, market: us, kind: aktie, unit: $, yahoo: MSFT}
+  - {id: NVDA, name: Nvidia, market: us, kind: aktie, unit: $, yahoo: NVDA}
+  - {id: AMZN, name: Amazon, market: us, kind: aktie, unit: $, yahoo: AMZN}
+  - {id: GOOGL, name: Alphabet (Google), market: us, kind: aktie, unit: $, yahoo: GOOGL}
+  - {id: META, name: Meta Platforms, market: us, kind: aktie, unit: $, yahoo: META}
+  - {id: TSLA, name: Tesla, market: us, kind: aktie, unit: $, yahoo: TSLA}
+  - {id: BRK-B, name: Berkshire Hathaway, market: us, kind: aktie, unit: $, yahoo: BRK-B}
+  - {id: AVGO, name: Broadcom, market: us, kind: aktie, unit: $, yahoo: AVGO}
+  - {id: LLY, name: Eli Lilly, market: us, kind: aktie, unit: $, yahoo: LLY}
+  - {id: JPM, name: JPMorgan Chase, market: us, kind: aktie, unit: $, yahoo: JPM}
+  - {id: V, name: Visa, market: us, kind: aktie, unit: $, yahoo: V}
+  - {id: MA, name: Mastercard, market: us, kind: aktie, unit: $, yahoo: MA}
+  - {id: UNH, name: UnitedHealth, market: us, kind: aktie, unit: $, yahoo: UNH}
+  - {id: XOM, name: Exxon Mobil, market: us, kind: aktie, unit: $, yahoo: XOM}
+  - {id: JNJ, name: Johnson & Johnson, market: us, kind: aktie, unit: $, yahoo: JNJ}
+  - {id: PG, name: Procter & Gamble, market: us, kind: aktie, unit: $, yahoo: PG}
+  - {id: KO, name: Coca-Cola, market: us, kind: aktie, unit: $, yahoo: KO}
+  - {id: PEP, name: PepsiCo, market: us, kind: aktie, unit: $, yahoo: PEP}
+  - {id: COST, name: Costco, market: us, kind: aktie, unit: $, yahoo: COST}
+  - {id: WMT, name: Walmart, market: us, kind: aktie, unit: $, yahoo: WMT}
+  - {id: AMD, name: AMD, market: us, kind: aktie, unit: $, yahoo: AMD}
+  - {id: NFLX, name: Netflix, market: us, kind: aktie, unit: $, yahoo: NFLX}
+  - {id: DIS, name: Walt Disney, market: us, kind: aktie, unit: $, yahoo: DIS}
+  - {id: ORCL, name: Oracle, market: us, kind: aktie, unit: $, yahoo: ORCL}
+  - {id: ADBE, name: Adobe, market: us, kind: aktie, unit: $, yahoo: ADBE}
+  - {id: CRM, name: Salesforce, market: us, kind: aktie, unit: $, yahoo: CRM}
+  - {id: INTC, name: Intel, market: us, kind: aktie, unit: $, yahoo: INTC}
+  - {id: BA, name: Boeing, market: us, kind: aktie, unit: $, yahoo: BA}
+  - {id: MCD, name: McDonald's, market: us, kind: aktie, unit: $, yahoo: MCD}
+  - {id: NKE, name: Nike, market: us, kind: aktie, unit: $, yahoo: NKE}
+
+  # ---------- Kryptowährungen (in €) ----------
+  - {id: BTC-EUR, name: Bitcoin, market: crypto, kind: krypto, kraken: XBTEUR, binance: BTCEUR, yahoo: BTC-EUR}
+  - {id: ETH-EUR, name: Ethereum, market: crypto, kind: krypto, kraken: ETHEUR, binance: ETHEUR, yahoo: ETH-EUR}
+  - {id: SOL-EUR, name: Solana, market: crypto, kind: krypto, kraken: SOLEUR, binance: SOLEUR, yahoo: SOL-EUR}
+  - {id: XRP-EUR, name: XRP, market: crypto, kind: krypto, kraken: XRPEUR, binance: XRPEUR, yahoo: XRP-EUR}
+  - {id: ADA-EUR, name: Cardano, market: crypto, kind: krypto, kraken: ADAEUR, binance: ADAEUR, yahoo: ADA-EUR}
+  - {id: DOGE-EUR, name: Dogecoin, market: crypto, kind: krypto, kraken: XDGEUR, binance: DOGEEUR, yahoo: DOGE-EUR}
+  - {id: DOT-EUR, name: Polkadot, market: crypto, kind: krypto, kraken: DOTEUR, binance: DOTEUR, yahoo: DOT-EUR}
+  - {id: LINK-EUR, name: Chainlink, market: crypto, kind: krypto, kraken: LINKEUR, binance: LINKEUR, yahoo: LINK-EUR}
+  - {id: LTC-EUR, name: Litecoin, market: crypto, kind: krypto, kraken: LTCEUR, binance: LTCEUR, yahoo: LTC-EUR}
+  - {id: AVAX-EUR, name: Avalanche, market: crypto, kind: krypto, kraken: AVAXEUR, binance: AVAXEUR, yahoo: AVAX-EUR}
+  - {id: XLM-EUR, name: Stellar, market: crypto, kind: krypto, kraken: XLMEUR, yahoo: XLM-EUR}
+  - {id: BCH-EUR, name: Bitcoin Cash, market: crypto, kind: krypto, kraken: BCHEUR, yahoo: BCH-EUR}
