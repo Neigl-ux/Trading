@@ -146,7 +146,13 @@ def _collect_one(settings: Settings, storage: Storage, providers: dict[str, Mark
         return log
     log.provider = result.provider
 
-    clean, report = check_and_clean(result.frame, inst.id, interval, inst.market)
+    # Sprungprüfung braucht Vorlauf: gespeicherte Historie plus neue Kerzen
+    history = storage.load_bars(inst.id, interval, start - step * 60) if last is not None else None
+    frame = result.frame
+    if history is not None and not history.empty:
+        frame = pd.concat([history[history.index < frame.index.min()], frame]) if not frame.empty else history
+    clean, report = check_and_clean(frame, inst.id, interval, inst.market, jumps_after=last)
+    clean = clean[clean.index >= result.frame.index.min()] if not result.frame.empty else clean
     clean = drop_unclosed(clean, pd.Timedelta(step), now, pd.Timedelta(minutes=cfg.delay_minutes))
     log.new_bars = storage.upsert_bars(inst.id, interval, clean, result.provider)
 

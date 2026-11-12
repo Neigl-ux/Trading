@@ -78,9 +78,13 @@ def test_quality_flags_jump_but_keeps_it(bars):
     df.loc[df.index[60]:, ["open", "high", "low", "close"]] *= 1.5
     df.iloc[60, df.columns.get_loc("open")] = df["close"].iloc[59]
     df.iloc[60, df.columns.get_loc("low")] = df["close"].iloc[59]
-    clean, report = check_and_clean(df, "X", "15m", "crypto")
+    clean, report = check_and_clean(df, "X", "15m", "crypto", jumps_after=df.index[50])
     assert len(clean) == 100
     assert any(i.kind == "kurssprung" for i in report.issues)
+    # alte Sprünge (vor dem letzten Lauf) und Erstbefüllung melden nichts
+    _, old = check_and_clean(df, "X", "15m", "crypto", jumps_after=df.index[70])
+    _, first = check_and_clean(df, "X", "15m", "crypto")
+    assert not any(i.kind == "kurssprung" for i in old.issues + first.issues)
 
 
 def test_gaps_ignore_holidays_but_find_missing_bars(bars):

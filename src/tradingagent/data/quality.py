@@ -64,8 +64,14 @@ _JUMP_THRESHOLD = {
 }
 
 
-def check_and_clean(df: pd.DataFrame, instrument: str, interval: str, market: str) -> tuple[pd.DataFrame, QualityReport]:
-    """Prüft die Struktur der Kerzen und entfernt fehlerhafte Zeilen."""
+def check_and_clean(df: pd.DataFrame, instrument: str, interval: str, market: str,
+                    jumps_after: pd.Timestamp | None = None) -> tuple[pd.DataFrame, QualityReport]:
+    """Prüft die Struktur der Kerzen und entfernt fehlerhafte Zeilen.
+
+    Kurssprünge werden nur für Kerzen nach `jumps_after` gemeldet, damit
+    historische Ereignisse (z. B. Corona-Crash) nicht bei jedem Lauf erneut
+    auftauchen. `None` = beim Erstbefüllen keine Sprungmeldungen.
+    """
     report = QualityReport(instrument, interval, rows_in=len(df))
     if df.empty:
         return df, report
@@ -95,11 +101,13 @@ def check_and_clean(df: pd.DataFrame, instrument: str, interval: str, market: st
     clean["volume"] = clean["volume"].fillna(0.0)
     report.rows_out = len(clean)
 
-    _check_jumps(clean, report, interval, market)
+    if jumps_after is not None:
+        _check_jumps(clean, report, interval, market, jumps_after)
     return clean, report
 
 
-def _check_jumps(df: pd.DataFrame, report: QualityReport, interval: str, market: str) -> None:
+def _check_jumps(df: pd.DataFrame, report: QualityReport, interval: str, market: str,
+                 after: pd.Timestamp) -> None:
     if len(df) < 20:
         return
     kind = "daily" if interval in ("1d", "1w", "2w", "1M") else "intraday"
@@ -110,7 +118,7 @@ def _check_jumps(df: pd.DataFrame, report: QualityReport, interval: str, market:
     if mad == 0 or np.isnan(mad):
         return
     z = (rets - med).abs() / mad
-    jumps = rets[(z > 12) & (rets.abs() > threshold)]
+    jumps = rets[(z > 12) & (rets.abs() > threshold) & (rets.index > after)]
     if len(jumps):
         largest = jumps.abs().idxmax()
         report.add(
