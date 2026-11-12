@@ -14,9 +14,22 @@ const $ = (id) => document.getElementById(id);
 
 // ---------- Formatierung ----------
 const nf = (max) => new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: max });
+// Anzeigewährung: intern ist alles in Euro, auf Wunsch zeigt die App Dollar (Kurs EUR/USD aus dem letzten Lauf)
+const CUR_STORE = "ta.currency";
+let currency = (() => { try { return localStorage.getItem(CUR_STORE) === "$" ? "$" : "€"; } catch { return "€"; } })();
+function usdRate() {
+  const fx = state.index && state.index.instruments.find((e) => e.id === "EURUSD");
+  return fx && fx.last > 0 ? fx.last : null;
+}
+// Faktor für einen Wert mit Einheit unit; null, wenn nichts umzurechnen ist
+function curFactor(unit) {
+  return unit === "€" && currency === "$" && usdRate() ? usdRate() : 1;
+}
+const shownUnit = (unit) => (curFactor(unit) !== 1 ? "$" : unit);
+const numFmt = (x) => (Math.abs(x) >= 1 ? nf(2) : nf(6)).format(x);
 function fmtPrice(x, unit = "€") {
   if (x == null) return "–";
-  return (Math.abs(x) >= 1 ? nf(2) : nf(6)).format(x) + " " + unit;
+  return numFmt(x * curFactor(unit)) + " " + shownUnit(unit);
 }
 const unitOf = (e) => (e && e.unit) || "€";
 function fmtPct(x) {
@@ -286,6 +299,7 @@ function rowFor(e) {
   chg.textContent = e.change_1d == null ? "" : `${fmtPct(e.change_1d)} heute`;
   chg.classList.add(trendClass(e.change_1d));
   row.addEventListener("click", () => openChart(e));
+  item.dataset.id = e.id;
   rowEls.set(e.id, { entry: e, item, px: row.querySelector(".px"), chg, sub: row.querySelector(".sub") });
   item.append(row, starButton(e.id, () => { if (filterKey === "fav" && !$("search").value) renderList(); }));
   return item;
@@ -430,6 +444,11 @@ async function openChart(entry) {
     startCryptoFeed();
   } else {
     priceFromRows();
+    // Listenkurs (Tradegate beim letzten Lauf) ist neuer als die Yahoo-Kerzen: denselben Kurs zeigen
+    if (entry.last != null && entry.last_ts && entry.last_ts >= (asset.asOf || 0)) {
+      asset.price = entry.last;
+      asset.asOf = entry.last_ts;
+    }
     if (rtAvailable(entry) && rtWanted()) startTradegate();
   }
   await selectView(viewKey);
@@ -911,7 +930,7 @@ function ensureChart() {
     handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true, axisDoubleClickReset: true },
     localization: {
       locale: "de-DE",
-      priceFormatter: (p) => nf(Math.abs(p) >= 1 ? 2 : 6).format(p),
+      priceFormatter: (p) => numFmt(p * curFactor(unitOf(state.entry))),
       timeFormatter: (t) => candleLabel(t, state.interval),
     },
   });
@@ -998,7 +1017,8 @@ function renderLegendRow(i) {
   const r = rows[i];
   if (!r) return;
   const el = $("legend");
-  const f = (x) => (Math.abs(x) >= 1 ? nf(2) : nf(6)).format(x);
+  const k = curFactor(unitOf(state.entry));
+  const f = (x) => numFmt(x * k);
   el.querySelector(".lg-date").textContent = candleLabel(shift(r[0]), state.interval);
   el.querySelector(".lg-open").textContent = f(r[1]);
   el.querySelector(".lg-high").textContent = f(r[2]);
@@ -1013,7 +1033,9 @@ function renderLegendRow(i) {
   chg.textContent = formatPct(pct);
   chg.className = "lg-prev " + pctClass(pct);
   const unit = unitOf(state.entry);
-  el.querySelector(".lg-unit").textContent = unit === "€" ? "Werte in €" : `Werte in ${unit}`;
+  el.querySelector(".lg-unit").textContent = k !== 1
+    ? `Werte in $, umgerechnet mit 1 € = ${nf(4).format(k)} $`
+    : `Werte in ${unit}`;
   el.hidden = false;
 }
 
@@ -1025,69 +1047,90 @@ function showLastInLegend() {
 
 
 // ---------- Echtzeit in der Liste ----------
-// Favoriten und Suchtreffer (bei kurzen Listen alle Einträge) werden live
-// aktualisiert: Euro-Werte über Tradegate alle 20 Sekunden, Krypto über Binance.
-const listLive = { timer: null, ws: null, run: 0 };
+// Alle Zeilen, die gerade auf dem Bildschirm stehen, werden live aktualisiert:
+// Euro-Werte über Tradegate alle 15 Sekunden, Krypto über den Binance-Strom.
+// „Heute“ vergleicht mit demselben Vortageskurs wie die 1D-Anzeige im Chart.
+const listLive = { timer: null, ws: null, run: 0, visible: new Set(), observer: null };
+
 function stopListLive() {
   clearInterval(listLive.timer);
   listLive.timer = null;
   listLive.run += 1;
-  if (listLive.ws) { try { listLive.ws.close(); } catch {} listLive.ws = null; }
+  if (listLive.ws) { try { listLive.ws.onclose = null; listLive.ws.close(); } catch {} listLive.ws = null; }
+  if (listLive.observer) { listLive.observer.disconnect(); listLive.observer = null; }
+  listLive.visible.clear();
 }
 
 function startListLive() {
   stopListLive();
   if (!rtWanted() || $("view-markets").hidden || document.hidden) return;
-  const shown = [...rowEls.values()].map((r) => r.entry);
-  const many = shown.length > 20;
-  const pick = (e) => !many || isFav(e.id);
-  const tg = shown.filter((e) => rtAvailable(e) && pick(e)).slice(0, 25);
-  const cr = shown.filter((e) => e.live && e.live.binance && pick(e));
-  if (tg.length) {
-    const run = listLive.run;
-    pollList(tg, run);
-    if (tradegateOpen()) listLive.timer = setInterval(() => pollList(tg, run), 20_000);
+  const run = listLive.run;
+  // sichtbare Zeilen beobachten
+  if ("IntersectionObserver" in window) {
+    listLive.observer = new IntersectionObserver((items) => {
+      for (const it of items) {
+        const id = it.target.dataset.id;
+        if (it.isIntersecting) {
+          if (!listLive.visible.has(id)) {
+            listLive.visible.add(id);
+            const r = rowEls.get(id);
+            if (r && rtAvailable(r.entry) && !isCrypto(r.entry)) pollOne(r.entry, run);
+          }
+        } else listLive.visible.delete(id);
+      }
+    }, { rootMargin: "80px 0px" });
+    for (const r of rowEls.values()) listLive.observer.observe(r.item);
+  } else {
+    for (const id of rowEls.keys()) listLive.visible.add(id);
   }
-  if (cr.length) openCryptoStream(cr);
+  listLive.timer = setInterval(() => pollVisible(run), tradegateOpen() ? 15_000 : 60_000);
+  const crypto = [...rowEls.values()].map((r) => r.entry).filter(isCrypto);
+  if (crypto.length) openCryptoStream(crypto, run);
 }
 
-async function pollList(entries, run) {
+async function pollVisible(run) {
+  const entries = [...listLive.visible].map((id) => rowEls.get(id)).filter(Boolean).map((r) => r.entry)
+    .filter((e) => rtAvailable(e) && !isCrypto(e)).slice(0, 15);
   for (let i = 0; i < entries.length; i += 4) {
     if (run !== listLive.run) return;
-    await Promise.all(entries.slice(i, i + 4).map(async (e) => {
-      try {
-        const q = await fetchQuote(e.isin);
-        if (tradegateOpen()) recordTick(e.id, Date.now() / 1000, q.last);
-        if (run === listLive.run) paintLive(e.id, q.last, q.prevClose ? q.last / q.prevClose - 1 : null, "heute");
-      } catch {}
-    }));
+    await Promise.all(entries.slice(i, i + 4).map((e) => pollOne(e, run)));
   }
 }
 
-function openCryptoStream(entries) {
-  const bySymbol = new Map(entries.map((e) => [e.live.binance.toUpperCase(), e.id]));
-  const streams = [...bySymbol.keys()].map((s) => `${s.toLowerCase()}@miniTicker`).join("/");
+async function pollOne(e, run) {
   try {
-    const ws = new WebSocket(`wss://stream.binance.com:443/stream?streams=${streams}`);
-    ws.onmessage = (msg) => {
-      const d = JSON.parse(msg.data).data;
-      const id = d && bySymbol.get(d.s);
-      if (!id) return;
-      const close = +d.c, open = +d.o;
-      paintLive(id, close, open ? close / open - 1 : null, "24 Std");
-    };
-    listLive.ws = ws;
+    const q = await fetchQuote(e.isin);
+    if (tradegateOpen()) recordTick(e.id, Date.now() / 1000, q.last);
+    if (run === listLive.run) paintLive(e.id, q.last);
   } catch {}
 }
 
-function paintLive(id, price, change, label) {
+function openCryptoStream(entries, run) {
+  const bySymbol = new Map(entries.map((e) => [e.live.binance.toUpperCase(), e.id]));
+  const streams = [...bySymbol.keys()].map((s) => `${s.toLowerCase()}@miniTicker`).join("/");
+  let ws;
+  try { ws = new WebSocket(`wss://stream.binance.com:443/stream?streams=${streams}`); } catch { return; }
+  ws.onmessage = (msg) => {
+    let d;
+    try { d = JSON.parse(msg.data).data; } catch { return; }
+    const id = d && bySymbol.get(d.s);
+    if (id) paintLive(id, +d.c);
+  };
+  // bei Abbruch nach 3 Sekunden neu verbinden, solange die Liste offen ist
+  ws.onclose = () => { if (run === listLive.run) setTimeout(() => { if (run === listLive.run) openCryptoStream(entries, run); }, 3000); };
+  listLive.ws = ws;
+}
+
+function paintLive(id, price) {
   const r = rowEls.get(id);
   if (!r || price == null) return;
-  r.px.textContent = fmtPrice(price, unitOf(r.entry));
-  r.chg.textContent = change == null ? "" : `${fmtPct(change)} ${label}`;
+  const e = r.entry;
+  const change = e.prev_close ? price / e.prev_close - 1 : null;
+  r.px.textContent = fmtPrice(price, unitOf(e));
+  r.chg.textContent = change == null ? "" : `${fmtPct(change)} heute`;
   r.chg.className = "chg " + trendClass(change);
   r.item.classList.add("is-live");
-  r.sub.textContent = `${subLine(r.entry).split(",")[0]}, live`;
+  r.sub.textContent = `${subLine(e).split(",")[0]}, live`;
 }
 
 
@@ -1107,3 +1150,25 @@ function resumeAsset() {
 }
 
 boot();
+
+// ---------- Währung umschalten ----------
+function paintCurrency() {
+  for (const b of document.querySelectorAll(".cur-toggle button")) b.setAttribute("aria-pressed", String(b.dataset.cur === currency));
+}
+function setCurrency(cur) {
+  if (cur === currency) return;
+  if (cur === "$" && !usdRate()) { $("list-hint").textContent = "Der Dollarkurs ist gerade nicht verfügbar. Die Werte bleiben in Euro."; return; }
+  currency = cur;
+  try { localStorage.setItem(CUR_STORE, cur); } catch {}
+  paintCurrency();
+  if (state.index) renderList();
+  if (state.entry && !$("view-chart").hidden) {
+    try {
+      updateHeader(); updatePerf(); updateMeta();
+      if (state.chart) state.chart.applyOptions({ localization: { priceFormatter: (p) => numFmt(p * curFactor(unitOf(state.entry))) } });
+      if (state.rows.length) renderLegendRow(state.rows.length - 1);
+    } catch (err) { console.warn(err); }
+  }
+}
+for (const b of document.querySelectorAll(".cur-toggle button")) b.addEventListener("click", () => setCurrency(b.dataset.cur));
+paintCurrency();

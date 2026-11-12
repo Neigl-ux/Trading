@@ -19,6 +19,7 @@ from .collector import collect
 from .config import ROOT, load_settings
 from .data.providers import build_providers
 from .export import export_all
+from .quotes import fetch_quotes
 from .storage import open_storage
 
 
@@ -39,7 +40,9 @@ def cmd_collect(args) -> int:
     for e in s["errors"]:
         print(f"  FEHLER {e['instrument']} {e['interval']}: {'; '.join(e['errors'])}")
     if not args.no_export:
-        export_all(settings, storage, summary.started, status=s, passphrase=_passphrase())
+        quotes, q_errors = fetch_quotes(settings)
+        print(f"Tradegate: {len(quotes)} aktuelle Kurse" + (f", {len(q_errors)} Fehler" if q_errors else ""))
+        export_all(settings, storage, summary.started, status=s, passphrase=_passphrase(), quotes=quotes)
         print(f"Export nach {settings.export_dir}")
     storage.close()
     return 1 if summary.all_failed else 0

@@ -152,3 +152,33 @@ def test_to_eur_uses_rate_at_candle_time():
     assert eur2["close"].iloc[0] == pytest.approx(110.0)
     with pytest.raises(ValueError):
         to_eur(usd, pd.DataFrame(), pd.DataFrame())
+
+
+def test_quotes_number_parsing_and_session():
+    from tradingagent.quotes import last_session_end, parse_number, tradegate_open
+    assert parse_number("1 371,80") == 1371.8 and parse_number(212.75) == 212.75 and parse_number("-") is None
+    sat = pd.Timestamp("2026-11-14 12:00", tz="UTC")
+    assert not tradegate_open(sat)
+    assert last_session_end(sat) == pd.Timestamp("2026-11-13 22:00", tz="Europe/Berlin").tz_convert("UTC")
+    assert tradegate_open(pd.Timestamp("2026-11-12 19:36", tz="UTC"))
+
+
+def test_summary_uses_tradegate_and_day_reference(settings):
+    from tradingagent.export import _Loader, _summary
+    from tradingagent.quotes import Quote
+    from tradingagent.config import Instrument
+    storage = SQLiteStorage(":memory:")
+    # Xetra-Kerzen: gestern Schluss 200, heute bis 17:30 Schluss 208,30
+    y = pd.date_range("2026-11-11 08:00", "2026-11-11 16:25", freq="5min", tz="UTC")
+    t = pd.date_range("2026-11-12 08:00", "2026-11-12 16:25", freq="5min", tz="UTC")
+    df = pd.DataFrame({"open": 1.0, "high": 300.0, "low": 1.0, "close": 205.0, "volume": 1.0}, index=y.append(t))
+    df.loc[y[-1], "close"] = 200.0
+    df.loc[t[-1], "close"] = 208.30
+    storage.upsert_bars("AIR", "5m", df, "yahoo")
+    inst = Instrument("AIR", "Airbus", "xetra", {"yahoo": "AIR.DE"}, isin="NL0000235190")
+    now = pd.Timestamp("2026-11-12 19:36", tz="UTC")
+    plain = _summary(_Loader(storage, inst), now)
+    assert plain["last"] == 208.3 and plain["prev_close"] == 200.0
+    live = _summary(_Loader(storage, inst), now, Quote(206.85, now))
+    assert live["last"] == 206.85 and live["last_source"] == "tradegate"
+    assert live["change_1d"] == pytest.approx(206.85 / 200 - 1)

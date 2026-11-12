@@ -178,3 +178,12 @@ main { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
 .small { color: var(--mute); font-size: .9rem; max-width: 60ch; }
 
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+/* Währungsumschalter € / $ */
+.list-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+.list-tools .rt-toggle { margin-top: 0; }
+.cur-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; flex: none; }
+.cur-toggle button { min-width: 44px; min-height: 34px; padding: 0 12px; border: 0; background: transparent; color: var(--mute); font: inherit; font-weight: 600; cursor: pointer; }
+.cur-toggle button + button { border-left: 1px solid var(--line); }
+.cur-toggle button[aria-pressed=true] { background: rgba(242, 181, 68, .2); color: var(--mark); }
+.chart-cur { margin-top: 10px; }

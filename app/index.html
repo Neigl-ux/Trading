@@ -41,11 +41,17 @@
         <span class="visually-hidden">Wert suchen</span>
         <input id="search" type="search" placeholder="Suchen, z. B. Apple, SAP oder MSCI" autocomplete="off" enterkeyhint="search">
       </label>
-      <label class="rt-toggle list-rt">
-        <input id="rt-list-switch" type="checkbox" role="switch">
-        <span class="rt-track" aria-hidden="true"></span>
-        <span>Echtzeit für Favoriten und Suchtreffer</span>
-      </label>
+      <div class="list-tools">
+        <label class="rt-toggle list-rt">
+          <input id="rt-list-switch" type="checkbox" role="switch">
+          <span class="rt-track" aria-hidden="true"></span>
+          <span>Echtzeit</span>
+        </label>
+        <div class="cur-toggle" role="group" aria-label="Währung der Anzeige">
+          <button type="button" data-cur="€" aria-pressed="true">€</button>
+          <button type="button" data-cur="$" aria-pressed="false">$</button>
+        </div>
+      </div>
       <nav id="filter-strip" class="tf-strip filter-strip" aria-label="Bereich wählen"></nav>
       <p id="list-hint" class="list-hint"></p>
       <div id="market-list" class="market-list"></div>
@@ -71,6 +77,10 @@
           <span>Echtzeit von Tradegate</span>
         </label>
         <p id="rt-info" class="meta rt-info"></p>
+        <div class="cur-toggle chart-cur" role="group" aria-label="Währung der Anzeige">
+          <button type="button" data-cur="€" aria-pressed="true">€</button>
+          <button type="button" data-cur="$" aria-pressed="false">$</button>
+        </div>
       </div>
       <nav id="tf-strip" class="tf-strip" aria-label="Zeitraum wählen"></nav>
       <div id="legend" class="legend" hidden>

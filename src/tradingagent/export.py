@@ -113,30 +113,64 @@ def build_series(loader: _Loader, now: pd.Timestamp) -> dict[str, list[list[floa
     return series
 
 
-def _summary(loader: _Loader) -> dict[str, Any]:
-    daily = loader.load("1d")
-    intraday = loader.load("15m")
-    last_close = None
-    last_ts = None
-    if not intraday.empty:
-        last_close, last_ts = float(intraday["close"].iloc[-1]), intraday.index[-1] + pd.Timedelta(minutes=15)
-    elif not daily.empty:
-        last_close, last_ts = float(daily["close"].iloc[-1]), daily.index[-1] + pd.Timedelta(days=1)
-    change = None
-    if last_close is not None and len(daily) >= 2:
-        # Vergleich mit dem letzten abgeschlossenen Tagesschluss vor heute
-        ref = daily[daily.index + pd.Timedelta(days=1) <= (last_ts or daily.index[-1])]
-        if len(ref):
-            change = last_close / float(ref["close"].iloc[-1]) - 1
+_REF_ORDER = ("5m", "15m", "1h", "1d")
+_REF_STEP = {"5m": 300, "15m": 900, "1h": 3600, "1d": 86400}
+
+
+def reference_close(loader: _Loader, T: pd.Timestamp) -> float | None:
+    """Schluss der letzten abgeschlossenen Kerze vor T, aus der feinsten Reihe,
+    die bis T reicht. Dieselbe Regel wie in der App (app/perf.js)."""
+    for interval in _REF_ORDER:
+        df = loader.load(interval, T - pd.Timedelta(days=15))
+        if df.empty:
+            continue
+        step = pd.Timedelta(seconds=_REF_STEP[interval])
+        if df.index[-1] + step < T:
+            continue  # Reihe reicht nicht bis T
+        starts = df.index
+        ends = starts + step
+        nxt = starts[1:].append(pd.DatetimeIndex([pd.Timestamp.max.tz_localize("UTC")]))
+        ends = ends.where(ends < nxt, nxt)
+        done = df[ends <= T]
+        if len(done):
+            return float(done["close"].iloc[-1])
+    return None
+
+
+def _summary(loader: _Loader, now: pd.Timestamp, quote=None) -> dict[str, Any]:
+    """Letzter Kurs und Veränderung „heute“ für die Liste.
+
+    Mit Tradegate-Kurs ist der Listenkurs derselbe wie die Echtzeit im Chart.
+    „Heute“ vergleicht mit dem Schluss der letzten Kerze vor Tagesbeginn
+    (deutsche Zeit) des Kurszeitpunkts – wie die 1D-Anzeige im Chart.
+    """
+    last_close, last_ts, source = None, None, None
+    for interval, step in (("5m", 300), ("15m", 900), ("1d", 86400)):
+        df = loader.load(interval, now - pd.Timedelta(days=10))
+        if not df.empty:
+            last_close = float(df["close"].iloc[-1])
+            last_ts = min(df.index[-1] + pd.Timedelta(seconds=step), now)
+            source = "yahoo"
+            break
+    if quote is not None and (last_ts is None or quote.time >= last_ts - pd.Timedelta(hours=12)):
+        last_close, last_ts, source = quote.last, quote.time, "tradegate"
+    prev_close = change = None
+    if last_ts is not None:
+        day_start = last_ts.tz_convert("Europe/Berlin").normalize().tz_convert("UTC")
+        prev_close = reference_close(loader, day_start)
+        if prev_close:
+            change = last_close / prev_close - 1
     return {
         "last": None if last_close is None else _r(last_close),
         "last_ts": None if last_ts is None else int(last_ts.timestamp()),
-        "change_1d": None if change is None else round(change, 5),
+        "last_source": source,
+        "prev_close": None if prev_close is None else _r(prev_close),
+        "change_1d": None if change is None else round(change, 6),
     }
 
 
 def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, status: dict[str, Any],
-               passphrase: str | None) -> Path:
+               passphrase: str | None, quotes: dict | None = None) -> Path:
     """Schreibt alle Dateien für die App. Gibt den Export-Ordner zurück."""
     out_dir = settings.export_dir
     tmp_dir = out_dir.with_name(out_dir.name + ".tmp")
@@ -173,11 +207,11 @@ def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, statu
         loader = _Loader(storage, inst)
         try:
             series = build_series(loader, now)
-            summary = _summary(loader)
+            summary = _summary(loader, now, (quotes or {}).get(inst.id))
         except ValueError:  # noch kein Wechselkurs vorhanden: vorerst in Dollar zeigen
             loader.convert = False
             series = build_series(loader, now)
-            summary = _summary(loader)
+            summary = _summary(loader, now, (quotes or {}).get(inst.id))
         payload = {
             "id": inst.id,
             "name": inst.name,
