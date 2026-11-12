@@ -18,6 +18,7 @@ INTERVALS: dict[str, timedelta] = {
     "30m": timedelta(minutes=30),
     "1h": timedelta(hours=1),
     "4h": timedelta(hours=4),
+    "12h": timedelta(hours=12),
     "1d": timedelta(days=1),
     "1w": timedelta(weeks=1),
     "2w": timedelta(weeks=2),
@@ -30,6 +31,7 @@ STORED_INTERVALS = ("5m", "15m", "1h", "1d")
 DERIVED_FROM: dict[str, str] = {
     "30m": "15m",
     "4h": "1h",
+    "12h": "1h",
     "1w": "1d",
     "2w": "1d",
     "1M": "1d",
@@ -53,21 +55,24 @@ class ChartView:
     lookback: timedelta
 
 
+# Zehn Kerzenlängen (wie im Auftrag) plus fünf lange Zeiträume. Der Zeitraum
+# gibt an, wie viel Historie exportiert wird; die App kann darin zoomen.
 CHART_VIEWS: tuple[ChartView, ...] = (
-    ChartView("1min", "1 Min", "1m", timedelta(hours=6)),
-    ChartView("5min", "5 Min", "5m", timedelta(days=1)),
-    ChartView("15min", "15 Min", "15m", timedelta(days=3)),
-    ChartView("30min", "30 Min", "30m", timedelta(days=7)),
-    ChartView("60min", "60 Min", "1h", timedelta(days=14)),
-    ChartView("1d", "1 Tag", "1d", timedelta(days=92)),
-    ChartView("1w", "1 Woche", "1w", timedelta(days=730)),
-    ChartView("2w", "2 Wochen", "2w", timedelta(days=1461)),
-    ChartView("1mo", "1 Monat", "1M", timedelta(days=3653)),
-    ChartView("6mo", "6 Monate", "1d", timedelta(days=183)),
-    ChartView("12mo", "12 Monate", "1d", timedelta(days=365)),
-    ChartView("3y", "3 Jahre", "1w", timedelta(days=1096)),
-    ChartView("5y", "5 Jahre", "1w", timedelta(days=1826)),
-    ChartView("10y", "10 Jahre", "1M", timedelta(days=3653)),
+    ChartView("1m", "1m", "1m", timedelta(hours=16)),
+    ChartView("5m", "5m", "5m", timedelta(days=5)),
+    ChartView("15m", "15m", "15m", timedelta(days=15)),
+    ChartView("30m", "30m", "30m", timedelta(days=30)),
+    ChartView("1h", "1h", "1h", timedelta(days=60)),
+    ChartView("4h", "4h", "4h", timedelta(days=365)),
+    ChartView("12h", "12h", "12h", timedelta(days=700)),
+    ChartView("1D", "1D", "1d", timedelta(days=1100)),
+    ChartView("1W", "1W", "1w", timedelta(days=3653)),
+    ChartView("1M", "1M", "1M", timedelta(days=3653)),
+    ChartView("6M", "6 Mon", "1d", timedelta(days=183)),
+    ChartView("1J", "1 Jahr", "1d", timedelta(days=365)),
+    ChartView("3J", "3 Jahre", "1w", timedelta(days=1096)),
+    ChartView("5J", "5 Jahre", "1w", timedelta(days=1826)),
+    ChartView("10J", "10 Jahre", "1M", timedelta(days=3653)),
 )
 
 

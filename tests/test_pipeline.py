@@ -65,12 +65,12 @@ def test_collect_store_export_roundtrip(settings):
     payload = open_sealed(PASS, index["kdf"], index)
     ids = [i["id"] for i in payload["instruments"]]
     assert ids == ["BTC-EUR", "SAP"]
-    assert len(payload["views"]) == 14
+    assert len(payload["views"]) == 15
     # Dateinamen verraten das Instrument nicht
     assert "BTC" not in payload["instruments"][0]["file"]
     sym = json.loads((out / payload["instruments"][0]["file"]).read_text())
     data = open_sealed(PASS, index["kdf"], sym)
-    assert set(data["series"]) >= {"5m", "15m", "30m", "1h", "1d", "1w", "2w", "1M"}
+    assert set(data["series"]) >= {"5m", "15m", "30m", "1h", "4h", "12h", "1d", "1w", "1M"}
     assert len(data["series"]["15m"]) > 0 and len(data["series"]["1d"]) > 300
     # Klartext steht nirgends in den Dateien
     raw_all = "".join(p.read_text() for p in out.rglob("*.json"))

@@ -13,6 +13,7 @@ _AGG = {"open": "first", "high": "max", "low": "min", "close": "last", "volume":
 _RULES = {
     "30m": "30min",
     "4h": "4h",
+    "12h": "12h",
     "1w": "W-MON",
     "2w": "2W-MON",
     "1M": "MS",

@@ -119,7 +119,8 @@ main { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
 .quote h2 { font-weight: 500; font-size: 1.05rem; color: var(--mute); margin-bottom: .1em; }
 .quote-row { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
 .price { font: 600 3.4rem/1 var(--figure); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
-.change { font: 500 1.35rem/1 var(--figure); font-variant-numeric: tabular-nums; }
+.change { font: 500 1.2rem/1.2 var(--figure); font-variant-numeric: tabular-nums; }
+.change.flat { color: var(--mute); }
 .meta { color: var(--mute); font-size: .88rem; margin: .5em 0 0; }
 
 /* Der Zeitwahl-Streifen: wie eine Skala, die man unter dem Zeiger durchschiebt */
@@ -140,6 +141,17 @@ main { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
   content: ""; position: absolute; left: 50%; bottom: 0; width: 1px; height: 6px; background: var(--line);
 }
 .tf-strip button[aria-pressed=true] { color: var(--ink); }
+#tf-strip button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 12px 11px; }
+.tf-label { font: 600 1.02rem/1 var(--figure); }
+.tf-pct { font: 500 .8rem/1 var(--figure); font-variant-numeric: tabular-nums; }
+.tf-pct.up { color: var(--up); }
+.tf-pct.down { color: var(--down); }
+.tf-pct.flat { color: var(--mute); }
+.tf-sep { flex: 0 0 1px; align-self: stretch; margin: 8px 4px; background: var(--line); }
+.q-stats { display: flex; gap: 22px; margin: 10px 0 0; flex-wrap: wrap; }
+.q-stats dt { color: var(--mute); font-size: .76rem; }
+.q-stats dd { margin: 0; font: 500 1rem/1.2 var(--figure); font-variant-numeric: tabular-nums; }
+.q-stats:empty { display: none; }
 .tf-strip button[aria-pressed=true]::after { height: 3px; width: 70%; left: 15%; background: var(--mark); }
 .legend { margin-top: 10px; }
 .lg-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 0 8px; font-size: .92rem; }
@@ -149,7 +161,7 @@ main { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
 .chart-type button + button { border-left: 1px solid var(--line); }
 .lg-date { color: var(--ink); font-weight: 500; }
 .lg-unit { color: var(--mute); font-size: .78rem; margin: 4px 0 0; }
-.lg-values { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0; }
+.lg-values { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 10px; margin: 0; }
 .lg-values dt { color: var(--mute); font-size: .78rem; }
 .lg-values dd { margin: 0; font: 500 1.05rem/1.2 var(--figure); font-variant-numeric: tabular-nums; }
 .chart { height: min(54vh, 440px); margin: 6px calc(-1 * var(--pad)) 0; touch-action: pan-y; }

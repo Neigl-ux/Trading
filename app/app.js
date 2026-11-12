@@ -1,11 +1,11 @@
 import { deriveKey, exportKey, importKey, openSealed } from "./crypto.js";
 import { candleLabel, tickLabel } from "./format.js";
 import { fetchQuote, tradegateOpen } from "./tradegate.js";
+import { VIEWS, STEP, TZ as PERF_TZ, computeAll, formatPct, pctClass, periodStart, berlinParts, berlinToUtc } from "./perf.js";
+import { CryptoFeed, binanceKlines, mergeRows } from "./feeds.js";
 
 const KEY_STORE = "ta.key.v1";
 const TZ = "Europe/Berlin";
-const LIVE_INTERVALS = new Set(["1m", "5m", "15m", "30m", "1h"]);
-const SECONDS = { "1m": 60, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600 };
 const MARKET_TITLE = { crypto: "Krypto", xetra: "Deutsche Börse (Xetra)" };
 
 const state = { key: null, raw: null, index: null, entry: null, data: null, viewKey: "1d", interval: "1d", rows: [], hovering: false, chart: null, candles: null, line: null, volume: null, ws: null, timeIndex: new Map() };
@@ -157,9 +157,7 @@ async function refreshIndex() {
       if (!$("view-chart").hidden && state.entry) {
         const fresh = index.instruments.find((e) => e.id === state.entry.id);
         if (fresh) {
-          state.entry = fresh;
-          state.data = await loadInstrument(fresh);
-          selectView(state.viewKey);
+          await reloadExport(fresh);
         }
       }
     }
@@ -371,19 +369,51 @@ $("logout").addEventListener("click", () => {
   location.reload();
 });
 
-// ---------- Chart ----------
+// ---------- Chartansicht ----------
+// Alles läuft live weiter, ohne Tippen und ohne Neuladen:
+//  Krypto:  Binance-WebSocket (Kerzen 1m/1h/1D/1W + gewähltes Intervall + 24-Std-Ticker),
+//           Ersatz Kraken, automatische Wiederverbindung mit Lückenfüllung.
+//  Aktien/ETFs: Tradegate alle 10 Sekunden (Schalter, standardmäßig an),
+//           dazu die gesammelten Yahoo-Kerzen, die alle 5 Minuten nachgeladen werden.
+const VIEW_STORE = "ta.view.v2";
+const VIEW_BY_KEY = Object.fromEntries(VIEWS.map((v) => [v.key, v]));
+let viewKey = (() => { try { const k = localStorage.getItem(VIEW_STORE); return VIEW_BY_KEY[k] ? k : "1D"; } catch { return "1D"; } })();
+const PERF_ORDER = ["1m", "5m", "15m", "30m", "1h", "4h", "12h", "1d", "1w", "1M"];
+
+const asset = {
+  entry: null, gen: 0, src: {}, ticks: [], price: null, asOf: null, stats: null,
+  feed: null, rtTimer: null, rtAbort: null, status: "", source: "",
+};
+let perfQueued = false;
+
+const isCrypto = (e) => Boolean(e && e.live && e.live.binance);
+const krakenPair = (e) => (e.id || "").replace("-", "/");
+
+function closeAsset() {
+  asset.gen += 1;
+  if (asset.feed) asset.feed.stop();
+  asset.feed = null;
+  stopTradegate();
+}
+function stopLive() { closeAsset(); }
+
 async function openChart(entry) {
   stopListLive();
-  state.entry = entry;
+  closeAsset();
+  const gen = asset.gen;
+  state.entry = asset.entry = entry;
+  Object.assign(asset, { src: {}, ticks: isCrypto(entry) ? [] : storedTicks(entry.id), price: null, asOf: null, stats: null, status: "", source: "" });
   $("view-markets").hidden = true;
   $("view-chart").hidden = false;
   $("q-name").textContent = entry.name;
-  $("rt-wrap").hidden = !rtAvailable(entry);
+  $("rt-wrap").hidden = !rtAvailable(entry) || isCrypto(entry);
   $("rt-switch").checked = rtWanted();
   $("rt-list-switch").checked = rtWanted();
   paintStar($("q-star"), entry.id);
   $("q-price").textContent = fmtPrice(entry.last, unitOf(entry));
   $("q-change").textContent = "";
+  $("q-stats").replaceChildren();
+  $("rt-info").textContent = "";
   $("q-meta").textContent = "Lade Kursverlauf …";
   buildStrip();
   try {
@@ -392,21 +422,476 @@ async function openChart(entry) {
     $("q-meta").textContent = "Die Kursdaten konnten nicht geladen werden. Prüfe die Internetverbindung.";
     return;
   }
-  selectView(state.viewKey);
+  if (gen !== asset.gen) return;
+  loadExportSources();
+  if (isCrypto(entry)) {
+    await loadCryptoHistory(gen);
+    if (gen !== asset.gen) return;
+    startCryptoFeed();
+  } else {
+    priceFromRows();
+    if (rtAvailable(entry) && rtWanted()) startTradegate();
+  }
+  await selectView(viewKey);
+  updateHeader();
+}
+
+/** Gesammelte Kerzen aus dem Export als Quellen übernehmen (Binance-Daten haben Vorrang). */
+function loadExportSources() {
+  for (const [interval, rows] of Object.entries(state.data.series || {})) {
+    if (!STEP[interval] || (asset.src[interval] && asset.src[interval].live)) continue;
+    asset.src[interval] = { name: `export-${interval}`, rows: rows.slice(), step: STEP[interval], live: false };
+  }
+}
+
+async function reloadExport(fresh) {
+  state.entry = asset.entry = fresh;
+  state.data = await loadInstrument(fresh);
+  loadExportSources();
+  if (!isCrypto(fresh) && !rtActive()) priceFromRows();
+  showRows();
+  updateHeader();
+  schedulePerf();
+}
+
+async function loadCryptoHistory(gen) {
+  const sym = asset.entry.live.binance;
+  const wanted = ["1m", "1h", "1d", "1w"];
+  const results = await Promise.allSettled(wanted.map((i) => binanceKlines(sym, i, 1000)));
+  if (gen !== asset.gen) return;
+  results.forEach((r, k) => {
+    if (r.status === "fulfilled" && r.value.length) {
+      asset.src[wanted[k]] = { name: `binance-${wanted[k]}`, rows: r.value, step: STEP[wanted[k]], live: true };
+    }
+  });
+  const m1 = asset.src["1m"];
+  if (m1 && m1.live) {
+    const last = m1.rows[m1.rows.length - 1];
+    asset.price = last[4];
+    asset.asOf = Date.now() / 1000;
+  } else {
+    priceFromRows();
+  }
+}
+
+function startCryptoFeed() {
+  const e = asset.entry;
+  const gen = asset.gen;
+  asset.feed = new CryptoFeed({
+    binance: e.live.binance,
+    kraken: krakenPair(e),
+    intervals: feedIntervals(),
+    onKline: (interval, row) => { if (gen === asset.gen) onKline(interval, row); },
+    onTicker: (t) => { if (gen === asset.gen) onTicker(t); },
+    onStatus: (text, source) => { if (gen === asset.gen) { asset.status = text; asset.source = source; updateMeta(); } },
+    onResync: () => { if (gen === asset.gen) resyncCrypto(gen); },
+  });
+  asset.feed.start();
+}
+
+function feedIntervals() {
+  const sel = VIEW_BY_KEY[viewKey].interval;
+  return [...new Set(["1m", "1h", "1d", "1w", sel])];
+}
+
+/** Nach einem Verbindungsabbruch die Lücke per REST schließen. */
+async function resyncCrypto(gen) {
+  const sym = asset.entry.live.binance;
+  for (const i of feedIntervals()) {
+    try {
+      const rows = await binanceKlines(sym, i, 200);
+      if (gen !== asset.gen) return;
+      const src = asset.src[i];
+      if (src) src.rows = mergeRows(src.rows, rows);
+      else asset.src[i] = { name: `binance-${i}`, rows, step: STEP[i], live: true };
+    } catch {}
+  }
+  showRows();
+  schedulePerf();
+}
+
+function onKline(interval, row) {
+  let src = asset.src[interval];
+  if (!src || !src.live) {
+    if (!src) return;
+  }
+  const rows = src.rows;
+  const last = rows[rows.length - 1];
+  if (last && last[0] === row[0]) rows[rows.length - 1] = row;
+  else if (!last || row[0] > last[0]) rows.push(row);
+  else return; // ältere Kerze: ignorieren, keine Doppelten
+  if (interval === state.interval) pushToChart(row);
+  if (interval === "1m" && asset.price == null) { asset.price = row[4]; asset.asOf = Date.now() / 1000; }
+  schedulePerf();
+}
+
+function onTicker(t) {
+  asset.price = t.price;
+  asset.asOf = t.time;
+  asset.stats = { kind: "24h", high: t.high, low: t.low, volume: t.volume };
+  addTick(t.time, t.price);
+  updateHeader();
+  schedulePerf();
+}
+
+function addTick(time, price) {
+  recordTick(asset.entry.id, time, price);
+  asset.ticks = tickStore.get(asset.entry.id) || [];
+}
+
+// Live-Kurse merken (auch aus der Liste), damit 1m bis 1h beim Öffnen schon berechenbar sind.
+// Gespeichert werden die letzten 3 Stunden je Wert, nur auf diesem Gerät.
+const TICK_STORE = "ta.ticks.v1";
+const tickStore = (() => {
+  try { return new Map(Object.entries(JSON.parse(localStorage.getItem(TICK_STORE) || "{}"))); } catch { return new Map(); }
+})();
+let tickSaveQueued = false;
+function recordTick(id, time, price) {
+  if (price == null) return;
+  const ticks = tickStore.get(id) || [];
+  if (ticks.length && ticks[ticks.length - 1][0] >= time) return;
+  ticks.push([Math.round(time), price]);
+  const cutoff = time - 3 * 3600;
+  while (ticks.length && ticks[0][0] < cutoff) ticks.shift();
+  tickStore.set(id, ticks);
+  if (!tickSaveQueued) {
+    tickSaveQueued = true;
+    setTimeout(() => {
+      tickSaveQueued = false;
+      try { localStorage.setItem(TICK_STORE, JSON.stringify(Object.fromEntries(tickStore))); } catch {}
+    }, 5000);
+  }
+}
+function storedTicks(id) {
+  const ticks = tickStore.get(id) || [];
+  const cutoff = Date.now() / 1000 - 3 * 3600;
+  return ticks.filter((t) => t[0] >= cutoff);
+}
+
+/** Ohne Live-Kurs: letzter Schlusskurs der feinsten Reihe, Zeitpunkt = Kerzenende. */
+function priceFromRows() {
+  for (const i of PERF_ORDER) {
+    const s = asset.src[i];
+    if (s && s.rows.length) {
+      const last = s.rows[s.rows.length - 1];
+      asset.price = last[4];
+      asset.asOf = Math.min(last[0] + s.step, Date.now() / 1000);
+      return;
+    }
+  }
+}
+
+function perfSources() {
+  const list = [];
+  if (asset.ticks.length) list.push({ name: "live", ticks: asset.ticks });
+  for (const i of PERF_ORDER) {
+    const s = asset.src[i];
+    if (s && s.rows.length) list.push({ name: s.name, rows: s.rows, step: s.step, closedUntil: s.live ? asset.asOf : undefined });
+  }
+  return list;
+}
+
+function schedulePerf() {
+  if (perfQueued) return;
+  perfQueued = true;
+  setTimeout(() => { perfQueued = false; updatePerf(); }, 300);
+}
+
+let lastPerf = {};
+function updatePerf() {
+  if (asset.price == null || asset.asOf == null) return;
+  lastPerf = computeAll(perfSources(), asset.price, asset.asOf);
+  for (const b of document.querySelectorAll("#tf-strip button")) {
+    const p = lastPerf[b.dataset.key];
+    const span = b.querySelector(".tf-pct");
+    span.textContent = formatPct(p && p.pct);
+    span.className = "tf-pct " + pctClass(p && p.pct);
+    b.title = p && p.ref ? `Vergleich mit ${fmtPrice(p.ref.price, unitOf(asset.entry))} (${fmtTime(p.ref.time, true)} Uhr)` : "Für diesen Zeitraum liegen noch keine passenden Daten vor";
+  }
+  updateHeader();
 }
 
 function buildStrip() {
   const strip = $("tf-strip");
   strip.replaceChildren();
-  for (const v of state.index.views) {
+  for (const v of VIEWS) {
+    if (v.key === "6M") {
+      const sep = document.createElement("span");
+      sep.className = "tf-sep";
+      sep.setAttribute("aria-hidden", "true");
+      strip.append(sep);
+    }
     const b = document.createElement("button");
     b.type = "button";
-    b.textContent = v.label;
     b.dataset.key = v.key;
-    b.setAttribute("aria-pressed", String(v.key === state.viewKey));
+    b.innerHTML = `<span class="tf-label"></span><span class="tf-pct flat">–</span>`;
+    b.querySelector(".tf-label").textContent = v.label;
+    b.setAttribute("aria-pressed", String(v.key === viewKey));
     b.addEventListener("click", () => selectView(v.key));
     strip.append(b);
   }
+}
+
+async function selectView(key) {
+  viewKey = key;
+  try { localStorage.setItem(VIEW_STORE, key); } catch {}
+  const gen = asset.gen;
+  document.querySelectorAll("#tf-strip button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.key === key)));
+  document.querySelector(`#tf-strip button[data-key="${key}"]`)?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+
+  const view = VIEW_BY_KEY[key];
+  let interval = view.interval;
+  let note = "";
+  if (isCrypto(asset.entry)) {
+    if (!asset.src[interval] || !asset.src[interval].live) {
+      try {
+        const rows = await binanceKlines(asset.entry.live.binance, interval, 1000);
+        if (gen !== asset.gen) return;
+        asset.src[interval] = { name: `binance-${interval}`, rows, step: STEP[interval], live: true };
+      } catch {
+        note = "Binance ist gerade nicht erreichbar. Angezeigt werden die zuletzt gesammelten Kerzen.";
+      }
+    }
+    if (asset.feed) asset.feed.setIntervals(feedIntervals());
+  }
+  if (!asset.src[interval] || !asset.src[interval].rows.length) {
+    if (interval === "1m") {
+      interval = "5m";
+      note = "Für Aktien und ETFs gibt es kostenlos keine 1-Minuten-Kerzen. Angezeigt werden 5-Minuten-Kerzen. Die 1m-Veränderung oben entsteht aus den Live-Kursen, sobald eine Minute Echtzeit vorliegt.";
+    }
+  }
+  state.interval = interval;
+  $("chart-note").textContent = note;
+  showRows(view);
+  schedulePerf();
+}
+
+/** Kerzen des gewählten Intervalls in den Chart (vollständig nur beim Wechsel). */
+function showRows(view = VIEW_BY_KEY[viewKey]) {
+  const src = asset.src[state.interval];
+  const rows = src ? src.rows : [];
+  state.rows = rows;
+  if (!rows.length) $("chart-note").textContent = "Für dieses Intervall liegen noch keine Kerzen vor. Die Historie füllt sich mit jedem Lauf.";
+  showLastInLegend();
+  updateMeta();
+  if (!ensureChart()) {
+    $("chart-note").textContent = "Die Chart-Bibliothek konnte nicht geladen werden. Prüfe die Internetverbindung und lade neu.";
+    return;
+  }
+  const intraday = STEP[state.interval] < 86400;
+  state.chart.applyOptions({ timeScale: { timeVisible: intraday, secondsVisible: false } });
+  state.timeIndex = new Map(rows.map((r, i) => [shift(r[0]), i]));
+  state.candles.setData(rows.map(toCandle));
+  state.line.setData(rows.map(toLine));
+  state.volume.setData(rows.map(toVolume));
+  if (rows.length) {
+    const last = rows[rows.length - 1][0];
+    const first = Math.max(rows[0][0], last - view.window);
+    try { state.chart.timeScale().setVisibleRange({ from: shift(first), to: shift(last) }); }
+    catch { state.chart.timeScale().fitContent(); }
+  }
+}
+
+/** Laufende Kerze im Chart aktualisieren, ohne neu zu laden. */
+function pushToChart(row) {
+  if (!state.candles) return;
+  const rows = state.rows;
+  if (!state.timeIndex.has(shift(row[0]))) state.timeIndex.set(shift(row[0]), rows.length - 1);
+  try {
+    state.candles.update(toCandle(row));
+    state.line.update(toLine(row));
+    state.volume.update(toVolume(row));
+  } catch {}
+  if (!state.hovering) showLastInLegend();
+}
+
+const toCandle = (r) => ({ time: shift(r[0]), open: r[1], high: r[2], low: r[3], close: r[4] });
+const toLine = (r) => ({ time: shift(r[0]), value: r[4] });
+const toVolume = (r) => ({ time: shift(r[0]), value: r[5], color: r[4] >= r[1] ? "rgba(60,201,160,.35)" : "rgba(242,112,107,.35)" });
+
+// ---------- Kopfzeile: Kurs, Veränderung heute, Hoch/Tief/Volumen ----------
+function updateHeader() {
+  const e = asset.entry;
+  if (!e || asset.price == null) return;
+  const unit = unitOf(e);
+  $("q-price").textContent = fmtPrice(asset.price, unit);
+  const day = lastPerf["1D"];
+  const ch = $("q-change");
+  if (day && day.ref) {
+    const abs = asset.price - day.ref.price;
+    ch.textContent = `${abs >= 0 ? "+" : "-"}${fmtPrice(Math.abs(abs), unit)} (${formatPct(day.pct)}) heute`;
+    ch.className = "change " + pctClass(day.pct);
+  } else {
+    ch.textContent = "";
+  }
+  const stats = asset.stats || todayStats();
+  const box = $("q-stats");
+  box.replaceChildren();
+  if (!stats) return;
+  const label = stats.kind === "24h" ? ["24 Std Hoch", "24 Std Tief", "24 Std Volumen"] : ["Tageshoch", "Tagestief", "Volumen heute"];
+  const vals = [fmtPrice(stats.high, unit), fmtPrice(stats.low, unit), fmtVolume(stats.volume, stats.volumeUnit)];
+  label.forEach((l, i) => {
+    const d = document.createElement("div");
+    const dt = document.createElement("dt"); dt.textContent = l;
+    const dd = document.createElement("dd"); dd.textContent = stats[["high", "low", "volume"][i]] == null ? "–" : vals[i];
+    d.append(dt, dd);
+    box.append(d);
+  });
+}
+
+/** Tageswerte aus den gesammelten Kerzen (ohne Live-Daten). */
+function todayStats() {
+  const src = asset.src["5m"] || asset.src["15m"];
+  if (!src || !src.rows.length || asset.asOf == null) return null;
+  const start = periodStart({ calendar: "day" }, asset.asOf);
+  const today = src.rows.filter((r) => r[0] >= start);
+  if (!today.length) return null;
+  return {
+    kind: "day",
+    high: Math.max(...today.map((r) => r[2])),
+    low: Math.min(...today.map((r) => r[3])),
+    volume: today.reduce((a, r) => a + r[5], 0),
+  };
+}
+
+function fmtVolume(v, unit = "") {
+  if (v == null) return "–";
+  const n = new Intl.NumberFormat("de-DE", { notation: "compact", maximumFractionDigits: 2 }).format(v);
+  return unit ? `${n} ${unit}` : n;
+}
+
+function updateMeta() {
+  const e = asset.entry;
+  if (!e) return;
+  let text;
+  if (isCrypto(e)) {
+    const src = asset.source === "kraken" ? "Kraken (Ersatz)" : "Binance";
+    text = asset.status === "live" ? `Live über ${src}` : asset.status ? `${src}: ${asset.status}` : `Verbinde mit ${src} …`;
+  } else if (rtActive()) {
+    text = "Live über Tradegate, Kerzenhistorie von Yahoo";
+  } else {
+    text = e.delay_minutes ? `Yahoo Finance, ${e.delay_minutes} Min verzögert` : "Yahoo Finance, Stand letzter Lauf";
+  }
+  if (e.converted_from) text += ", von US-Dollar in Euro umgerechnet";
+  $("q-meta").textContent = text;
+}
+
+// ---------- Echtzeit für Aktien und ETFs (Tradegate) ----------
+const RT_STORE = "ta.realtime.v1";
+const rt = { line: null, failures: 0 };
+// Standard: an. Nur wer ausdrücklich ausschaltet, bekommt verzögerte Kurse.
+function rtWanted() { try { return localStorage.getItem(RT_STORE) !== "0"; } catch { return true; } }
+function rtAvailable(e) { return Boolean(e && e.isin && unitOf(e) === "€"); }
+function rtActive() { return Boolean(asset.rtTimer || asset.rtAbort) && rtAvailable(asset.entry); }
+
+function setRealtime(on) {
+  try { localStorage.setItem(RT_STORE, on ? "1" : "0"); } catch {}
+  $("rt-switch").checked = on;
+  $("rt-list-switch").checked = on;
+}
+$("rt-switch").addEventListener("change", (ev) => {
+  setRealtime(ev.target.checked);
+  if (ev.target.checked) startTradegate();
+  else { stopTradegate(); asset.ticks = []; asset.stats = null; priceFromRows(); updateMeta(); updateHeader(); schedulePerf(); }
+});
+$("rt-list-switch").addEventListener("change", (ev) => {
+  setRealtime(ev.target.checked);
+  if (ev.target.checked) startListLive();
+  else renderList();
+});
+$("rt-list-switch").checked = rtWanted();
+
+function stopTradegate() {
+  clearInterval(asset.rtTimer);
+  asset.rtTimer = null;
+  if (asset.rtAbort) asset.rtAbort.abort();
+  asset.rtAbort = null;
+  if (rt.line && state.candles) { try { state.candles.removePriceLine(rt.line.c); state.line.removePriceLine(rt.line.l); } catch {} }
+  rt.line = null;
+  $("rt-info").textContent = "";
+}
+
+function startTradegate() {
+  stopTradegate();
+  if (!rtAvailable(asset.entry) || isCrypto(asset.entry) || $("view-chart").hidden) return;
+  rt.failures = 0;
+  pollTradegate();
+  // Tradegate aktualisiert alle 10 Sekunden; außerhalb der Handelszeit genügt eine Abfrage pro Minute
+  asset.rtTimer = setInterval(pollTradegate, tradegateOpen() ? 10_000 : 60_000);
+  updateMeta();
+}
+
+async function pollTradegate() {
+  const entry = asset.entry;
+  if (asset.rtAbort) asset.rtAbort.abort();
+  const ctrl = new AbortController();
+  asset.rtAbort = ctrl;
+  try {
+    const q = await fetchQuote(entry.isin, ctrl.signal);
+    if (entry !== asset.entry) return;
+    rt.failures = 0;
+    applyQuote(q);
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    rt.failures += 1;
+    $("rt-info").textContent = "Tradegate liefert gerade keinen Kurs für diesen Wert. Angezeigt werden die verzögerten Daten.";
+    if (rt.failures >= 3) { clearInterval(asset.rtTimer); asset.rtTimer = null; updateMeta(); }
+  } finally {
+    if (asset.rtAbort === ctrl) asset.rtAbort = null;
+  }
+}
+
+function lastTradegateClose(now) {
+  // Ende der letzten Tradegate-Handelszeit (werktags 22:00 Uhr)
+  let d = now;
+  for (let k = 0; k < 8; k++, d -= 86400) {
+    const p = berlinParts(d);
+    if (p.wd <= 5) {
+      const close = berlinToUtc(p.y, p.mo, p.d, 22, 0);
+      if (close <= now) return close;
+    }
+  }
+  return now;
+}
+
+function applyQuote(q) {
+  const unit = unitOf(asset.entry);
+  const now = Date.now() / 1000;
+  const open = tradegateOpen();
+  asset.price = q.last;
+  asset.asOf = open ? now : lastTradegateClose(now);
+  asset.stats = { kind: "day", high: q.high, low: q.low, volume: q.volume, volumeUnit: "Stück" };
+  if (open) addTick(now, q.last);
+  const time = new Intl.DateTimeFormat("de-DE", { timeStyle: "medium", timeZone: TZ }).format(new Date());
+  const spread = q.bid != null && q.ask != null ? `Geld ${fmtPrice(q.bid, unit)}, Brief ${fmtPrice(q.ask, unit)}` : "";
+  $("rt-info").textContent = `Tradegate, Stand ${time} Uhr${spread ? ", " + spread : ""}${open ? "" : " (Börse geschlossen, letzter Kurs)"}`;
+  updateMeta();
+  updateHeader();
+  schedulePerf();
+  if (!state.candles) return;
+  const opts = { price: q.last, color: "#f2b544", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "Live" };
+  if (rt.line) { rt.line.c.applyOptions({ price: q.last }); rt.line.l.applyOptions({ price: q.last }); }
+  else rt.line = { c: state.candles.createPriceLine(opts), l: state.line.createPriceLine(opts) };
+  if (open) updateLiveCandle(q.last, now);
+}
+
+// Die laufende Kerze des gewählten Intervalls wächst mit jedem Live-Kurs.
+function updateLiveCandle(price, now) {
+  const step = STEP[state.interval];
+  const rows = state.rows;
+  if (!step || !rows) return;
+  const last = rows[rows.length - 1];
+  let row;
+  if (last && now < last[0] + step) {
+    row = [last[0], last[1], Math.max(last[2], price), Math.min(last[3], price), price, last[5]];
+    rows[rows.length - 1] = row;
+  } else if (step <= 3600) {
+    const bucket = Math.floor(now / step) * step;
+    if (last && bucket <= last[0]) return;
+    row = [bucket, price, price, price, price, 0];
+    rows.push(row);
+  } else return;
+  pushToChart(row);
 }
 
 function ensureChart() {
@@ -438,13 +923,13 @@ function ensureChart() {
     crosshairMarkerBackgroundColor: c("--mark"), crosshairMarkerBorderColor: c("--night"), crosshairMarkerRadius: 5,
   });
   applyChartType();
-  state.volume = state.chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "", color: "rgba(141,162,191,.35)" });
+  state.volume = state.chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "", color: "rgba(141,162,191,.35)", lastValueVisible: false, priceLineVisible: false });
   state.volume.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
   state.chart.subscribeCrosshairMove((param) => {
     if (touching) return; // Fingersteuerung setzt die Infozeile selbst
-    const row = param.time !== undefined ? rowAtTime(param.time) : null;
-    state.hovering = Boolean(row);
-    if (row) renderLegend(shift(row[0]), row[1], row[2], row[3], row[4]);
+    const i = param.time !== undefined ? state.timeIndex.get(param.time) : undefined;
+    state.hovering = i !== undefined;
+    if (i !== undefined) renderLegendRow(i);
     else showLastInLegend();
   });
   attachTouch(el);
@@ -491,7 +976,7 @@ function attachTouch(el) {
     touching = true;
     state.hovering = true;
     try { state.chart.setCrosshairPosition(row[4], shift(row[0]), activeSeries()); } catch {}
-    renderLegend(shift(row[0]), row[1], row[2], row[3], row[4]);
+    renderLegendRow(i);
   };
   const end = () => {
     if (!touching) return;
@@ -506,159 +991,38 @@ function attachTouch(el) {
   el.addEventListener("touchcancel", end, { passive: true });
 }
 
-async function selectView(key) {
-  state.viewKey = key;
-  stopLive();
-  document.querySelectorAll("#tf-strip button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.key === key)));
-  const active = document.querySelector(`#tf-strip button[data-key="${key}"]`);
-  active?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
 
-  const view = state.index.views.find((v) => v.key === key);
-  const entry = state.entry;
-  let interval = view.interval;
-  let note = "";
-  let rows = null;
-  let source = entry.delay_minutes ? `Yahoo Finance, ${entry.delay_minutes} Min verzögert` : "Yahoo Finance, Stand letzter Lauf";
-  if (entry.converted_from) source += ", von US-Dollar in Euro umgerechnet";
-
-  const binance = entry.live && entry.live.binance;
-  if (binance && LIVE_INTERVALS.has(interval)) {
-    const limit = Math.min(1000, Math.ceil(view.lookback_s / SECONDS[interval]));
-    try {
-      rows = await fetchBinance(binance, interval, limit);
-      source = "Binance, live";
-    } catch {
-      note = "Live-Daten von Binance nicht erreichbar, angezeigt werden die zuletzt gesammelten Kerzen.";
-    }
-  }
-  if (!rows) {
-    if (interval === "1m") {
-      interval = "5m";
-      note = entry.market === "xetra"
-        ? "Für Xetra gibt es kostenlos keine 1-Minuten-Kerzen. Angezeigt werden 5-Minuten-Kerzen."
-        : note || "Angezeigt werden 5-Minuten-Kerzen.";
-    }
-    const all = state.data.series[interval] || [];
-    const end = all.length ? all[all.length - 1][0] : Date.now() / 1000;
-    rows = all.filter((r) => r[0] >= end - view.lookback_s);
-  }
-
-  if (!rows.length) note = "Für diesen Zeitraum liegen noch keine Kerzen vor. Die Historie füllt sich mit jedem Lauf.";
-  state.interval = interval;
-  state.rows = rows;
-  showLastInLegend();
-  updateQuote(rows, SECONDS[interval] !== undefined, source);
-  $("chart-note").textContent = note;
-  if (rtAvailable(entry) && rtWanted()) {
-    startRealtime();
-    if (SECONDS[interval]) $("chart-note").textContent = (note ? note + " " : "") + "Die Kerzen bis vor 15 Minuten kommen von Yahoo, die aktuelle Kerze baut sich aus den Tradegate-Kursen auf.";
-  }
-  if (!ensureChart()) {
-    $("chart-note").textContent = "Die Chart-Bibliothek konnte nicht geladen werden. Prüfe die Internetverbindung und lade neu.";
-    return;
-  }
-  const intraday = SECONDS[interval] !== undefined;
-  state.chart.applyOptions({ timeScale: { timeVisible: intraday, secondsVisible: false } });
-  state.timeIndex = new Map(rows.map((r, i) => [shift(r[0]), i]));
-  state.candles.setData(rows.map(toCandle));
-  state.line.setData(rows.map(toLine));
-  state.volume.setData(rows.map(toVolume));
-  state.chart.timeScale().fitContent();
-
-  if (binance && source === "Binance, live") startLive(binance, interval);
-}
-
-const toCandle = (r) => ({ time: shift(r[0]), open: r[1], high: r[2], low: r[3], close: r[4] });
-const toLine = (r) => ({ time: shift(r[0]), value: r[4] });
-const toVolume = (r) => ({ time: shift(r[0]), value: r[5], color: r[4] >= r[1] ? "rgba(60,201,160,.35)" : "rgba(242,112,107,.35)" });
-
-function updateQuote(rows, intraday, source) {
-  if (!rows.length) { $("q-meta").textContent = `Quelle ${source}`; return; }
-  const first = rows[0][1];
-  const last = rows[rows.length - 1][4];
-  const change = first ? last / first - 1 : null;
-  const when = (sec) => (intraday ? fmtTime(sec, true) + " Uhr" : fmtDate(sec));
-  $("q-price").textContent = fmtPrice(last, unitOf(state.entry));
-  const ch = $("q-change");
-  ch.textContent = change == null ? "" : `${fmtPct(change)} seit ${when(rows[0][0])}`;
-  ch.className = "change " + trendClass(change);
-  $("q-meta").textContent = `Letzte ${intraday ? "Kerze" : "abgeschlossene Kerze"} ${when(rows[rows.length - 1][0])}, Quelle ${source}`;
-}
-
-// Infozeile über dem Chart: Datum und Werte der berührten (oder neuesten) Kerze
-function renderLegend(time, open, high, low, close) {
+// Infozeile über dem Chart: Datum, OHLC, Volumen und Veränderung zur Vorkerze
+function renderLegendRow(i) {
+  const rows = state.rows;
+  const r = rows[i];
+  if (!r) return;
   const el = $("legend");
-  const unit = unitOf(state.entry);
   const f = (x) => (Math.abs(x) >= 1 ? nf(2) : nf(6)).format(x);
-  el.querySelector(".lg-date").textContent = candleLabel(time, state.interval);
-  const vals = { open, high, low, close };
-  for (const k of Object.keys(vals)) el.querySelector(`.lg-${k}`).textContent = f(vals[k]);
+  el.querySelector(".lg-date").textContent = candleLabel(shift(r[0]), state.interval);
+  el.querySelector(".lg-open").textContent = f(r[1]);
+  el.querySelector(".lg-high").textContent = f(r[2]);
+  el.querySelector(".lg-low").textContent = f(r[3]);
+  const close = el.querySelector(".lg-close");
+  close.textContent = f(r[4]);
+  close.className = "lg-close " + trendClass(r[4] - r[1]);
+  el.querySelector(".lg-vol").textContent = fmtVolume(r[5]);
+  const prev = rows[i - 1];
+  const pct = prev && prev[4] ? (r[4] / prev[4] - 1) * 100 : null;
+  const chg = el.querySelector(".lg-prev");
+  chg.textContent = formatPct(pct);
+  chg.className = "lg-prev " + pctClass(pct);
+  const unit = unitOf(state.entry);
   el.querySelector(".lg-unit").textContent = unit === "€" ? "Werte in €" : `Werte in ${unit}`;
-  el.querySelector(".lg-close").className = "lg-close " + trendClass(close - open);
   el.hidden = false;
 }
 
 function showLastInLegend() {
-  const r = state.rows[state.rows.length - 1];
-  if (!r) { $("legend").hidden = true; return; }
-  renderLegend(shift(r[0]), r[1], r[2], r[3], r[4]);
+  const rows = state.rows || [];
+  if (!rows.length) { $("legend").hidden = true; return; }
+  renderLegendRow(rows.length - 1);
 }
 
-async function fetchBinance(symbol, interval, limit) {
-  const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Binance ${res.status}`);
-  const data = await res.json();
-  return data.map((k) => [Math.floor(k[0] / 1000), +k[1], +k[2], +k[3], +k[4], +k[5]]);
-}
-
-function startLive(symbol, interval) {
-  try {
-    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@kline_${interval}`);
-    ws.onmessage = (msg) => {
-      const k = JSON.parse(msg.data).k;
-      if (!k) return;
-      const row = [Math.floor(k.t / 1000), +k.o, +k.h, +k.l, +k.c, +k.v];
-      state.candles.update(toCandle(row));
-      state.line.update(toLine(row));
-      state.volume.update(toVolume(row));
-      const rows = state.rows;
-      if (rows.length && rows[rows.length - 1][0] === row[0]) rows[rows.length - 1] = row;
-      else { rows.push(row); state.timeIndex.set(shift(row[0]), rows.length - 1); }
-      if (!state.hovering) showLastInLegend();
-      $("q-price").textContent = fmtPrice(row[4], unitOf(state.entry));
-    };
-    state.ws = ws;
-  } catch {}
-}
-
-function stopLive() {
-  if (state.ws) { try { state.ws.close(); } catch {} state.ws = null; }
-  stopRealtime();
-}
-
-// ---------- Echtzeit von Tradegate (umschaltbar) ----------
-const RT_STORE = "ta.realtime.v1";
-const rt = { timer: null, abort: null, line: null, failures: 0 };
-function rtWanted() { try { return localStorage.getItem(RT_STORE) === "1"; } catch { return false; } }
-function rtAvailable(e) { return Boolean(e && e.isin && unitOf(e) === "€"); }
-
-function setRealtime(on) {
-  try { localStorage.setItem(RT_STORE, on ? "1" : "0"); } catch {}
-  $("rt-switch").checked = on;
-  $("rt-list-switch").checked = on;
-}
-$("rt-switch").addEventListener("change", (ev) => {
-  setRealtime(ev.target.checked);
-  if (ev.target.checked) startRealtime();
-  else { stopRealtime(); selectView(state.viewKey); }
-});
-$("rt-list-switch").addEventListener("change", (ev) => {
-  setRealtime(ev.target.checked);
-  if (ev.target.checked) startListLive();
-  else renderList();
-});
-$("rt-list-switch").checked = rtWanted();
 
 // ---------- Echtzeit in der Liste ----------
 // Favoriten und Suchtreffer (bei kurzen Listen alle Einträge) werden live
@@ -693,6 +1057,7 @@ async function pollList(entries, run) {
     await Promise.all(entries.slice(i, i + 4).map(async (e) => {
       try {
         const q = await fetchQuote(e.isin);
+        if (tradegateOpen()) recordTick(e.id, Date.now() / 1000, q.last);
         if (run === listLive.run) paintLive(e.id, q.last, q.prevClose ? q.last / q.prevClose - 1 : null, "heute");
       } catch {}
     }));
@@ -703,7 +1068,7 @@ function openCryptoStream(entries) {
   const bySymbol = new Map(entries.map((e) => [e.live.binance.toUpperCase(), e.id]));
   const streams = [...bySymbol.keys()].map((s) => `${s.toLowerCase()}@miniTicker`).join("/");
   try {
-    const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+    const ws = new WebSocket(`wss://stream.binance.com:443/stream?streams=${streams}`);
     ws.onmessage = (msg) => {
       const d = JSON.parse(msg.data).data;
       const id = d && bySymbol.get(d.s);
@@ -725,85 +1090,20 @@ function paintLive(id, price, change, label) {
   r.sub.textContent = `${subLine(r.entry).split(",")[0]}, live`;
 }
 
-function stopRealtime() {
-  clearInterval(rt.timer);
-  rt.timer = null;
-  if (rt.abort) rt.abort.abort();
-  rt.abort = null;
-  if (rt.line && state.candles) { try { state.candles.removePriceLine(rt.line.c); state.line.removePriceLine(rt.line.l); } catch {} }
-  rt.line = null;
-  $("rt-info").textContent = "";
-}
-
-function startRealtime() {
-  stopRealtime();
-  if (!rtAvailable(state.entry) || !rtWanted() || $("view-chart").hidden) return;
-  rt.failures = 0;
-  pollRealtime();
-  if (tradegateOpen()) rt.timer = setInterval(pollRealtime, 10_000); // Tradegate aktualisiert alle 10 Sekunden
-}
-
-async function pollRealtime() {
-  const entry = state.entry;
-  if (rt.abort) rt.abort.abort();
-  rt.abort = new AbortController();
-  try {
-    const q = await fetchQuote(entry.isin, rt.abort.signal);
-    if (entry !== state.entry) return;
-    rt.failures = 0;
-    applyQuote(q);
-  } catch (err) {
-    if (err.name === "AbortError") return;
-    rt.failures += 1;
-    $("rt-info").textContent = "Tradegate liefert gerade keinen Kurs für diesen Wert. Angezeigt werden die verzögerten Daten.";
-    if (rt.failures >= 3) { clearInterval(rt.timer); rt.timer = null; }
-  }
-}
-
-function applyQuote(q) {
-  const unit = unitOf(state.entry);
-  $("q-price").textContent = fmtPrice(q.last, unit);
-  if (q.prevClose) {
-    const change = q.last / q.prevClose - 1;
-    const ch = $("q-change");
-    ch.textContent = `${fmtPct(change)} heute`;
-    ch.className = "change " + trendClass(change);
-  }
-  const time = new Intl.DateTimeFormat("de-DE", { timeStyle: "medium", timeZone: TZ }).format(new Date());
-  const spread = q.bid != null && q.ask != null ? `, Geld ${fmtPrice(q.bid, unit)}, Brief ${fmtPrice(q.ask, unit)}` : "";
-  const closed = tradegateOpen() ? "" : " (Börse geschlossen, letzter Kurs)";
-  $("rt-info").textContent = `Echtzeit Tradegate, Stand ${time} Uhr${spread}${closed}`;
-  if (!state.candles) return;
-  const opts = { price: q.last, color: "#f2b544", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "Live" };
-  if (rt.line) { rt.line.c.applyOptions({ price: q.last }); rt.line.l.applyOptions({ price: q.last }); }
-  else rt.line = { c: state.candles.createPriceLine(opts), l: state.line.createPriceLine(opts) };
-  updateLiveCandle(q.last);
-}
-
-// Bei Minuten- und Stundenansichten wächst die aktuelle Kerze mit jedem Abruf.
-function updateLiveCandle(price) {
-  const step = SECONDS[state.interval];
-  if (!step || !tradegateOpen()) return;
-  const bucket = Math.floor(Date.now() / 1000 / step) * step;
-  const rows = state.rows;
-  const lastRow = rows[rows.length - 1];
-  let row;
-  if (lastRow && lastRow[0] === bucket) {
-    row = [bucket, lastRow[1], Math.max(lastRow[2], price), Math.min(lastRow[3], price), price, lastRow[5]];
-    rows[rows.length - 1] = row;
-  } else if (!lastRow || lastRow[0] < bucket) {
-    row = [bucket, price, price, price, price, 0];
-    rows.push(row);
-    state.timeIndex.set(shift(bucket), rows.length - 1);
-  } else return;
-  try { state.candles.update(toCandle(row)); state.line.update(toLine(row)); } catch {}
-  if (!state.hovering) showLastInLegend();
-}
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && state.index) { refreshIndex(); startListLive(); }
-  if (document.hidden) { stopLive(); stopListLive(); }
-  else if (!$("view-chart").hidden && state.data) selectView(state.viewKey);
+  if (document.hidden) { stopListLive(); pauseAsset(); }
+  else if (!$("view-chart").hidden && asset.entry) resumeAsset();
 });
+
+function pauseAsset() {
+  if (asset.feed) { asset.feed.stop(); asset.paused = true; }
+  if (asset.rtTimer) { stopTradegate(); asset.rtPaused = true; }
+}
+function resumeAsset() {
+  if (asset.paused && isCrypto(asset.entry)) { asset.paused = false; startCryptoFeed(); resyncCrypto(asset.gen); }
+  if (asset.rtPaused) { asset.rtPaused = false; startTradegate(); }
+}
 
 boot();

@@ -10,10 +10,10 @@ from tradingagent.data.sessions import session_for
 from tradingagent.data.timeframes import CHART_VIEWS, export_lookbacks
 
 
-def test_fourteen_chart_views_in_requested_order():
+def test_chart_views_in_requested_order():
     labels = [v.label for v in CHART_VIEWS]
-    assert labels == ["1 Min", "5 Min", "15 Min", "30 Min", "60 Min", "1 Tag", "1 Woche", "2 Wochen",
-                      "1 Monat", "6 Monate", "12 Monate", "3 Jahre", "5 Jahre", "10 Jahre"]
+    assert labels[:10] == ["1m", "5m", "15m", "30m", "1h", "4h", "12h", "1D", "1W", "1M"]
+    assert labels[10:] == ["6 Mon", "1 Jahr", "3 Jahre", "5 Jahre", "10 Jahre"]
 
 
 def test_export_lookbacks_cover_every_view():
