@@ -2486,6 +2486,8 @@ async function renderDashChart() {
     dash.candles = dash.chart.addCandlestickSeries({ upColor: c("--up"), downColor: c("--down"), borderVisible: false, wickUpColor: c("--up"), wickDownColor: c("--down") });
     dash.vol = dash.chart.addHistogramSeries({ priceScaleId: "vol", priceFormat: { type: "volume" }, lastValueVisible: false, priceLineVisible: false });
     dash.chart.priceScale("vol").applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+    // Werte unter Maus oder Finger, ohne den Chart groß zu öffnen
+    attachScrub($("dash-chart"), dash.chart, () => dash.rows, () => dash.candles, (i) => paintDashInfo(i));
   }
   let data;
   try { data = await loadInstrument(e); } catch { return; }
@@ -2506,6 +2508,7 @@ function drawDash(fit = false) {
   const up = css.getPropertyValue("--up-a").trim(), down = css.getPropertyValue("--down-a").trim();
   dash.candles.setData(dash.rows.map((r) => ({ time: shift(r[0]), open: r[1], high: r[2], low: r[3], close: r[4] })));
   dash.vol.setData(dash.rows.map((r) => ({ time: shift(r[0]), value: r[5], color: r[4] >= r[1] ? up : down })));
+  paintDashInfo(null);
   if (fit && dash.rows.length) {
     // genau der gewählte Zeitraum (z. B. 1D = heute), sonst der letzte Zeitraum mit Daten
     const rows = dash.rows;
@@ -3007,28 +3010,31 @@ function renderDonut(rows, cash, total) {
   el.innerHTML = `<svg viewBox="0 0 120 120" class="donut" aria-hidden="true">${arcs}</svg><ul class="donut-legend">${legend}</ul>`;
 }
 
-// Wertentwicklung: Tagesschlusskurse × heutige Stückzahlen (Käufe/Verkäufe der letzten 30 Tage sind nicht bekannt)
+// Wertentwicklung: Tagesschlusskurse × heutige Stückzahlen (Käufe/Verkäufe im Zeitraum sind nicht bekannt)
+const PF_RANGES = [["1W", 7], ["1M", 31], ["3M", 92], ["6M", 183], ["1J", 366], ["3J", 1096], ["Max", 100000]];
+const PF_RANGE_STORE = "ta.pf.range.v1";
+pf.range = (() => { try { return localStorage.getItem(PF_RANGE_STORE) || "1M"; } catch { return "1M"; } })();
+pf.points = [];
+
 async function renderPfHistory(rows, cash) {
   const key = JSON.stringify([rows.map((r) => [r.p.id, r.p.qty]), cash]);
   if (key === pf.histKey && Date.now() - (pf.histAt || 0) < 60_000) return;
   pf.histKey = key;
   pf.histAt = Date.now();
   const withData = rows.filter((r) => r.e);
-  if (!withData.length) { $("pf-chart-note").textContent = ""; if (pf.series) pf.series.setData([]); return; }
-  const since = Date.now() / 1000 - 31 * 86400;
   const byDay = new Map();
   for (const r of withData) {
     let data;
     try { data = await loadInstrument(r.e); } catch { continue; }
-    const daily = ((data.series || {})["1d"] || []).filter((x) => x[0] >= since);
-    for (const x of daily) {
+    for (const x of ((data.series || {})["1d"] || [])) {
       const d = Math.floor(shift(x[0]) / 86400) * 86400;
       const m = byDay.get(d) || new Map();
       m.set(r.e.id, x[4] * r.p.qty);
       byDay.set(d, m);
     }
   }
-  // fehlende Tage eines Werts (z. B. Wochenende bei Aktien) mit dem letzten bekannten Wert füllen
+  // fehlende Tage eines Werts (Wochenende, Feiertag) mit dem letzten bekannten Wert füllen;
+  // gezeigt wird erst ab dem Tag, an dem alle Positionen einen Kurs haben
   const days = [...byDay.keys()].sort((a, b) => a - b);
   const lastVal = new Map();
   const points = [];
@@ -3037,6 +3043,20 @@ async function renderPfHistory(rows, cash) {
     if (lastVal.size < withData.length) continue;
     points.push({ time: d, value: [...lastVal.values()].reduce((a, b) => a + b, 0) + cash });
   }
+  pf.points = points;
+  drawPfHistory();
+}
+
+function drawPfHistory() {
+  const tf = $("pf-tf");
+  tf.replaceChildren(...PF_RANGES.map(([k]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = k;
+    b.setAttribute("aria-pressed", String(k === pf.range));
+    b.addEventListener("click", () => { pf.range = k; try { localStorage.setItem(PF_RANGE_STORE, k); } catch {} drawPfHistory(); });
+    return b;
+  }));
   if (typeof LightweightCharts === "undefined") return;
   if (!pf.chart) {
     const css = getComputedStyle(document.documentElement);
@@ -3046,15 +3066,44 @@ async function renderPfHistory(rows, cash) {
       layout: { background: { color: c("--panel") }, textColor: c("--mute"), fontFamily: "Inter, system-ui, sans-serif" },
       grid: { vertLines: { visible: false }, horzLines: { color: c("--grid") } },
       rightPriceScale: { borderColor: c("--line") },
-      timeScale: { borderColor: c("--line") },
+      timeScale: { borderColor: c("--line"), tickMarkFormatter: (t, type) => tickLabel(t, type) },
+      crosshair: { mode: 1 },
       handleScroll: false, handleScale: false,
-      localization: { locale: "de-DE", priceFormatter: (p) => numFmt(p * curFactor("€")) },
+      localization: { locale: "de-DE", priceFormatter: (p) => numFmt(p * curFactor("€")), timeFormatter: (t) => candleLabel(t, "1d") },
     });
     pf.series = pf.chart.addAreaSeries({ lineColor: "#16c784", topColor: "rgba(22,199,132,.25)", bottomColor: "rgba(22,199,132,0)", lineWidth: 2, priceLineVisible: false });
+    attachScrub($("pf-chart"), pf.chart, () => pf.shown || [], () => pf.series, (i) => paintPfInfo(i), (p) => p.time, (p) => p.value);
   }
-  pf.series.setData(points);
+  const days = (PF_RANGES.find(([k]) => k === pf.range) || PF_RANGES[1])[1];
+  const since = Date.now() / 1000 - days * 86400;
+  pf.shown = pf.points.filter((p) => p.time >= since);
+  const up = pf.shown.length < 2 || pf.shown[pf.shown.length - 1].value >= pf.shown[0].value;
+  pf.series.applyOptions(up
+    ? { lineColor: "#16c784", topColor: "rgba(22,199,132,.25)", bottomColor: "rgba(22,199,132,0)" }
+    : { lineColor: "#ea3943", topColor: "rgba(234,57,67,.22)", bottomColor: "rgba(234,57,67,0)" });
+  pf.series.setData(pf.shown);
   pf.chart.timeScale().fitContent();
-  $("pf-chart-note").textContent = points.length ? "Berechnet mit deinen heutigen Stückzahlen und den Tagesschlusskursen; Käufe und Verkäufe im Zeitraum sind nicht berücksichtigt." : "Für diese Werte liegen noch keine Tageskurse vor.";
+  paintPfInfo(null);
+  $("pf-chart-note").textContent = pf.points.length
+    ? "Berechnet mit deinen heutigen Stückzahlen und den Tagesschlusskursen; Käufe und Verkäufe im Zeitraum sind nicht berücksichtigt."
+    : "Für diese Werte liegen noch keine Tageskurse vor.";
+}
+
+// Ohne Finger/Maus: Veränderung über den ganzen Zeitraum. Darüber: Wert an diesem Tag und Veränderung bis dahin.
+function paintPfInfo(i) {
+  const pts = pf.shown || [];
+  const el = $("pf-info");
+  if (pts.length < 2) { el.textContent = ""; return; }
+  const first = pts[0];
+  const p = i == null ? pts[pts.length - 1] : pts[i];
+  const abs = p.value - first.value, pct = first.value ? p.value / first.value - 1 : null;
+  const when = i == null ? `${pf.range}: ${fmtDate(first.time)} bis heute` : fmtDate(p.time);
+  el.innerHTML = "";
+  const t = document.createElement("span"); t.className = "dc-when"; t.textContent = when;
+  const v = document.createElement("b"); v.textContent = fmtPrice(p.value, "€");
+  const c = document.createElement("span"); c.className = trendClass(abs);
+  c.textContent = `${abs >= 0 ? "+" : "-"}${fmtPrice(Math.abs(abs), "€")} (${pctText(pct)})${i == null ? "" : " seit " + fmtDate(first.time)}`;
+  el.append(t, v, c);
 }
 
 // Hinzufügen
@@ -3141,3 +3190,68 @@ $("sort-sel").addEventListener("change", (ev) => {
   try { localStorage.setItem(SORT_STORE, sortKey); } catch {}
   renderList();
 });
+
+// ---------- Werte unter Maus oder Finger (Startseite, Portfolio) ----------
+// Ein Finger, der waagerecht über den Chart fährt, zeigt die Werte; senkrechtes Wischen scrollt die Seite weiter.
+function attachScrub(el, chart, getRows, getSeries, onShow, timeOf = (r) => shift(r[0]), valueOf = (r) => r[4]) {
+  let touching = false;
+  chart.subscribeCrosshairMove((param) => {
+    if (touching) return;
+    const rows = getRows();
+    if (param.time === undefined || !rows.length) return onShow(null);
+    const i = rows.findIndex((r) => timeOf(r) === param.time);
+    onShow(i >= 0 ? i : null);
+  });
+  const show = (ev) => {
+    const rows = getRows();
+    if (ev.touches.length !== 1 || !rows.length) return;
+    const x = ev.touches[0].clientX - el.getBoundingClientRect().left;
+    const logical = chart.timeScale().coordinateToLogical(x);
+    if (logical === null) return;
+    const i = Math.max(0, Math.min(rows.length - 1, Math.round(logical)));
+    touching = true;
+    try { chart.setCrosshairPosition(valueOf(rows[i]), timeOf(rows[i]), getSeries()); } catch {}
+    onShow(i);
+  };
+  const end = () => {
+    if (!touching) return;
+    touching = false;
+    try { chart.clearCrosshairPosition(); } catch {}
+    onShow(null);
+  };
+  el.addEventListener("touchstart", show, { passive: true });
+  el.addEventListener("touchmove", show, { passive: true });
+  el.addEventListener("touchend", end, { passive: true });
+  el.addEventListener("touchcancel", end, { passive: true });
+}
+
+/** Startseiten-Chart: ohne Berührung Hoch/Tief des Zeitraums, darüber die einzelne Kerze. */
+function paintDashInfo(i) {
+  const rows = dash.rows || [];
+  const el = $("dc-info");
+  const e = dashEntry();
+  if (!rows.length || !e) { el.textContent = ""; return; }
+  const unit = unitOf(e);
+  const f = (x) => (e.kind === "index" ? numFmt(x) : fmtPrice(x, unit));
+  el.innerHTML = "";
+  const add = (cls, text) => { const s = document.createElement("span"); s.className = cls; s.textContent = text; el.append(s); };
+  if (i == null) {
+    const perf = VIEW_BY_KEY[dash.iv].perf;
+    const start = periodStart(perf, rows[rows.length - 1][0] + dash.step);
+    const part = rows.filter((r) => r[0] >= start);
+    if (!part.length) return;
+    add("dc-when", PERIOD_LONG[dash.iv] || dash.iv);
+    add("", `Hoch ${f(Math.max(...part.map((r) => r[2])))}`);
+    add("", `Tief ${f(Math.min(...part.map((r) => r[3])))}`);
+    const chg = part[part.length - 1][4] / part[0][1] - 1;
+    add(trendClass(chg), pctText(chg));
+    return;
+  }
+  const r = rows[i], prev = rows[i - 1];
+  add("dc-when", candleLabel(shift(r[0]), dash.ivUsed || "1h"));
+  add("", `Eröffnung ${f(r[1])}`);
+  add("", `Hoch ${f(r[2])}`);
+  add("", `Tief ${f(r[3])}`);
+  add("", `Schluss ${f(r[4])}`);
+  if (prev && prev[4]) { const c = r[4] / prev[4] - 1; add(trendClass(c), `${pctText(c)} zur Vorkerze`); }
+}

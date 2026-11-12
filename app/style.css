@@ -554,3 +554,9 @@ main { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
   .dash-top, .dash-flop { grid-column: span 6; }
   .dash-screener { grid-column: span 12; }
 }
+
+/* Werte unter Maus/Finger in Startseiten- und Portfolio-Chart */
+.dc-info { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0 0 6px; min-height: 1.4em; font-size: .8rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+.dc-info .dc-when { color: var(--mute); }
+.dc-info b { font-weight: 600; }
+.dash-chart, .pf-chart { touch-action: pan-y; }

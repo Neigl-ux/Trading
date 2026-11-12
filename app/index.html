@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=17">
+  <link rel="stylesheet" href="style.css?v=18">
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
-  <script type="module" src="app.js?v=17"></script>
+  <script type="module" src="app.js?v=18"></script>
 </head>
 <body>
   <!-- Entsperren -->
@@ -55,7 +55,8 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
             </button>
           </header>
-          <nav id="dc-tf" class="dc-tf" aria-label="Kerzenlänge"></nav>
+          <nav id="dc-tf" class="dc-tf" aria-label="Zeitraum"></nav>
+          <p id="dc-info" class="dc-info"></p>
           <div id="dash-chart" class="dash-chart" role="img" aria-label="Kursverlauf"></div>
         </article>
         <article class="card dash-watch">
@@ -232,7 +233,7 @@
         <div class="card kpi"><span class="kpi-label">Gewinn / Verlust</span><span id="pf-gain" class="kpi-value">–</span><span id="pf-gain-sub" class="kpi-sub"></span></div>
       </div>
       <div class="pf-grid">
-        <article class="card pf-history"><header class="card-head"><h3>Wertentwicklung (letzte 30 Tage)</h3></header><div id="pf-chart" class="pf-chart"></div><p id="pf-chart-note" class="small"></p></article>
+        <article class="card pf-history"><header class="card-head"><h3>Wertentwicklung</h3></header><nav id="pf-tf" class="dc-tf" aria-label="Zeitraum"></nav><p id="pf-info" class="dc-info"></p><div id="pf-chart" class="pf-chart"></div><p id="pf-chart-note" class="small"></p></article>
         <article class="card pf-alloc"><header class="card-head"><h3>Verteilung</h3></header><div id="pf-donut" class="pf-donut"></div></article>
       </div>
       <article class="card pf-positions">
