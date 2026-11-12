@@ -67,6 +67,15 @@ _JUMP_THRESHOLD = {
     ("us", "daily"): 0.20,
     ("fx", "intraday"): 0.02,
     ("fx", "daily"): 0.05,
+    ("uk", "intraday"): 0.06,
+    ("uk", "daily"): 0.20,
+    ("japan", "intraday"): 0.06,
+    ("japan", "daily"): 0.20,
+    ("hongkong", "intraday"): 0.06,
+    ("hongkong", "daily"): 0.20,
+    # Terminkontrakte: beim Rollen in den nächsten Kontrakt springt der Kurs
+    ("futures", "intraday"): 0.08,
+    ("futures", "daily"): 0.25,
 }
 
 

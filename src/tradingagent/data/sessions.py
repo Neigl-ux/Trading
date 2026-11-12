@@ -48,9 +48,18 @@ SESSIONS: dict[str, Session] = {
     "us": Session(tz="America/New_York", open=time(9, 30), close=time(16, 0), weekdays_only=True),
     # Devisen: werktags rund um die Uhr (vereinfacht Montag bis Freitag UTC)
     "fx": Session(tz="UTC", open=time(0, 0), close=time(23, 59, 59), weekdays_only=True),
+    # London Stock Exchange: 8:00-16:30 Uhr Londoner Zeit
+    "uk": Session(tz="Europe/London", open=time(8, 0), close=time(16, 30), weekdays_only=True),
+    # Tokio: 9:00-15:30 Uhr (mit Mittagspause, hier vereinfacht durchgehend)
+    "japan": Session(tz="Asia/Tokyo", open=time(9, 0), close=time(15, 30), weekdays_only=True),
+    # Hongkong: 9:30-16:00 Uhr (mit Mittagspause, vereinfacht)
+    "hongkong": Session(tz="Asia/Hong_Kong", open=time(9, 30), close=time(16, 0), weekdays_only=True),
+    # Rohstoff-Terminkontrakte (CME/ICE): werktags nahezu rund um die Uhr, vereinfacht New Yorker Werktage
+    "futures": Session(tz="America/New_York", open=time(0, 0), close=time(23, 59, 59), weekdays_only=True),
 }
 
-MARKET_TZ = {"crypto": "UTC", "xetra": "Europe/Berlin", "europe": "Europe/Berlin", "us": "America/New_York", "fx": "UTC"}
+MARKET_TZ = {"crypto": "UTC", "xetra": "Europe/Berlin", "europe": "Europe/Berlin", "us": "America/New_York", "fx": "UTC",
+             "uk": "Europe/London", "japan": "Asia/Tokyo", "hongkong": "Asia/Hong_Kong", "futures": "America/New_York"}
 
 
 def session_for(market: str) -> Session:

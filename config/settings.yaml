@@ -46,6 +46,32 @@ markets:
     daily_providers: [yahoo]
     # Yahoo zeigt US-Kurse nahezu in Echtzeit
     delay_minutes: 0
+  # Internationale Indizes (nur Kursverlauf, Yahoo 15 Min verzögert)
+  uk:
+    enabled: true
+    providers: [yahoo]
+    intervals: [5m, 15m, 1h]
+    daily_providers: [yahoo]
+    delay_minutes: 15
+  japan:
+    enabled: true
+    providers: [yahoo]
+    intervals: [5m, 15m, 1h]
+    daily_providers: [yahoo]
+    delay_minutes: 15
+  hongkong:
+    enabled: true
+    providers: [yahoo]
+    intervals: [5m, 15m, 1h]
+    daily_providers: [yahoo]
+    delay_minutes: 15
+  # Rohstoffe als Terminkontrakte (CME/ICE über Yahoo, ca. 10 Min verzögert)
+  futures:
+    enabled: true
+    providers: [yahoo]
+    intervals: [5m, 15m, 1h]
+    daily_providers: [yahoo]
+    delay_minutes: 10
 
 history:
   # Wie weit beim ersten Lauf zurückgeladen wird (Grenzen der kostenlosen Quellen beachtet).
