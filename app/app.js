@@ -162,7 +162,7 @@ function updateFreshness() {
   const age = Date.now() / 1000 - state.index.updated;
   const fresh = $("freshness");
   fresh.textContent = `Daten von ${fmtTime(state.index.updated, age > 20 * 3600)} Uhr`;
-  fresh.style.color = age > 45 * 60 ? "var(--mark)" : "";
+  fresh.style.color = age > 45 * 60 ? "var(--warn)" : "";
   fresh.title = age > 45 * 60 ? "Der letzte Sammel-Lauf liegt länger zurück. Prüfe den Status." : "";
 }
 
@@ -386,13 +386,13 @@ function renderStatus() {
 }
 
 // ---------- Tabs ----------
-const TABS = { markets: "view-markets", advisor: "view-advisor", sim: "view-sim", status: "view-status" };
+const TABS = { home: "view-home", markets: "view-markets", advisor: "view-advisor", sim: "view-sim", status: "view-status" };
 // Jeder Wechsel steht im Browserverlauf: Zurück (Handy-Geste oder Pfeil am PC) geht einen Schritt
 // zurück statt die App zu schließen, und Neuladen landet wieder auf derselben Seite.
 const SCROLL_STORE = "ta.scroll";
 history.scrollRestoration = "manual";
 let listScroll = 0;
-const routeNow = () => decodeURIComponent(location.hash.slice(1)) || "markets";
+const routeNow = () => decodeURIComponent(location.hash.slice(1)) || "home";
 function navigate(route, replace = false) {
   const depth = (history.state && history.state.depth) || 0;
   const url = "#" + route.split("/").map(encodeURIComponent).join("/");
@@ -410,24 +410,32 @@ function applyRoute(route) {
       if ($("view-chart").hidden || !state.entry || state.entry.id !== id) showChart(e);
       return;
     }
-    history.replaceState({ route: "markets", app: true, depth: (history.state && history.state.depth) || 0 }, "", "#markets");
-    return showTab("markets");
+    history.replaceState({ route: "home", app: true, depth: (history.state && history.state.depth) || 0 }, "", "#home");
+    return showTab("home");
   }
-  if (tab === "movers" || tab === "screener") return showTab("markets", tab);
-  showTab(TABS[tab] ? tab : "markets");
+  if (tab === "movers" || tab === "screener") return showTab("markets", tab, tab);
+  if (tab === "watch") { setFilterKey("fav"); return showTab("markets", "list", "watch"); }
+  showTab(TABS[tab] ? tab : "home");
 }
 window.addEventListener("popstate", () => applyRoute(routeNow()));
 function setTabActive(tab) {
   document.querySelectorAll(".tabbar button").forEach((x) => x.classList.toggle("active", x.dataset.tab === tab));
 }
-function showTab(tab, sub = "list") {
+function setFilterKey(key) {
+  filterKey = key;
+  try { localStorage.setItem(FILTER_STORE, key); } catch {}
+  $("search").value = "";
+  document.querySelectorAll("#filter-strip button").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.key === key)));
+}
+function showTab(tab, sub = "list", active = tab) {
   const fromChart = !$("view-chart").hidden;
   showSub(tab === "markets" ? sub : "list");
-  setTabActive(tab);
+  setTabActive(active);
   stopLive();
   stopListLive();
   $("view-chart").hidden = true;
   for (const [t, id] of Object.entries(TABS)) $(id).hidden = t !== tab;
+  if (tab === "home") renderDash();
   if (tab === "markets") {
     renderCatBars();
     if (sub === "movers") renderMovers();
@@ -440,7 +448,7 @@ function showTab(tab, sub = "list") {
 }
 document.querySelectorAll(".tabbar button").forEach((b) =>
   b.addEventListener("click", () => {
-    if (routeNow() === b.dataset.tab) return showTab(b.dataset.tab);
+    if (routeNow() === b.dataset.tab) return applyRoute(b.dataset.tab);
     navigate(b.dataset.tab);
   }),
 );
@@ -774,9 +782,21 @@ async function selectView(key) {
 }
 
 /** Kerzen des gewählten Intervalls in den Chart (vollständig nur beim Wechsel). */
+// Der Chart zeigt deutsche Ortszeit. Bei der Zeitumstellung im Herbst gibt es eine Stunde
+// doppelt; zwei Kerzen mit derselben Ortszeit verträgt der Chart nicht. Sie werden zu einer
+// Kerze zusammengefasst (Eröffnung der ersten, Schluss der zweiten, Hoch/Tief/Volumen gemeinsam).
+function mergeSameLocalTime(rows) {
+  for (let i = rows.length - 1; i > 0; i--) {
+    if (shift(rows[i][0]) > shift(rows[i - 1][0])) continue;
+    const a = rows[i - 1], b = rows[i];
+    rows.splice(i - 1, 2, [a[0], a[1], Math.max(a[2], b[2]), Math.min(a[3], b[3]), b[4], (a[5] || 0) + (b[5] || 0)]);
+  }
+  return rows;
+}
+
 function showRows(view = VIEW_BY_KEY[viewKey]) {
   const src = asset.src[state.interval];
-  const rows = src ? src.rows : [];
+  const rows = src ? mergeSameLocalTime(src.rows) : [];
   state.rows = rows;
   if (!rows.length) $("chart-note").textContent = "Für dieses Intervall liegen noch keine Kerzen vor. Die Historie füllt sich mit jedem Lauf.";
   showLastInLegend();
@@ -814,7 +834,7 @@ function pushToChart(row) {
 
 const toCandle = (r) => ({ time: shift(r[0]), open: r[1], high: r[2], low: r[3], close: r[4] });
 const toLine = (r) => ({ time: shift(r[0]), value: r[4] });
-const toVolume = (r) => ({ time: shift(r[0]), value: r[5], color: r[4] >= r[1] ? "rgba(60,201,160,.35)" : "rgba(242,112,107,.35)" });
+const toVolume = (r) => ({ time: shift(r[0]), value: r[5], color: r[4] >= r[1] ? "rgba(22,199,132,.35)" : "rgba(234,57,67,.35)" });
 
 // ---------- Kopfzeile: Kurs, Veränderung heute, Hoch/Tief/Volumen ----------
 function updateHeader() {
@@ -995,7 +1015,7 @@ function applyQuote(q) {
 
 function livePriceLine(price) {
   if (!state.candles) return;
-  const opts = { price, color: "#f2b544", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "Live" };
+  const opts = { price, color: "#3b82f6", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "Live" };
   if (rt.line) { rt.line.c.applyOptions({ price }); rt.line.l.applyOptions({ price }); }
   else rt.line = { c: state.candles.createPriceLine(opts), l: state.line.createPriceLine(opts) };
 }
@@ -1026,8 +1046,8 @@ function ensureChart() {
   const el = $("chart");
   state.chart = LightweightCharts.createChart(el, {
     autoSize: true,
-    layout: { background: { color: c("--night") }, textColor: c("--mute"), fontFamily: "Barlow, system-ui, sans-serif" },
-    grid: { vertLines: { color: "rgba(36,67,106,.45)" }, horzLines: { color: "rgba(36,67,106,.45)" } },
+    layout: { background: { color: c("--panel") }, textColor: c("--mute"), fontFamily: "Inter, system-ui, sans-serif" },
+    grid: { vertLines: { color: c("--grid") }, horzLines: { color: c("--grid") } },
     rightPriceScale: { borderColor: c("--line") },
     timeScale: { borderColor: c("--line"), rightOffset: 3, tickMarkFormatter: (t, type) => tickLabel(t, type) },
     crosshair: { mode: 1 },
@@ -1044,11 +1064,11 @@ function ensureChart() {
     upColor: c("--up"), downColor: c("--down"), borderVisible: false, wickUpColor: c("--up"), wickDownColor: c("--down"),
   });
   state.line = state.chart.addAreaSeries({
-    lineColor: "#cfe0f5", lineWidth: 2, topColor: "rgba(207,224,245,.16)", bottomColor: "rgba(207,224,245,0)",
-    crosshairMarkerBackgroundColor: c("--mark"), crosshairMarkerBorderColor: c("--night"), crosshairMarkerRadius: 5,
+    lineColor: "#3b82f6", lineWidth: 2, topColor: "rgba(59,130,246,.22)", bottomColor: "rgba(59,130,246,0)",
+    crosshairMarkerBackgroundColor: c("--accent"), crosshairMarkerBorderColor: c("--panel"), crosshairMarkerRadius: 5,
   });
   applyChartType();
-  state.volume = state.chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "", color: "rgba(141,162,191,.35)", lastValueVisible: false, priceLineVisible: false });
+  state.volume = state.chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "", color: "rgba(133,146,166,.3)", lastValueVisible: false, priceLineVisible: false });
   state.volume.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
   state.chart.timeScale().subscribeVisibleLogicalRangeChange(syncPan);
   state.chart.subscribeCrosshairMove((param) => {
@@ -1562,7 +1582,8 @@ function paintSub(el, e) {
   const kind = e.kind === "aktie" ? `Aktie ${MARKET_LABEL[e.market] || ""}`.trim() : KIND_LABEL[e.kind] || "";
   const badge = document.createElement("span");
   paintBadge(badge, e);
-  el.replaceChildren(document.createTextNode(`${kind}, ${venueLabel(e)} `), badge);
+  const venue = venueLabel(e);
+  el.replaceChildren(document.createTextNode(venue && venue !== kind ? `${kind}, ${venue} ` : `${kind} `), badge);
 }
 // Kennzeichnung regelmäßig neu bewerten: ein Kurs ohne Nachschub ist nach 90 Sekunden nicht mehr „live“
 setInterval(() => {
@@ -2009,3 +2030,358 @@ for (const [id, dir] of [["pan-left", -1], ["pan-right", 1]]) {
     state.chart.timeScale().setVisibleLogicalRange({ from, to: from + g.width });
   });
 }
+
+// =====================================================================
+// Startseite (Dashboard): nur Darstellung, alle Daten und Funktionen von oben
+// =====================================================================
+const DASH_TICKER = ["SPX", "NDX", "DAX", "BTC-EUR", "ETH-EUR"];
+const DEFAULT_WATCH = ["BTC-EUR", "ETH-EUR", "SOL-EUR", "XRP-EUR", "DOGE-EUR", "TSLA", "AAPL", "NVDA", "MSFT"];
+const DASH_STORE = "ta.dash.v1";
+const OV_TABS = [
+  { key: "index", label: "Indizes", filter: "index" },
+  { key: "aktie", label: "Aktien", filter: "all" },
+  { key: "etf", label: "ETFs", filter: "etf" },
+  { key: "krypto", label: "Krypto", filter: "krypto" },
+  { key: "rohstoff", label: "Rohstoffe", filter: "rohstoff" },
+  { key: "devisen", label: "Forex", filter: "devisen" },
+];
+const DC_INTERVALS = [["5m", "5m"], ["15m", "15m"], ["30m", "30m"], ["1h", "1h"], ["4h", "4h"], ["12h", "12h"], ["1d", "1D"], ["1w", "1W"], ["1M", "1M"]];
+const dash = (() => {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(DASH_STORE) || "{}"); } catch {}
+  return { id: saved.id || "BTC-EUR", iv: saved.iv || "1h", ov: saved.ov || "index", chart: null, candles: null, vol: null, rows: [], gen: 0, queued: false, last: null };
+})();
+const saveDash = () => { try { localStorage.setItem(DASH_STORE, JSON.stringify({ id: dash.id, iv: dash.iv, ov: dash.ov })); } catch {} };
+const homeVisible = () => state.index && !$("view-home").hidden && !$("main").hidden;
+const byId = (id) => state.index.instruments.find((x) => x.id === id);
+const curPriceOf = (e) => { const q = quoteOf(e.id); return q ? q.price : e.last; };
+function pct24(e) {
+  const p = perfOf(e, "24h", livePrice(e));
+  return p ? p.pct : e.change_1d ?? null;
+}
+function shortSym(e) {
+  if (e.kind === "krypto") return e.id.split("-")[0];
+  if (e.kind === "index") return e.id;
+  return (e.ticker || e.id).replace(/^\^/, "").replace(/=.*$/, "").replace(/\.[A-Z]{1,3}$/, "");
+}
+function avatar(e, el = document.createElement("span")) {
+  const sym = shortSym(e);
+  let h = 0;
+  for (const ch of sym) h = (h * 31 + ch.charCodeAt(0)) % 360;
+  el.className = "avatar";
+  el.style.setProperty("--hue", h);
+  el.textContent = sym.slice(0, 2);
+  el.setAttribute("aria-hidden", "true");
+  return el;
+}
+const pctText = (x) => (x == null ? "–" : formatPct(x * 100));
+
+function renderDash() {
+  if (!state.index) return;
+  renderTicker();
+  renderWatch();
+  renderDashMovers();
+  renderDashScreener();
+  renderOverview();
+  renderDashChart();
+  ensureAllLive();
+}
+
+function renderTicker() {
+  const box = $("dash-ticker");
+  box.replaceChildren(...DASH_TICKER.map(byId).filter(Boolean).map((e) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tick-card";
+    const pct = pct24(e);
+    const cls = trendClass(pct);
+    const info = document.createElement("div");
+    info.innerHTML = `<span class="tc-name"></span><span class="tc-price"></span><span class="tc-chg ${cls}"></span>`;
+    info.querySelector(".tc-name").textContent = e.kind === "krypto" ? shortSym(e) : e.name;
+    info.querySelector(".tc-price").textContent = e.kind === "index" ? numFmt(curPriceOf(e)) : priceText(e, curPriceOf(e));
+    info.querySelector(".tc-chg").textContent = pctText(pct);
+    b.append(info, sparkline((e.metrics || {}).spark, cls));
+    b.addEventListener("click", () => setDashAsset(e.id));
+    return b;
+  }));
+}
+
+function renderWatch() {
+  const ids = favs.length ? favs : DEFAULT_WATCH;
+  const rows = ids.map(byId).filter(Boolean).slice(0, 12).map((e) => miniRow(e, () => setDashAsset(e.id)));
+  $("dash-watch").replaceChildren(...rows);
+  if (!rows.length) $("dash-watch").textContent = "Noch keine Favoriten.";
+}
+
+function miniRow(e, onClick, { spark = false } = {}) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "mini-row" + (spark ? " with-spark" : "");
+  const pct = pct24(e);
+  const sym = document.createElement("span");
+  sym.className = "mr-sym";
+  const label = document.createElement("span");
+  label.textContent = spark ? e.name : shortSym(e);
+  sym.append(avatar(e), label);
+  const px = document.createElement("span");
+  px.className = "mr-px";
+  px.textContent = e.kind === "index" ? numFmt(curPriceOf(e)) : priceText(e, curPriceOf(e));
+  const chg = document.createElement("span");
+  chg.className = `mr-chg ${trendClass(pct)}`;
+  chg.textContent = pctText(pct);
+  b.append(sym, px, chg);
+  if (spark) b.append(sparkline((e.metrics || {}).spark, trendClass(pct)));
+  b.addEventListener("click", onClick);
+  return b;
+}
+
+function renderDashMovers() {
+  const res = topFlop(state.index.instruments, { cats, liquidOnly: true, limit: 5, priceOf: livePrice });
+  const fill = (el, rows, empty) => {
+    el.replaceChildren(...rows.map((r, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "rank-mini";
+      const cls = trendClass(r.pct);
+      const n = document.createElement("span");
+      n.className = "rm-n";
+      n.textContent = String(i + 1);
+      const sym = document.createElement("span");
+      sym.className = "mr-sym";
+      const t = document.createElement("span");
+      t.textContent = shortSym(r.e);
+      t.title = r.e.name;
+      sym.append(avatar(r.e), t);
+      const chg = document.createElement("span");
+      chg.className = `mr-chg ${cls}`;
+      chg.textContent = pctText(r.pct);
+      b.append(n, sym, sparkline((r.e.metrics || {}).spark, cls), chg);
+      b.addEventListener("click", () => openChart(r.e));
+      return b;
+    }));
+    if (!rows.length) el.textContent = empty;
+  };
+  fill($("dash-top"), res.top, "Kein Wert im Plus.");
+  fill($("dash-flop"), res.flop, "Kein Wert im Minus.");
+}
+
+// Kurz-Screener: setzt dieselben Filter wie der große Screener
+function dashFilter() {
+  const f = { ...EMPTY_FILTER, window: "24h" };
+  const perf = $("ds-perf").value;
+  if (perf !== "") { if (Number(perf) < 0) f.perfMax = Number(perf); else f.perfMin = Number(perf); }
+  if ($("ds-vol").value !== "") f.turnoverMin = Number($("ds-vol").value);
+  if ($("ds-rsi").value !== "") {
+    const [lo, hi] = $("ds-rsi").value.split(",").map(Number);
+    if (lo > 0) f.rsiMin = lo;
+    if (hi < 100) f.rsiMax = hi;
+  }
+  return f;
+}
+function renderDashScreener() {
+  const box = $("ds-cats");
+  if (!box.dataset.built) {
+    box.dataset.built = "1";
+    for (const c of CATEGORIES) {
+      const l = document.createElement("label");
+      l.className = "check-line";
+      l.innerHTML = `<input type="checkbox" value="${c.key}"> <span></span>`;
+      l.querySelector("span").textContent = c.key === "krypto" ? "Krypto" : c.label;
+      l.querySelector("input").addEventListener("change", (ev) => setCat(c.key, ev.target.checked));
+      box.append(l);
+    }
+    for (const id of ["ds-perf", "ds-vol", "ds-rsi"]) $(id).addEventListener("change", updateDsCount);
+    $("ds-go").addEventListener("click", () => {
+      scr = dashFilter();
+      try { localStorage.setItem(SCR_STORE, JSON.stringify(scr)); } catch {}
+      if ($("screener-form").dataset.built) fillScreenerForm();
+      navigate("screener");
+    });
+    $("ds-reset").addEventListener("click", () => {
+      for (const id of ["ds-perf", "ds-vol", "ds-rsi"]) $(id).value = "";
+      setCat("all", true);
+    });
+    $("ds-saved").addEventListener("change", (ev) => {
+      const f = savedFilters()[ev.target.value];
+      if (!f) return;
+      scr = { ...EMPTY_FILTER, ...f };
+      try { localStorage.setItem(SCR_STORE, JSON.stringify(scr)); } catch {}
+      if ($("screener-form").dataset.built) fillScreenerForm();
+      navigate("screener");
+    });
+  }
+  for (const input of box.querySelectorAll("input")) input.checked = cats.has(input.value);
+  const names = Object.keys(savedFilters()).sort((a, b) => a.localeCompare(b, "de"));
+  const sel = $("ds-saved");
+  sel.replaceChildren(...[names.length ? "Gespeicherte Filter" : "Keine gespeicherten Filter", ...names].map((n, i) => {
+    const o = document.createElement("option");
+    o.value = i === 0 ? "" : n;
+    o.textContent = n;
+    return o;
+  }));
+  sel.disabled = !names.length;
+  updateDsCount();
+}
+function updateDsCount() {
+  const { rows } = screen(state.index.instruments, dashFilter(), { cats, priceOf: livePrice });
+  $("ds-go").textContent = `Suchen (${new Intl.NumberFormat("de-DE").format(rows.length)} Treffer)`;
+}
+
+function renderOverview() {
+  const tabs = $("ov-tabs");
+  if (!tabs.childElementCount) {
+    for (const t of OV_TABS) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.key = t.key;
+      b.textContent = t.label;
+      b.addEventListener("click", () => { dash.ov = t.key; saveDash(); renderOverview(); });
+      tabs.append(b);
+    }
+    $("ov-all").addEventListener("click", () => {
+      const t = OV_TABS.find((x) => x.key === dash.ov) || OV_TABS[0];
+      setFilterKey(t.filter);
+      navigate("markets");
+    });
+  }
+  for (const b of tabs.children) b.setAttribute("aria-pressed", String(b.dataset.key === dash.ov));
+  let items = state.index.instruments.filter((e) => e.kind === dash.ov);
+  // am meisten gehandelte zuerst (Indizes in der Reihenfolge der Liste)
+  if (dash.ov !== "index") items = items.slice().sort((a, b) => ((b.metrics || {}).avg_turnover_20d || 0) - ((a.metrics || {}).avg_turnover_20d || 0));
+  $("ov-list").replaceChildren(...items.slice(0, 8).map((e) => miniRow(e, () => openChart(e), { spark: true })));
+}
+
+// ---------- Chart auf der Startseite ----------
+function setDashAsset(id) {
+  dash.id = id;
+  saveDash();
+  renderDashChart();
+  if (window.innerWidth < 1100) document.querySelector(".dash-chart-card").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function dashEntry() { return byId(dash.id) || byId("BTC-EUR") || state.index.instruments[0]; }
+
+async function renderDashChart() {
+  const e = dashEntry();
+  if (!e || typeof LightweightCharts === "undefined") return;
+  const gen = ++dash.gen;
+  // Kerzenlängen-Leiste
+  const tf = $("dc-tf");
+  tf.replaceChildren(...DC_INTERVALS.map(([iv, label]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = label;
+    b.setAttribute("aria-pressed", String(iv === dash.iv));
+    b.addEventListener("click", () => { dash.iv = iv; saveDash(); renderDashChart(); });
+    return b;
+  }));
+  avatar(e, $("dc-avatar"));
+  $("dc-name").textContent = `${e.name} (${shortSym(e)})`;
+  paintDashQuote();
+  if (!dash.chart) {
+    const css = getComputedStyle(document.documentElement);
+    const c = (v) => css.getPropertyValue(v).trim();
+    dash.chart = LightweightCharts.createChart($("dash-chart"), {
+      autoSize: true,
+      layout: { background: { color: c("--panel") }, textColor: c("--mute"), fontFamily: "Inter, system-ui, sans-serif" },
+      grid: { vertLines: { color: c("--grid") }, horzLines: { color: c("--grid") } },
+      rightPriceScale: { borderColor: c("--line") },
+      timeScale: { borderColor: c("--line"), rightOffset: 3, tickMarkFormatter: (t, type) => tickLabel(t, type) },
+      crosshair: { mode: 1 },
+      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: false, vertTouchDrag: false },
+      handleScale: { mouseWheel: true, pinch: true },
+      localization: { locale: "de-DE", priceFormatter: (p) => numFmt(p * curFactor(unitOf(dashEntry()))), timeFormatter: (t) => candleLabel(t, dash.iv) },
+    });
+    dash.candles = dash.chart.addCandlestickSeries({ upColor: c("--up"), downColor: c("--down"), borderVisible: false, wickUpColor: c("--up"), wickDownColor: c("--down") });
+    dash.vol = dash.chart.addHistogramSeries({ priceScaleId: "vol", priceFormat: { type: "volume" }, lastValueVisible: false, priceLineVisible: false });
+    dash.chart.priceScale("vol").applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+  }
+  let data;
+  try { data = await loadInstrument(e); } catch { return; }
+  if (gen !== dash.gen) return;
+  const iv = (data.series || {})[dash.iv] && data.series[dash.iv].length ? dash.iv : "1d";
+  dash.rows = mergeSameLocalTime(((data.series || {})[iv] || []).map((r) => r.slice()));
+  dash.step = STEP[iv];
+  dash.last = null;
+  drawDash(true);
+}
+
+function drawDash(fit = false) {
+  if (!dash.candles) return;
+  const css = getComputedStyle(document.documentElement);
+  const up = css.getPropertyValue("--up-a").trim(), down = css.getPropertyValue("--down-a").trim();
+  dash.candles.setData(dash.rows.map((r) => ({ time: shift(r[0]), open: r[1], high: r[2], low: r[3], close: r[4] })));
+  dash.vol.setData(dash.rows.map((r) => ({ time: shift(r[0]), value: r[5], color: r[4] >= r[1] ? up : down })));
+  if (fit) {
+    const n = dash.rows.length;
+    if (n) dash.chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, n - 90), to: n + 2 });
+  }
+}
+
+// Laufende Kerze wächst mit jedem Live-Kurs (nur während die Börse handelt)
+function dashLive() {
+  const e = dashEntry();
+  if (!e || !dash.rows.length || !dash.step) return;
+  const q = quoteOf(e.id);
+  if (!q || !q.live || q === dash.last) return;
+  dash.last = q;
+  const now = q.time;
+  const last = dash.rows[dash.rows.length - 1];
+  if (now < last[0] + dash.step) {
+    last[2] = Math.max(last[2], q.price); last[3] = Math.min(last[3], q.price); last[4] = q.price;
+    dash.candles.update({ time: shift(last[0]), open: last[1], high: last[2], low: last[3], close: last[4] });
+  } else if (dash.step <= 3600) {
+    const t = Math.floor(now / dash.step) * dash.step;
+    const row = [t, q.price, q.price, q.price, q.price, 0];
+    dash.rows.push(row);
+    dash.candles.update({ time: shift(t), open: q.price, high: q.price, low: q.price, close: q.price });
+  }
+}
+
+function paintDashQuote() {
+  const e = dashEntry();
+  if (!e) return;
+  const price = curPriceOf(e);
+  $("dc-price").textContent = e.kind === "index" ? `${numFmt(price)} Punkte` : priceText(e, price);
+  const p = perfOf(e, "24h", livePrice(e));
+  const ch = $("dc-change");
+  ch.className = `dc-chg ${trendClass(p ? p.pct : null)}`;
+  ch.textContent = p ? `${p.abs >= 0 ? "+" : "-"}${e.kind === "index" ? numFmt(Math.abs(p.abs)) : fmtPrice(Math.abs(p.abs), unitOf(e))} (${pctText(p.pct)}) 24 Std.` : "";
+  paintBadge($("dc-status"), e);
+}
+$("dc-name").addEventListener("click", () => openChart(dashEntry()));
+$("dc-open").addEventListener("click", () => openChart(dashEntry()));
+for (const b of document.querySelectorAll("[data-go]")) {
+  b.addEventListener("click", () => {
+    if (b.dataset.filter) setFilterKey(b.dataset.filter);
+    navigate(b.dataset.go);
+  });
+}
+
+// Live-Kurse: Startseite höchstens alle 2 Sekunden neu zeichnen
+onQuote(() => {
+  liveBox.last = Date.now();
+  if (dash.queued || !homeVisible()) return;
+  dash.queued = true;
+  setTimeout(() => {
+    dash.queued = false;
+    if (!homeVisible()) return;
+    renderTicker();
+    renderWatch();
+    renderDashMovers();
+    renderOverview();
+    paintDashQuote();
+    dashLive();
+  }, 2000);
+});
+
+// ---------- Live-Anzeige in der Seitenleiste ----------
+const liveBox = { last: null };
+function paintLiveBox() {
+  const on = rtWanted() && Boolean(listLive.timer) && !document.hidden;
+  $("live-dot").classList.toggle("on", on);
+  $("live-state").textContent = on ? "Aktiv" : "Pausiert";
+  $("live-time").textContent = liveBox.last
+    ? `Letzte Aktualisierung: ${new Intl.DateTimeFormat("de-DE", { timeStyle: "medium", timeZone: TZ }).format(new Date(liveBox.last))}`
+    : "Noch kein Live-Kurs";
+}
+setInterval(paintLiveBox, 1000);

@@ -3,17 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#10233d">
+  <meta name="theme-color" content="#07090d">
   <meta name="robots" content="noindex, nofollow">
   <title>Trading-Agent</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=13">
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
-  <script type="module" src="app.js"></script>
+  <script type="module" src="app.js?v=13"></script>
 </head>
 <body>
   <!-- Entsperren -->
@@ -31,13 +31,70 @@
 
   <main id="main" hidden>
     <header class="topbar">
-      <span class="brand">Trading-Agent</span>
+      <span class="brand"><svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1"/><rect x="8" y="10" width="4" height="12" rx="1"/><rect x="14" y="6" width="4" height="16" rx="1"/><rect x="20" y="2" width="3" height="20" rx="1"/></svg>Trading-Agent</span>
       <span id="freshness" class="freshness"></span>
         <label class="search top-search">
           <span class="visually-hidden">Wert suchen</span>
           <input id="search" type="search" placeholder="Suchen, z. B. Apple, SAP oder MSCI" autocomplete="off" enterkeyhint="search">
         </label>
     </header>
+
+    <!-- Start: Dashboard aus den vorhandenen Funktionen -->
+    <section id="view-home" class="view view-wide" hidden>
+      <div id="dash-ticker" class="dash-ticker" aria-label="Wichtige Werte"></div>
+      <div class="dash-grid">
+        <article class="card dash-chart-card">
+          <header class="dc-head">
+            <span id="dc-avatar" class="avatar" aria-hidden="true"></span>
+            <div class="dc-title">
+              <button type="button" id="dc-name" class="link-title"></button>
+              <div class="dc-quote"><span id="dc-price" class="dc-price"></span> <span id="dc-change"></span> <span id="dc-status" class="badge"></span></div>
+            </div>
+            <button type="button" id="dc-open" class="icon-btn" aria-label="Chart groß öffnen" title="Chart groß öffnen">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+            </button>
+          </header>
+          <nav id="dc-tf" class="dc-tf" aria-label="Kerzenlänge"></nav>
+          <div id="dash-chart" class="dash-chart" role="img" aria-label="Kursverlauf"></div>
+        </article>
+        <article class="card dash-watch">
+          <header class="card-head"><h3>Watchlist</h3><button type="button" class="card-link" data-go="markets" data-filter="fav">Alle anzeigen</button></header>
+          <div class="mini-table-head"><span>Symbol</span><span>Kurs</span><span>24 Std.</span></div>
+          <div id="dash-watch" class="mini-table"></div>
+        </article>
+        <article class="card dash-top">
+          <header class="card-head"><h3>Top Performer 24h</h3><button type="button" class="card-link" data-go="movers">Alle anzeigen</button></header>
+          <div id="dash-top" class="mini-rank"></div>
+        </article>
+        <article class="card dash-flop">
+          <header class="card-head"><h3>Flop Performer 24h</h3><button type="button" class="card-link down" data-go="movers">Alle anzeigen</button></header>
+          <div id="dash-flop" class="mini-rank"></div>
+        </article>
+        <article class="card dash-screener">
+          <header class="card-head"><h3>Asset-Screener</h3><button type="button" class="card-link" id="ds-reset">Filter zurücksetzen</button></header>
+          <div class="ds-body">
+            <fieldset class="ds-cats"><legend>Anlageklasse</legend><div id="ds-cats" class="ds-checks"></div></fieldset>
+            <div class="ds-selects">
+              <label class="fld"><span>Perf. 24 Std.</span><select id="ds-perf">
+                <option value="">beliebig</option><option value="0">&gt; 0 %</option><option value="2">&gt; 2 %</option><option value="5">&gt; 5 %</option><option value="-2">&lt; −2 %</option></select></label>
+              <label class="fld"><span>Umsatz 24 Std.</span><select id="ds-vol">
+                <option value="">beliebig</option><option value="100000">&gt; 100 Tsd. €</option><option value="1000000">&gt; 1 Mio. €</option><option value="10000000">&gt; 10 Mio. €</option></select></label>
+              <label class="fld"><span>RSI</span><select id="ds-rsi">
+                <option value="">beliebig</option><option value="0,30">unter 30</option><option value="30,50">30 – 50</option><option value="50,70">50 – 70</option><option value="70,100">über 70</option></select></label>
+            </div>
+            <div class="ds-actions">
+              <button type="button" id="ds-go" class="primary-btn">Suchen</button>
+              <select id="ds-saved" aria-label="Gespeicherte Filter"></select>
+            </div>
+          </div>
+        </article>
+        <article class="card dash-overview">
+          <header class="card-head"><h3>Marktübersicht</h3><button type="button" class="card-link" id="ov-all">Alle anzeigen</button></header>
+          <nav id="ov-tabs" class="ov-tabs" aria-label="Anlageklasse"></nav>
+          <div id="ov-list" class="mini-table ov-list"></div>
+        </article>
+      </div>
+    </section>
 
     <!-- Märkte -->
     <section id="view-markets" class="view">
@@ -178,10 +235,19 @@
     </section>
 
     <nav class="tabbar" aria-label="Bereiche">
-      <button data-tab="markets" class="active" type="button">Märkte</button>
-      <button data-tab="advisor" type="button">Ratgeber</button>
-      <button data-tab="sim" type="button">Simulator</button>
-      <button data-tab="status" type="button">Status</button>
+      <button data-tab="home" class="active" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Start</span></button>
+      <button data-tab="markets" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16M8 15l4-5 3 3 5-6"/></svg><span>Märkte</span></button>
+      <button data-tab="screener" class="desk-only" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 8v6l-4-2v-4z"/></svg><span>Screener</span></button>
+      <button data-tab="watch" class="desk-only" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg><span>Watchlist</span></button>
+      <button data-tab="movers" class="desk-only" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l6-6 4 4 6-7M14 8h6v6"/></svg><span>Top Performer</span></button>
+      <button data-tab="advisor" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 1 4 10.5V17H8v-3.5A6 6 0 0 1 12 3zM9 21h6"/></svg><span>Ratgeber</span></button>
+      <button data-tab="sim" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><span>Simulator</span></button>
+      <button data-tab="status" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>Status</span></button>
+      <div class="live-box desk-only" aria-live="polite">
+        <span class="live-dot" id="live-dot"></span>
+        <div><strong id="live-title">Live-Daten</strong><span id="live-state" class="live-state"></span>
+        <small id="live-time"></small></div>
+      </div>
     </nav>
   </main>
 </body>
