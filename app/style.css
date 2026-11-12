@@ -140,13 +140,17 @@ main { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
 .tf-strip button[aria-pressed=true] { color: var(--ink); }
 .tf-strip button[aria-pressed=true]::after { height: 3px; width: 70%; left: 15%; background: var(--mark); }
 .legend { margin-top: 10px; }
-.lg-head { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 6px; font-size: .92rem; }
+.lg-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 0 8px; font-size: .92rem; }
+.chart-type { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; flex: none; }
+.chart-type button { background: none; border: 0; color: var(--mute); padding: 6px 12px; font-size: .85rem; cursor: pointer; }
+.chart-type button[aria-pressed=true] { background: var(--deck); color: var(--ink); }
+.chart-type button + button { border-left: 1px solid var(--line); }
 .lg-date { color: var(--ink); font-weight: 500; }
-.lg-unit { color: var(--mute); font-size: .82rem; }
+.lg-unit { color: var(--mute); font-size: .78rem; margin: 4px 0 0; }
 .lg-values { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0; }
 .lg-values dt { color: var(--mute); font-size: .78rem; }
 .lg-values dd { margin: 0; font: 500 1.05rem/1.2 var(--figure); font-variant-numeric: tabular-nums; }
-.chart { height: min(54vh, 440px); margin: 6px calc(-1 * var(--pad)) 0; }
+.chart { height: min(54vh, 440px); margin: 6px calc(-1 * var(--pad)) 0; touch-action: pan-y; }
 .note { color: var(--mute); font-size: .85rem; min-height: 1.3em; }
 
 /* ---------- Status ---------- */

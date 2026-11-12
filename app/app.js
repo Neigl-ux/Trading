@@ -8,7 +8,7 @@ const LIVE_INTERVALS = new Set(["1m", "5m", "15m", "30m", "1h"]);
 const SECONDS = { "1m": 60, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600 };
 const MARKET_TITLE = { crypto: "Krypto", xetra: "Deutsche Börse (Xetra)" };
 
-const state = { key: null, raw: null, index: null, entry: null, data: null, viewKey: "1d", interval: "1d", rows: [], hovering: false, chart: null, candles: null, volume: null, ws: null };
+const state = { key: null, raw: null, index: null, entry: null, data: null, viewKey: "1d", interval: "1d", rows: [], hovering: false, chart: null, candles: null, line: null, volume: null, ws: null, timeIndex: new Map() };
 const files = new Map();
 const $ = (id) => document.getElementById(id);
 
@@ -121,14 +121,52 @@ async function loadInstrument(entry) {
 function showMain() {
   $("lock").hidden = true;
   $("main").hidden = false;
+  updateFreshness();
+  buildFilterStrip();
+  renderList();
+  renderStatus();
+  startAutoRefresh();
+}
+
+function updateFreshness() {
   const age = Date.now() / 1000 - state.index.updated;
   const fresh = $("freshness");
   fresh.textContent = `Daten von ${fmtTime(state.index.updated, age > 20 * 3600)} Uhr`;
   fresh.style.color = age > 45 * 60 ? "var(--mark)" : "";
   fresh.title = age > 45 * 60 ? "Der letzte Sammel-Lauf liegt länger zurück. Prüfe den Status." : "";
-  buildFilterStrip();
-  renderList();
-  renderStatus();
+}
+
+// Neue Daten holen, solange die App offen ist (der Sammler läuft alle 15 Minuten)
+let refreshTimer = null;
+function startAutoRefresh() {
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(() => { if (!document.hidden) refreshIndex(); }, 5 * 60 * 1000);
+}
+
+async function refreshIndex() {
+  try {
+    const sealed = await fetchJSON("data/index.json");
+    if (sealed.enc && state.raw && sealed.kdf && sealed.kdf.salt !== state.raw.kdf.salt) return location.reload();
+    const index = sealed.enc ? await openSealed(state.key, sealed) : sealed.data;
+    state.raw = sealed;
+    if (index.updated !== state.index.updated) {
+      state.index = index;
+      files.clear();
+      renderList();
+      renderStatus();
+      if (!$("view-chart").hidden && state.entry) {
+        const fresh = index.instruments.find((e) => e.id === state.entry.id);
+        if (fresh) {
+          state.entry = fresh;
+          state.data = await loadInstrument(fresh);
+          selectView(state.viewKey);
+        }
+      }
+    }
+  } catch {
+    // Netz weg: beim nächsten Mal erneut versuchen
+  }
+  updateFreshness();
 }
 
 // ---------- Favoriten (nur auf diesem Gerät) ----------
@@ -374,7 +412,10 @@ function ensureChart() {
     grid: { vertLines: { color: "rgba(36,67,106,.45)" }, horzLines: { color: "rgba(36,67,106,.45)" } },
     rightPriceScale: { borderColor: c("--line") },
     timeScale: { borderColor: c("--line"), rightOffset: 3, tickMarkFormatter: (t, type) => tickLabel(t, type) },
-    crosshair: { mode: 0 },
+    crosshair: { mode: 1 },
+    // Wischen mit einem Finger zeigt Werte (eigene Steuerung unten), zwei Finger zoomen
+    handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: false, vertTouchDrag: false },
+    handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true, axisDoubleClickReset: true },
     localization: {
       locale: "de-DE",
       priceFormatter: (p) => nf(Math.abs(p) >= 1 ? 2 : 6).format(p),
@@ -384,15 +425,77 @@ function ensureChart() {
   state.candles = state.chart.addCandlestickSeries({
     upColor: c("--up"), downColor: c("--down"), borderVisible: false, wickUpColor: c("--up"), wickDownColor: c("--down"),
   });
+  state.line = state.chart.addAreaSeries({
+    lineColor: "#cfe0f5", lineWidth: 2, topColor: "rgba(207,224,245,.16)", bottomColor: "rgba(207,224,245,0)",
+    crosshairMarkerBackgroundColor: c("--mark"), crosshairMarkerBorderColor: c("--night"), crosshairMarkerRadius: 5,
+  });
+  applyChartType();
   state.volume = state.chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "", color: "rgba(141,162,191,.35)" });
   state.volume.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
   state.chart.subscribeCrosshairMove((param) => {
-    const bar = param.time !== undefined && param.seriesData ? param.seriesData.get(state.candles) : null;
-    state.hovering = Boolean(bar);
-    if (bar) renderLegend(param.time, bar.open, bar.high, bar.low, bar.close);
+    if (touching) return; // Fingersteuerung setzt die Infozeile selbst
+    const row = param.time !== undefined ? rowAtTime(param.time) : null;
+    state.hovering = Boolean(row);
+    if (row) renderLegend(shift(row[0]), row[1], row[2], row[3], row[4]);
     else showLastInLegend();
   });
+  attachTouch(el);
   return state.chart;
+}
+
+// ---------- Darstellung: Kerzen oder Linie ----------
+const TYPE_STORE = "ta.charttype.v1";
+let chartType = (() => { try { return localStorage.getItem(TYPE_STORE) || "candles"; } catch { return "candles"; } })();
+function activeSeries() { return chartType === "line" ? state.line : state.candles; }
+function applyChartType() {
+  document.querySelectorAll("#chart-type button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.type === chartType)));
+  if (!state.candles) return;
+  state.candles.applyOptions({ visible: chartType === "candles" });
+  state.line.applyOptions({ visible: chartType === "line" });
+}
+document.querySelectorAll("#chart-type button").forEach((b) =>
+  b.addEventListener("click", () => {
+    chartType = b.dataset.type;
+    try { localStorage.setItem(TYPE_STORE, chartType); } catch {}
+    applyChartType();
+  }),
+);
+applyChartType();
+
+function rowAtTime(t) {
+  const i = state.timeIndex.get(t);
+  return i === undefined ? null : state.rows[i];
+}
+
+// ---------- Werte unter dem Finger ----------
+// Ein Finger wischt nach links oder rechts: Fadenkreuz und Infozeile folgen
+// dem Finger. Loslassen zeigt wieder die neueste Kerze. Zwei Finger zoomen.
+let touching = false;
+function attachTouch(el) {
+  const show = (ev) => {
+    if (ev.touches.length !== 1 || !state.rows.length) return;
+    const rect = el.getBoundingClientRect();
+    const x = ev.touches[0].clientX - rect.left;
+    const logical = state.chart.timeScale().coordinateToLogical(x);
+    if (logical === null) return;
+    const i = Math.max(0, Math.min(state.rows.length - 1, Math.round(logical)));
+    const row = state.rows[i];
+    touching = true;
+    state.hovering = true;
+    try { state.chart.setCrosshairPosition(row[4], shift(row[0]), activeSeries()); } catch {}
+    renderLegend(shift(row[0]), row[1], row[2], row[3], row[4]);
+  };
+  const end = () => {
+    if (!touching) return;
+    touching = false;
+    state.hovering = false;
+    try { state.chart.clearCrosshairPosition(); } catch {}
+    showLastInLegend();
+  };
+  el.addEventListener("touchstart", show, { passive: true });
+  el.addEventListener("touchmove", show, { passive: true });
+  el.addEventListener("touchend", end, { passive: true });
+  el.addEventListener("touchcancel", end, { passive: true });
 }
 
 async function selectView(key) {
@@ -447,7 +550,9 @@ async function selectView(key) {
   }
   const intraday = SECONDS[interval] !== undefined;
   state.chart.applyOptions({ timeScale: { timeVisible: intraday, secondsVisible: false } });
+  state.timeIndex = new Map(rows.map((r, i) => [shift(r[0]), i]));
   state.candles.setData(rows.map(toCandle));
+  state.line.setData(rows.map(toLine));
   state.volume.setData(rows.map(toVolume));
   state.chart.timeScale().fitContent();
 
@@ -455,6 +560,7 @@ async function selectView(key) {
 }
 
 const toCandle = (r) => ({ time: shift(r[0]), open: r[1], high: r[2], low: r[3], close: r[4] });
+const toLine = (r) => ({ time: shift(r[0]), value: r[4] });
 const toVolume = (r) => ({ time: shift(r[0]), value: r[5], color: r[4] >= r[1] ? "rgba(60,201,160,.35)" : "rgba(242,112,107,.35)" });
 
 function updateQuote(rows, intraday, source) {
@@ -505,10 +611,11 @@ function startLive(symbol, interval) {
       if (!k) return;
       const row = [Math.floor(k.t / 1000), +k.o, +k.h, +k.l, +k.c, +k.v];
       state.candles.update(toCandle(row));
+      state.line.update(toLine(row));
       state.volume.update(toVolume(row));
       const rows = state.rows;
       if (rows.length && rows[rows.length - 1][0] === row[0]) rows[rows.length - 1] = row;
-      else rows.push(row);
+      else { rows.push(row); state.timeIndex.set(shift(row[0]), rows.length - 1); }
       if (!state.hovering) showLastInLegend();
       $("q-price").textContent = fmtPrice(row[4], unitOf(state.entry));
     };
@@ -538,7 +645,7 @@ function stopRealtime() {
   rt.timer = null;
   if (rt.abort) rt.abort.abort();
   rt.abort = null;
-  if (rt.line && state.candles) { try { state.candles.removePriceLine(rt.line); } catch {} }
+  if (rt.line && state.candles) { try { state.candles.removePriceLine(rt.line.c); state.line.removePriceLine(rt.line.l); } catch {} }
   rt.line = null;
   $("rt-info").textContent = "";
 }
@@ -582,8 +689,9 @@ function applyQuote(q) {
   const closed = tradegateOpen() ? "" : " (Börse geschlossen, letzter Kurs)";
   $("rt-info").textContent = `Echtzeit Tradegate, Stand ${time} Uhr${spread}${closed}`;
   if (!state.candles) return;
-  if (rt.line) rt.line.applyOptions({ price: q.last });
-  else rt.line = state.candles.createPriceLine({ price: q.last, color: "#f2b544", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "Live" });
+  const opts = { price: q.last, color: "#f2b544", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "Live" };
+  if (rt.line) { rt.line.c.applyOptions({ price: q.last }); rt.line.l.applyOptions({ price: q.last }); }
+  else rt.line = { c: state.candles.createPriceLine(opts), l: state.line.createPriceLine(opts) };
   updateLiveCandle(q.last);
 }
 
@@ -601,12 +709,14 @@ function updateLiveCandle(price) {
   } else if (!lastRow || lastRow[0] < bucket) {
     row = [bucket, price, price, price, price, 0];
     rows.push(row);
+    state.timeIndex.set(shift(bucket), rows.length - 1);
   } else return;
-  try { state.candles.update(toCandle(row)); } catch {}
+  try { state.candles.update(toCandle(row)); state.line.update(toLine(row)); } catch {}
   if (!state.hovering) showLastInLegend();
 }
 
 document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && state.index) refreshIndex();
   if (document.hidden) stopLive();
   else if (!$("view-chart").hidden && state.data) selectView(state.viewKey);
 });
