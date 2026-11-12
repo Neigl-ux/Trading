@@ -165,3 +165,23 @@ def test_kraken_waits_and_retries_on_rate_limit():
     df = p.fetch("XBTEUR", "1h", pd.Timestamp("2023-11-14", tz="UTC"), pd.Timestamp("2023-11-15", tz="UTC"))
     assert len(calls) == 2 and 2.0 in sleeps
     assert float(df["close"].iloc[0]) == 1.5
+
+
+def test_notify_sends_json_without_topic_in_code():
+    from tradingagent import notify
+    sent = {}
+
+    class R:
+        status_code = 200
+        text = ""
+
+    class S:
+        def post(self, url, json, timeout):
+            sent.update(json)
+            return R()
+
+    assert notify.send("T", "Nachricht", topic="geheim", session=S()) is True
+    assert sent["topic"] == "geheim" and sent["message"] == "Nachricht"
+    import os
+    os.environ.pop("NTFY_TOPIC", None)
+    assert notify.send("T", "x", topic=None, session=S()) is False

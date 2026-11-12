@@ -1,0 +1,19 @@
+# Manuell: schickt eine Testnachricht aufs Handy (ntfy), um die Einrichtung zu prüfen.
+name: Benachrichtigung testen
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m tradingagent notify-test

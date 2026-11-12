@@ -96,6 +96,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("export").set_defaults(func=cmd_export)
     sub.add_parser("status").set_defaults(func=cmd_status)
     sub.add_parser("heartbeat").set_defaults(func=cmd_heartbeat)
+    sub.add_parser("notify-test", help="Testnachricht aufs Handy (ntfy)").set_defaults(
+        func=lambda args: __import__("tradingagent.notify", fromlist=["main"]).main())
     sub.add_parser("universe", help="Verzeichnis config/universe.yaml aus öffentlichen Listen erzeugen").set_defaults(
         func=lambda args: __import__("tradingagent.universe", fromlist=["main"]).main())
     sub.add_parser("verify", help="Asset-Datenbank gegen die Quellen prüfen").set_defaults(
