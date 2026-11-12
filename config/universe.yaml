@@ -1,6 +1,6 @@
 # Automatisch erzeugt mit `python -m tradingagent universe` (Ablauf „Verzeichnis aktualisieren“).
 # Nicht von Hand bearbeiten: eigene Werte gehören in instruments.yaml.
-# Stand: 12.11.2026 23:03, 716 Werte.
+# Stand: 12.11.2026 23:09, 1070 Werte.
 instruments:
 - id: TUI1
   name: TUI AG
@@ -1822,6 +1822,286 @@ instruments:
   isin: DE000A2YN355
   wkn: A2YN35
   yahoo: CA1.DE
+- id: KTA
+  name: Knaus Tabbert AG
+  market: xetra
+  kind: aktie
+  isin: DE000A2YN504
+  wkn: A2YN50
+  yahoo: KTA.DE
+- id: X4Z
+  name: Metlen Energy & Metals PLC
+  market: xetra
+  kind: aktie
+  isin: GB00BTQGS779
+  wkn: A41CD0
+  yahoo: X4Z.DE
+- id: ASG
+  name: Assicurazioni Generali S.p.A.
+  market: xetra
+  kind: aktie
+  isin: IT0000062072
+  wkn: '850312'
+  yahoo: ASG.DE
+- id: GSC1
+  name: Gesco SE
+  market: xetra
+  kind: aktie
+  isin: DE000A1K0201
+  wkn: A1K020
+  yahoo: GSC1.DE
+- id: SKB
+  name: Koenig & Bauer AG
+  market: xetra
+  kind: aktie
+  isin: DE0007193500
+  wkn: '719350'
+  yahoo: SKB.DE
+- id: IOOA
+  name: IP Group Plc
+  market: xetra
+  kind: aktie
+  isin: GB00B128J450
+  wkn: A0JKX1
+  yahoo: IOOA.DE
+- id: IC1H
+  name: InterContinental Hotels Group PLC
+  market: xetra
+  kind: aktie
+  isin: GB00BHJYC057
+  wkn: A2PA4R
+  yahoo: IC1H.DE
+- id: INR
+  name: International Consolidated Airlines Group S.A.
+  market: xetra
+  kind: aktie
+  isin: ES0177542018
+  wkn: A1H6AJ
+  yahoo: INR.DE
+- id: MULT
+  name: Multitude AG
+  market: xetra
+  kind: aktie
+  isin: CH1398992755
+  wkn: A40VJN
+  yahoo: MULT.DE
+- id: VME
+  name: Viromed Medical AG
+  market: xetra
+  kind: aktie
+  isin: DE000A40ZVN7
+  wkn: A40ZVN
+  yahoo: VME.DE
+- id: TCO0
+  name: Tesco PLC
+  market: xetra
+  kind: aktie
+  isin: GB00BLGZ9862
+  wkn: A2QQMK
+  yahoo: TCO0.DE
+- id: 68F
+  name: Technip Energies N.V.
+  market: xetra
+  kind: aktie
+  isin: NL0014559478
+  wkn: A2QNZT
+  yahoo: 68F.DE
+- id: 2HRA
+  name: H&R GmbH & Co. KGaA
+  market: xetra
+  kind: aktie
+  isin: DE000A2E4T77
+  wkn: A2E4T7
+  yahoo: 2HRA.DE
+- id: 93M1
+  name: MPH Health Care AG
+  market: xetra
+  kind: aktie
+  isin: DE000A289V03
+  wkn: A289V0
+  yahoo: 93M1.DE
+- id: XTP
+  name: Sino AG
+  market: xetra
+  kind: aktie
+  isin: DE0005765507
+  wkn: '576550'
+  yahoo: XTP.DE
+- id: FO4N
+  name: ageas SA/NV
+  market: xetra
+  kind: aktie
+  isin: BE0974264930
+  wkn: A1J1DR
+  yahoo: FO4N.DE
+- id: NP5
+  name: Newron Pharmaceuticals S.p.A.
+  market: xetra
+  kind: aktie
+  isin: IT0004147952
+  wkn: A0LF18
+  yahoo: NP5.DE
+- id: GU81
+  name: Aviva plc
+  market: xetra
+  kind: aktie
+  isin: GB00BPQY8M80
+  wkn: A3DJ6W
+  yahoo: GU81.DE
+- id: TTK
+  name: TAKKT AG
+  market: xetra
+  kind: aktie
+  isin: DE0007446007
+  wkn: '744600'
+  yahoo: TTK.DE
+- id: BDT
+  name: Bertrandt Aktiengesellschaft
+  market: xetra
+  kind: aktie
+  isin: DE0005232805
+  wkn: '523280'
+  yahoo: BDT.DE
+- id: FAU
+  name: Forvia SE
+  market: xetra
+  kind: aktie
+  isin: FR0000121147
+  wkn: '867025'
+  yahoo: FAU.DE
+- id: NXS
+  name: Nexans S.A.
+  market: xetra
+  kind: aktie
+  isin: FR0000044448
+  wkn: '676168'
+  yahoo: NXS.DE
+- id: HTG
+  name: HomeToGo SE
+  market: xetra
+  kind: aktie
+  isin: LU2290523658
+  wkn: A2QM3K
+  yahoo: HTG.DE
+- id: ERCB
+  name: Telefonaktiebolaget LM Ericsson (publ)
+  market: xetra
+  kind: aktie
+  isin: SE0000108656
+  wkn: '850001'
+  yahoo: ERCB.DE
+- id: 6R9
+  name: Verisure plc
+  market: xetra
+  kind: aktie
+  isin: GB00BVMN1558
+  wkn: A41MLK
+  yahoo: 6R9.DE
+- id: WIB
+  name: Wienerberger AG
+  market: xetra
+  kind: aktie
+  isin: AT0000831706
+  wkn: '852894'
+  yahoo: WIB.DE
+- id: OEWA
+  name: VERBUND AG
+  market: xetra
+  kind: aktie
+  isin: AT0000746409
+  wkn: '877738'
+  yahoo: OEWA.DE
+- id: 9TG
+  name: Gaztransport & Technigaz SA
+  market: xetra
+  kind: aktie
+  isin: FR0011726835
+  wkn: A1XEHR
+  yahoo: 9TG.DE
+- id: SDV1
+  name: Saab AB (publ)
+  market: xetra
+  kind: aktie
+  isin: SE0021921269
+  wkn: A403UW
+  yahoo: SDV1.DE
+- id: NVJP
+  name: Umicore SA
+  market: xetra
+  kind: aktie
+  isin: BE0974320526
+  wkn: A2H5A3
+  yahoo: NVJP.DE
+- id: CLIQ
+  name: Cliq Digital AG
+  market: xetra
+  kind: aktie
+  isin: DE000A35JS40
+  wkn: A35JS4
+  yahoo: CLIQ.DE
+- id: GFG
+  name: Global Fashion Group S.A.
+  market: xetra
+  kind: aktie
+  isin: LU2010095458
+  wkn: A2PLUG
+  yahoo: GFG.DE
+- id: HMU
+  name: HMS Bergbau AG
+  market: xetra
+  kind: aktie
+  isin: DE0006061104
+  wkn: '606110'
+  yahoo: HMU.DE
+- id: XD4
+  name: Strabag SE
+  market: xetra
+  kind: aktie
+  isin: AT000000STR1
+  wkn: A0M23V
+  yahoo: XD4.DE
+- id: PQQ0
+  name: Harbour Energy plc
+  market: xetra
+  kind: aktie
+  isin: GB00BMBVGQ36
+  wkn: A3CRBA
+  yahoo: PQQ0.DE
+- id: I56
+  name: Lottomatica Group S.p.A.
+  market: xetra
+  kind: aktie
+  isin: IT0005541336
+  wkn: A3EDET
+  yahoo: I56.DE
+- id: BRNK
+  name: Branicks Group AG
+  market: xetra
+  kind: aktie
+  isin: DE000A1X3XX4
+  wkn: A1X3XX
+  yahoo: BRNK.DE
+- id: NTG
+  name: Nabaltec AG
+  market: xetra
+  kind: aktie
+  isin: DE000A0KPPR7
+  wkn: A0KPPR
+  yahoo: NTG.DE
+- id: 49G
+  name: On Holding AG
+  market: xetra
+  kind: aktie
+  isin: CH1134540470
+  wkn: A3C20K
+  yahoo: 49G.DE
+- id: 2NN
+  name: NN Group N.V.
+  market: xetra
+  kind: aktie
+  isin: NL0010773842
+  wkn: A115DY
+  yahoo: 2NN.DE
 - id: EXW1
   name: iShares Core EURO STOXX 50 UCITS ETF (DE)
   market: xetra
@@ -2908,7 +3188,7 @@ instruments:
   wkn: A3DEKS
   yahoo: UDIV.DE
 - id: UEF5
-  name: UBS MSCI EM Socially Responsible UCITS ETF USD dis
+  name: Ubsmsciemsocres DLD
   market: xetra
   kind: etf
   isin: LU1048313891
@@ -3279,1582 +3559,3466 @@ instruments:
   wkn: LYX01W
   yahoo: LBNK.DE
 - id: XDDX
-  name: Xtrackers DAX ESG Screened UCITS ETF 1D
+  name: Xtrackers DAX ESG SCR 1D
   market: xetra
   kind: etf
   isin: LU0838782315
   wkn: DBX0NH
   yahoo: XDDX.DE
 - id: EQQX
-  name: Invesco NASDAQ-100 Swap UCITS ETF Acc
+  name: Invescomi NASDAQ100 Swap
   market: xetra
   kind: etf
   isin: IE00BNRQM384
   wkn: A2QMHS
   yahoo: EQQX.DE
 - id: AMEL
-  name: Amundi Index Solutions - Amundi MSCI Em Latin America UCITS ETF-C EUR
+  name: AIS AM MSCI EM L A EOC
   market: xetra
   kind: etf
   isin: LU1681045024
   wkn: A2H58P
   yahoo: AMEL.DE
 - id: V50A
-  name: Amundi Core EURO STOXX 50 UCITS ETF EUR Acc
+  name: AIS AM Core EU STX50 EOC
   market: xetra
   kind: etf
   isin: LU1681047236
   wkn: A2H59L
   yahoo: V50A.DE
 - id: DBX5
-  name: Xtrackers MSCI Taiwan UCITS ETF 1C
+  name: Xtrackers MSCI Taiwan 1C
   market: xetra
   kind: etf
   isin: LU0292109187
   wkn: DBX1MT
   yahoo: DBX5.DE
 - id: IE1A
-  name: iShares € Corp Bond 1-5yr UCITS ETF EUR (Acc)
+  name: iShares COR B EOA
   market: xetra
   kind: etf
   isin: IE000F6G1DE0
   wkn: A3DJQH
   yahoo: IE1A.DE
 - id: LYTR
-  name: Amundi Bloomberg Equal-weight Commodity ex-Agriculture UCITS ETF Acc
+  name: MUL AM B E W C XA ETF EOA
   market: xetra
   kind: etf
   isin: LU1829218749
   wkn: LYX0Z2
   yahoo: LYTR.DE
 - id: EDMW
-  name: iShares MSCI World CTB Enhanced ESG UCITS ETF USD Acc
+  name: ISHS4 MSCI WLD CEE Uetf A
   market: xetra
   kind: etf
   isin: IE00BHZPJ569
   wkn: A2PCB4
   yahoo: EDMW.DE
 - id: IQQW
-  name: iShares MSCI World UCITS ETF USD (Dist)
+  name: iShares MSCI World D
   market: xetra
   kind: etf
   isin: IE00B0M62Q58
   wkn: A0HGV0
   yahoo: IQQW.DE
 - id: EXH3
-  name: iShares STOXX Europe 600 Food & Beverage UCITS ETF (DE)
+  name: IS S E 600 FO +B U ETF A
   market: xetra
   kind: etf
   isin: DE000A0H08H3
   wkn: A0H08H
   yahoo: EXH3.DE
 - id: 36BZ
-  name: iShares MSCI China A UCITS ETF USD (Acc)
+  name: iShares IV MSCI China A A
   market: xetra
   kind: etf
   isin: IE00BQT3WG13
   wkn: A12DPT
   yahoo: 36BZ.DE
 - id: SPYD
-  name: State Street SPDR S&P US Dividend Aristocrats UCITS ETF Dis
+  name: Ststspdr S+P US D AR UE D
   market: xetra
   kind: etf
   isin: IE00B6YX5D40
   wkn: A1JKS0
   yahoo: SPYD.DE
 - id: XD5E
-  name: Xtrackers MSCI EMU UCITS ETF 1D
+  name: Xtrackers MSCI EMU 1D
   market: xetra
   kind: etf
   isin: LU0846194776
   wkn: DBX0GJ
   yahoo: XD5E.DE
 - id: WELE
-  name: Amundi S&P 500 Equal Weight ESG UCITS ETF Acc
+  name: AM ETF S+P500EWESG Uetfa
   market: xetra
   kind: etf
   isin: IE000LAP5Z18
   wkn: A3DH0B
   yahoo: WELE.DE
 - id: XEOD
-  name: Xtrackers II EUR Overnight Rate Swap UCITS ETF 1D
+  name: Xtrackers II EUR OV Rate SW 1D
   market: xetra
   kind: etf
   isin: LU0335044896
   wkn: DBX0A2
   yahoo: XEOD.DE
 - id: XEMD
-  name: Xtrackers MSCI Emerging Markets UCITS ETF 1D
+  name: XT Msciemma 1DDLD
   market: xetra
   kind: etf
   isin: IE000GWA2J58
   wkn: DBX0RB
   yahoo: XEMD.DE
 - id: UBU7
-  name: UBS Core MSCI World UCITS ETF USD dis
+  name: Ubs(i)etf Ucmwld ETF DLD
   market: xetra
   kind: etf
   isin: IE00B7KQ7B66
   wkn: A1JVCA
   yahoo: UBU7.DE
 - id: EXV7
-  name: iShares STOXX Europe 600 Chemicals UCITS ETF (DE)
+  name: IS S EU 600 Chem U ETF A
   market: xetra
   kind: etf
   isin: DE000A0H08E0
   wkn: A0H08E
   yahoo: EXV7.DE
 - id: SXRJ
-  name: iShares VII PLC - iShares MSCI EMU Small Cap ETF EUR Acc
+  name: iShares VII MSCI EMU SC Eoacc
   market: xetra
   kind: etf
   isin: IE00B3VWMM18
   wkn: A0X8SE
   yahoo: SXRJ.DE
 - id: EUNN
-  name: iShares Core MSCI Japan IMI UCITS ETF USD (Acc)
+  name: iShares III C MSCI JP IMI DLA
   market: xetra
   kind: etf
   isin: IE00B4L5YX21
   wkn: A0RPWL
   yahoo: EUNN.DE
 - id: OM3F
-  name: iShares € Corp Bond ESG SRI UCITS ETF EUR (Dist)
+  name: ISHS2 CO B ESG SRI EOD
   market: xetra
   kind: etf
   isin: IE00BYZTVT56
   wkn: A142NT
   yahoo: OM3F.DE
 - id: IBCH
-  name: iShares MSCI World EUR Hedged UCITS ETF (Acc)
+  name: iShares V MSCI W EUR HGD Acc
   market: xetra
   kind: etf
   isin: IE00B441G979
   wkn: A1C5E7
   yahoo: IBCH.DE
 - id: SPPE
-  name: State Street SPDR S&P 500 UCITS ETF EUR Accumulation Hedged
+  name: STS SP5 UE Heoa
   market: xetra
   kind: etf
   isin: IE00BYYW2V44
   wkn: A2AGXP
   yahoo: SPPE.DE
 - id: SPYW
-  name: State Street SPDR S&P Euro Dividend Aristocrats UCITS ETF
+  name: SPDR S+P DIV Arist ETF
   market: xetra
   kind: etf
   isin: IE00B5M1WJ87
   wkn: A1JT1B
   yahoo: SPYW.DE
 - id: SXR7
-  name: iShares VII PLC -iShares Core MSCI EMU UCITS ETF EUR (Acc)
+  name: ISH 7 C MSCI E U E Acc
   market: xetra
   kind: etf
   isin: IE00B53QG562
   wkn: A0YEDX
   yahoo: SXR7.DE
 - id: IUSL
-  name: iShares Dow Jones Global Leaders Screened UCITS ETF USD (Acc)
+  name: iShares II DJ GL Lead SCR DLA
   market: xetra
   kind: etf
   isin: IE00B57X3V84
   wkn: A1H7ZT
   yahoo: IUSL.DE
 - id: SPY4
-  name: State Street SPDR S&P 400 US Mid Cap UCITS ETF
+  name: SPDR S+P 400 US MID CAP
   market: xetra
   kind: etf
   isin: IE00B4YBJ215
   wkn: A1JSHV
   yahoo: SPY4.DE
 - id: XAMB
-  name: Amundi MSCI World SRI Climate Net Zero Ambition PAB UCITS ETF EUR Acc
+  name: AME Mwscpaal EOA
   market: xetra
   kind: etf
   isin: IE000Y77LGG9
   wkn: ETF143
   yahoo: XAMB.DE
 - id: QDVR
-  name: iShares MSCI USA SRI UCITS ETF USD (Acc)
+  name: Isiv Msciusasri U ETF DLA
   market: xetra
   kind: etf
   isin: IE00BYVJRR92
   wkn: A2AFC0
   yahoo: QDVR.DE
 - id: OM3L
-  name: iShares MSCI USA CTB Enhanced ESG UCITS ETF USD Inc
+  name: ISHS4 Msciusactbee UE DLD
   market: xetra
   kind: etf
   isin: IE00BHZPJ890
   wkn: A2PDNU
   yahoo: OM3L.DE
 - id: XDEE
-  name: Xtrackers S&P 500 Equal Weight UCITS ETF 2C EUR Hedged
+  name: XT S+P500EW 2CHEOA
   market: xetra
   kind: etf
   isin: IE0002EI5AG0
   wkn: DBX0P9
   yahoo: XDEE.DE
 - id: VNRT
-  name: Vanguard FTSE North America UCITS ETF
+  name: Vanguard FTSE N AME U ETF DLD
   market: xetra
   kind: etf
   isin: IE00BKX55R35
   wkn: A12CXY
   yahoo: VNRT.DE
 - id: H4ZF
-  name: HSBC S&P 500 UCITS ETF
+  name: HSBC S+P 500 UCITS ETF
   market: xetra
   kind: etf
   isin: IE00B5KQNG97
   wkn: A1C19C
   yahoo: H4ZF.DE
 - id: DBXW
-  name: Xtrackers MSCI World Swap UCITS ETF 1C
+  name: Xtrackers MSCI World Swap 1C
   market: xetra
   kind: etf
   isin: LU0274208692
   wkn: DBX1MW
   yahoo: DBXW.DE
 - id: EXXW
-  name: iShares Dow Jones Asia Pacific Select Dividend 50 UCITS ETF (DE)
+  name: IS DJ AS PAC S D 50 U ETF
   market: xetra
   kind: etf
   isin: DE000A0H0744
   wkn: A0H074
   yahoo: EXXW.DE
 - id: JREM
-  name: JPMorgan ETFs (Ireland) ICAV - Global Emerging Markets Research Enh Idx Eq Active UCITS ETF USD Acc
+  name: JPM GEM REI EQ AUE DLA
   market: xetra
   kind: etf
   isin: IE00BF4G6Z54
   wkn: A2DWM5
   yahoo: JREM.DE
 - id: VGER
-  name: Vanguard Germany All Cap UCITS ETF EUR Distributing
+  name: Vanguard V GER A CAP EOD
   market: xetra
   kind: etf
   isin: IE00BG143G97
   wkn: A2JF6S
   yahoo: VGER.DE
 - id: EXV2
-  name: iShares STOXX Europe 600 Telecommunications UCITS ETF (DE)
+  name: ISH S EU 600 TEL U ETF A
   market: xetra
   kind: etf
   isin: DE000A0H08R2
   wkn: A0H08R
   yahoo: EXV2.DE
 - id: EXV5
-  name: iShares STOXX Europe 600 Automobiles & Parts UCITS ETF (DE) EUR dis
+  name: iShares SE 600 A+P U ETF EOD
   market: xetra
   kind: etf
   isin: DE000A0Q4R28
   wkn: A0Q4R2
   yahoo: EXV5.DE
 - id: LYSX
-  name: Amundi EURO STOXX 50 II UCITS ETF Acc
+  name: MUF AM EOSTXX50 II UE Acc
   market: xetra
   kind: etf
   isin: FR0007054358
   wkn: '798328'
   yahoo: LYSX.DE
 - id: LKOR
-  name: Amundi MSCI Korea UCITS ETF Acc
+  name: MUL Amundi Korea ETF Acc
   market: xetra
   kind: etf
   isin: LU1900066975
   wkn: LYX016
   yahoo: LKOR.DE
 - id: XDEB
-  name: Xtrackers MSCI World Minimum Volatility UCITS ETF 1C
+  name: X(ie) MSCI WO MI VO 1CDL
   market: xetra
   kind: etf
   isin: IE00BL25JN58
   wkn: A1103F
   yahoo: XDEB.DE
 - id: NADQ
-  name: Amundi Core Nasdaq-100 Swap UCITS ETF Dist
+  name: MUL Amundi CN100SW Uetf DLD
   market: xetra
   kind: etf
   isin: LU2197908721
   wkn: LYX05V
   yahoo: NADQ.DE
 - id: CBUC
-  name: iShares MSCI USA CTB Enhanced ESG UCITS ETF EUR Hedged Acc
+  name: ISHS4 Msciusactbee UE EOA
   market: xetra
   kind: etf
   isin: IE000U7L59A3
   wkn: A3CR2Z
   yahoo: CBUC.DE
 - id: VECA
-  name: Vanguard EUR Corporate Bond UCITS ETF EUR Accumulation
+  name: VAN EUR Corp BD EOA
   market: xetra
   kind: etf
   isin: IE00BGYWT403
   wkn: A2PA8G
   yahoo: VECA.DE
 - id: LYPG
-  name: Amundi MSCI World Information Technology UCITS ETF EUR Acc
+  name: MUL Amundi W Inftec ETF Acc
   market: xetra
   kind: etf
   isin: LU0533033667
   wkn: LYX0GP
   yahoo: LYPG.DE
 - id: XDPU
-  name: Xtrackers S&P 500 UCITS ETF 4C - USD
+  name: XT S+P500 4CDLCAP
   market: xetra
   kind: etf
   isin: IE000Z9SJA06
   wkn: DBX0SV
   yahoo: XDPU.DE
 - id: VGEA
-  name: Vanguard EUR Eurozone Government Bond UCITS ETF EUR Accumulation
+  name: VAN EUR GOV BD EOA
   market: xetra
   kind: etf
   isin: IE00BH04GL39
   wkn: A2PA8D
   yahoo: VGEA.DE
 - id: AEMD
-  name: Amundi Index Solutions - Amundi Core MSCI Emerging Markets UCITS ETF EUR Distribution
+  name: AIS A CO MSCI E M Uetfdrd
   market: xetra
   kind: etf
   isin: LU1737652583
   wkn: A2H9Q0
   yahoo: AEMD.DE
 - id: QDVA
-  name: iShares Edge MSCI USA Momentum Factor UCITS ETF USD (Acc)
+  name: iShares IV E MSCI USA M F DLA
   market: xetra
   kind: etf
   isin: IE00BD1F4N50
   wkn: A2AP36
   yahoo: QDVA.DE
 - id: EUNS
-  name: iShares € Corp Bond ex-Financials 1-5yr ESG SRI UCITS ETF EUR (Dist)
+  name: ISHS3 EOCBXF15YESUETF EOD
   market: xetra
   kind: etf
   isin: IE00B4L5ZY03
   wkn: A0RPWP
   yahoo: EUNS.DE
 - id: 2B78
-  name: iShares Healthcare Innovation UCITS ETF USD (Acc)
+  name: iShares IV Healthc Innov ETF
   market: xetra
   kind: etf
   isin: IE00BYZK4776
   wkn: A2ANH2
   yahoo: 2B78.DE
 - id: PPFB
-  name: iShares Physical Gold ETC
+  name: Ishares Phys MET O END ZT
   market: xetra
   kind: etf
   isin: IE00B4ND3602
   wkn: A1KWPQ
   yahoo: PPFB.DE
 - id: 8PSG
-  name: Invesco Physical Gold ETC
+  name: Invesco PHY MKT O E ETC00 XAU
   market: xetra
   kind: etf
   isin: IE00B579F325
   wkn: A1AA5X
   yahoo: 8PSG.DE
 - id: 8PSB
-  name: Invesco Physical Silver ETC
+  name: Invesco PHY MKT O E ETC00 XAG
   market: xetra
   kind: etf
   isin: IE00B43VDT70
   wkn: A1KX35
   yahoo: 8PSB.DE
 - id: 3SOI
-  name: WisdomTree WTI Crude Oil 3x Daily Short ETN
+  name: Witr MU AS I ETP 2062
   market: xetra
   kind: etf
   isin: XS2819844387
   wkn: A4AGV3
   yahoo: 3SOI.DE
 - id: GLDA
-  name: Amundi Physical Gold ETC C
+  name: Amundiphme ETC Z 2118
   market: xetra
   kind: etf
   isin: FR0013416716
   wkn: A2UJK0
   yahoo: GLDA.DE
 - id: XGDU
-  name: Xtrackers IE Physical Gold ETC
+  name: Xtrack ETC Gold 80
   market: xetra
   kind: etf
   isin: DE000A2T0VU5
   wkn: A2T0VU
   yahoo: XGDU.DE
 - id: IGLD
-  name: iShares Physical Gold EUR Hedged ETC
+  name: Ishares Phys MET O END ZT
   market: xetra
   kind: etf
   isin: IE0009JOT9U1
   wkn: A3GX4G
   yahoo: IGLD.DE
 - id: XAD1
-  name: Xtrackers Physical Gold EUR Hedged ETC
+  name: Xtrackers P Gold EUR H60
   market: xetra
   kind: etf
   isin: DE000A1EK0G3
   wkn: A1EK0G
   yahoo: XAD1.DE
 - id: XGDE
-  name: Xtrackers IE Physical Gold EUR Hedged ETC Securities 5
+  name: Xtrack ETC Gold EUR H80
   market: xetra
   kind: etf
   isin: DE000A2T5DZ1
   wkn: A2T5DZ
   yahoo: XGDE.DE
 - id: XAD6
-  name: Xtrackers Physical Silver ETC (EUR)
+  name: Xtrackers P Silver EUR 60
   market: xetra
   kind: etf
   isin: DE000A1E0HS6
   wkn: A1E0HS
   yahoo: XAD6.DE
 - id: XAD5
-  name: Xtrackers Physical Gold ETC (EUR)
+  name: Xtrackers P Gold EUR 60
   market: xetra
   kind: etf
   isin: DE000A1E0HR8
   wkn: A1E0HR
   yahoo: XAD5.DE
 - id: 8PSE
-  name: Invesco Physical Gold ETC EUR Hedged
+  name: Invesco PHY MKT O E ETC00 XAU
   market: xetra
   kind: etf
   isin: XS2183935274
   wkn: A28QBG
   yahoo: 8PSE.DE
 - id: RM8U
-  name: Royal Mint Responsibly Sourced Physical Gold ETC
+  name: Hanetf ETC O END ZT XAU
   market: xetra
   kind: etf
   isin: XS2115336336
   wkn: A279KU
   yahoo: RM8U.DE
 - id: XSLE
-  name: Xtrackers IE Physical Silver EUR Hedged ETC 4
+  name: Xtrack ETC Silber 80
   market: xetra
   kind: etf
   isin: DE000A2UDH55
   wkn: A2UDH5
   yahoo: XSLE.DE
 - id: SGS4
-  name: SG ETC GOLD FUTURE
+  name: Sgis O E ETC Gold
   market: xetra
   kind: etf
   isin: DE000ETC0738
   wkn: ETC073
   yahoo: SGS4.DE
 - id: SPUT
-  name: Sprott Physical Uranium ETC
+  name: HAN MUL ASS ETC O END
   market: xetra
   kind: etf
   isin: XS2937253818
   wkn: A4A5UR
   yahoo: SPUT.DE
 - id: YGLD
-  name: IncomeShares Gold + Yield ETP
+  name: Leverage Shares Gold+ ETP
   market: xetra
   kind: etf
   isin: XS2852999775
   wkn: A4AH1M
   yahoo: YGLD.DE
 - id: NGXS
-  name: WisdomTree Natural Gas 3x Daily Short
+  name: Witr MU AS I GAS ETP 2062
   market: xetra
   kind: etf
   isin: XS2819843223
   wkn: A4AGVY
   yahoo: NGXS.DE
 - id: 3SLV
-  name: Leverage Shares 3x Long Silver ETP Securities
+  name: Leverage Shares 3SILV ETP
   market: xetra
   kind: etf
   isin: XS2472195952
   wkn: A3GZU8
   yahoo: 3SLV.DE
 - id: SGS2
-  name: SG ETC BRENT OIL FUTURE
+  name: Sgis O E ETC Brent OIL
   market: xetra
   kind: etf
   isin: DE000ETC0696
   wkn: ETC069
   yahoo: SGS2.DE
 - id: BNQ9
-  name: HENRY HUB ERDGAS (TR) ETC
+  name: BNP PAR ISS O E ETC
   market: xetra
   kind: etf
   isin: DE000PB6GAS5
   wkn: PB6GAS
   yahoo: BNQ9.DE
 - id: 42GI
-  name: SG ETC Copper Future
+  name: Sgis O E ETC Copper
   market: xetra
   kind: etf
   isin: DE000ETC0787
   wkn: ETC078
   yahoo: 42GI.DE
 - id: YSLV
-  name: IncomeShares Silver+ Yield ETP
+  name: Leverage Shares Silv+ ETP
   market: xetra
   kind: etf
   isin: XS3068774614
   wkn: A4AN02
   yahoo: YSLV.DE
 - id: BNQB
-  name: WTI CRUDE ÖL (TR) ETC
+  name: BNP PAR ISS O E ETC
   market: xetra
   kind: etf
   isin: DE000PS7WT17
   wkn: PS7WT1
   yahoo: BNQB.DE
 - id: 8PSA
-  name: Invesco Physical Platinum ETC
+  name: Invesco PHY MKT O E ETC00 XPT
   market: xetra
   kind: etf
   isin: IE00B40QP990
   wkn: A1KX36
   yahoo: 8PSA.DE
 - id: XPPT
-  name: Xtrackers ETC plc - Xtrackers IE Physical Platinum ETC 1
+  name: Xtrack ETC Platin 80
   market: xetra
   kind: etf
   isin: DE000A2T0VT7
   wkn: A2T0VT
   yahoo: XPPT.DE
 - id: 42G3
-  name: SG ETC Unleaded Gasoline Future
+  name: Sgis O E ETC Gasoline
   market: xetra
   kind: etf
   isin: DE000ETC0852
   wkn: ETC085
   yahoo: 42G3.DE
 - id: BNQA
-  name: ICE BRENT CRUDE OIL ETC
+  name: BNP PAR ISS O E ETC
   market: xetra
   kind: etf
   isin: DE000PS701L2
   wkn: PS701L
   yahoo: BNQA.DE
 - id: SGS3
-  name: SG ETC NATURAL GAS FUTURE
+  name: Sgis O E ETC Natural GAS
   market: xetra
   kind: etf
   isin: DE000ETC0704
   wkn: ETC070
   yahoo: SGS3.DE
 - id: B4N1
-  name: ICE LOW SULPHUR GASOIL (TR) ETC
+  name: BNP PAR ISS O E ETC
   market: xetra
   kind: etf
   isin: DE000PB6D1Z6
   wkn: PB6D1Z
   yahoo: B4N1.DE
 - id: B4NQ
-  name: Kupfer TR ETC EUR
+  name: BNP PAR ISS O E ETC
   market: xetra
   kind: etf
   isin: DE000PB8C0P8
   wkn: PB8C0P
   yahoo: B4NQ.DE
 - id: 3GLD
-  name: Leverage Shares 3x Long Gold ETP Securities
+  name: Leverage Shares 3GOLD ETP
   market: xetra
   kind: etf
   isin: XS2472195101
   wkn: A3GZU4
   yahoo: 3GLD.DE
 - id: 8PSC
-  name: Invesco Physical Palladium ETC
+  name: Invesco PHY MKT O E ETC00 XPD
   market: xetra
   kind: etf
   isin: IE00B4LJS984
   wkn: A1KX37
   yahoo: 8PSC.DE
 - id: XAD3
-  name: Xtrackers Physical Platinum EUR Hedged ETC
+  name: Xtrackers P Platinum EUR H60
   market: xetra
   kind: etf
   isin: DE000A1EK0H1
   wkn: A1EK0H
   yahoo: XAD3.DE
 - id: AGSE
-  name: WisdomTree Physical Silver - EUR Daily Hedged
+  name: WisdomTree HMS Z26/UN XAG
   market: xetra
   kind: etf
   isin: JE00B9GQFM16
   wkn: A4AQTP
   yahoo: AGSE.DE
 - id: BNQC
-  name: RICI Enhanced Brent Öl TR EUR ETC
+  name: BNP PAR ISS O E ETC
   market: xetra
   kind: etf
   isin: DE000PB6R1B1
   wkn: PB6R1B
   yahoo: BNQC.DE
 - id: NRGT
-  name: WisdomTree Energy Transition Metals ETC
+  name: Witr MU AS I ETP 62
   market: xetra
   kind: etf
   isin: XS2425848053
   wkn: A3GWVP
   yahoo: NRGT.DE
 - id: BNQJ
-  name: BNPP Gold ETC
+  name: BNP PAR ISS O E ETC XAU
   market: xetra
   kind: etf
   isin: DE000PS7G0L8
   wkn: PS7G0L
   yahoo: BNQJ.DE
 - id: BNQP
-  name: RICI EnhancedSM Kupfer TR ETC
+  name: BNP PAR ISS O E ETC
   market: xetra
   kind: etf
   isin: DE000PB8R1C7
   wkn: PB8R1C
   yahoo: BNQP.DE
 - id: XPPE
-  name: Xtrackers IE Physical Platinum EUR Hedged ETC Securities
+  name: Xtrack ETC Platin 80
   market: xetra
   kind: etf
   isin: DE000A2UDH63
   wkn: A2UDH6
   yahoo: XPPE.DE
-- id: EW
-  name: Edwards Lifesciences Corporation
+- id: GOOG
+  name: Alphabet Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: EW
-- id: NDAQ
-  name: Nasdaq, Inc.
+  yahoo: GOOG
+- id: TSM
+  name: Taiwan Semiconductor Manufacturing Company Limited
   market: us
   kind: aktie
   unit: $
-  yahoo: NDAQ
-- id: IMO
-  name: Imperial Oil Limited
+  yahoo: TSM
+- id: SPCX
+  name: Space Exploration Technologies Corp.
   market: us
   kind: aktie
   unit: $
-  yahoo: IMO
-- id: WPM
-  name: Wheaton Precious Metals Corp.
+  yahoo: SPCX
+- id: BRK-A
+  name: Berkshire Hathaway Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: WPM
-- id: TFC
-  name: Truist Financial Corporation
+  yahoo: BRK-A
+- id: SKHY
+  name: SK hynix Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: TFC
-- id: BE
-  name: Bloom Energy Corporation
+  yahoo: SKHY
+- id: HSBC
+  name: HSBC Holdings plc
   market: us
   kind: aktie
   unit: $
-  yahoo: BE
-- id: D
-  name: Dominion Energy, Inc.
+  yahoo: HSBC
+- id: NVS
+  name: Novartis AG
   market: us
   kind: aktie
   unit: $
-  yahoo: D
-- id: BDX
-  name: Becton, Dickinson and Company
+  yahoo: NVS
+- id: JPM-PC
+  name: JPMorgan Chase & Co.
   market: us
   kind: aktie
   unit: $
-  yahoo: BDX
-- id: NUE
-  name: Nucor Corporation
+  yahoo: JPM-PC
+- id: LRCX
+  name: Lam Research Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: NUE
-- id: OXY
-  name: Occidental Petroleum Corporation
+  yahoo: LRCX
+- id: AZN
+  name: AstraZeneca PLC
   market: us
   kind: aktie
   unit: $
-  yahoo: OXY
-- id: MPLX
-  name: MPLX LP
+  yahoo: AZN
+- id: RY
+  name: Royal Bank of Canada
   market: us
   kind: aktie
   unit: $
-  yahoo: MPLX
-- id: NU
-  name: Nu Holdings Ltd.
+  yahoo: RY
+- id: SHEL
+  name: Shell plc
   market: us
   kind: aktie
   unit: $
-  yahoo: NU
-- id: DAL
-  name: Delta Air Lines, Inc.
+  yahoo: SHEL
+- id: PANW
+  name: Palo Alto Networks, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: DAL
-- id: LITE
-  name: Lumentum Holdings Inc.
+  yahoo: PANW
+- id: ANET
+  name: Arista Networks, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: LITE
-- id: O
-  name: Realty Income Corporation
+  yahoo: ANET
+- id: TM
+  name: Toyota Motor Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: O
-- id: OKE
-  name: ONEOK, Inc.
+  yahoo: TM
+- id: MUFG
+  name: Mitsubishi UFJ Financial Group, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: OKE
-- id: PCAR
-  name: PACCAR Inc
+  yahoo: MUFG
+- id: BML-PG
+  name: Bank of America Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: PCAR
-- id: DEO
-  name: Diageo plc
+  yahoo: BML-PG
+- id: DELL
+  name: Dell Technologies Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: DEO
-- id: AME
-  name: AMETEK, Inc.
+  yahoo: DELL
+- id: CRWD
+  name: CrowdStrike Holdings, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: AME
-- id: GRMN
-  name: Garmin Ltd.
+  yahoo: CRWD
+- id: BABA
+  name: Alibaba Group Holding Limited
   market: us
   kind: aktie
   unit: $
-  yahoo: GRMN
-- id: IDXX
-  name: IDEXX Laboratories, Inc.
+  yahoo: BABA
+- id: GEV
+  name: GE Vernova Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: IDXX
-- id: ADSK
-  name: Autodesk, Inc.
+  yahoo: GEV
+- id: AXP
+  name: American Express Company
   market: us
   kind: aktie
   unit: $
-  yahoo: ADSK
-- id: ETR
-  name: Entergy Corporation
+  yahoo: AXP
+- id: C
+  name: Citigroup Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: ETR
-- id: HUM
-  name: Humana Inc.
+  yahoo: C
+- id: KLAC
+  name: KLA Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: HUM
-- id: EBAY
-  name: eBay Inc.
+  yahoo: KLAC
+- id: BHP
+  name: BHP Group Limited
   market: us
   kind: aktie
   unit: $
-  yahoo: EBAY
-- id: HONA
-  name: Honeywell Aerospace Inc.
+  yahoo: BHP
+- id: TD
+  name: The Toronto-Dominion Bank
   market: us
   kind: aktie
   unit: $
-  yahoo: HONA
-- id: DVN
-  name: Devon Energy Corporation
+  yahoo: TD
+- id: ADI
+  name: Analog Devices, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: DVN
-- id: AZO
-  name: AutoZone, Inc.
+  yahoo: ADI
+- id: APH
+  name: Amphenol Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: AZO
-- id: XEL
-  name: Xcel Energy Inc.
+  yahoo: APH
+- id: BLK
+  name: BlackRock, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: XEL
-- id: CVE
-  name: Cenovus Energy Inc.
+  yahoo: BLK
+- id: DE
+  name: Deere & Company
   market: us
   kind: aktie
   unit: $
-  yahoo: CVE
-- id: KEYS
-  name: Keysight Technologies, Inc.
+  yahoo: DE
+- id: TMUS
+  name: T-Mobile US, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: KEYS
-- id: SRE
-  name: Sempra
+  yahoo: TMUS
+- id: UNP
+  name: Union Pacific Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: SRE
-- id: CCEP
-  name: Coca-Cola Europacific Partners PLC
+  yahoo: UNP
+- id: WELL
+  name: Welltower Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: CCEP
-- id: TEVA
-  name: Teva Pharmaceutical Industries Limited
+  yahoo: WELL
+- id: NVO
+  name: Novo Nordisk A/S
   market: us
   kind: aktie
   unit: $
-  yahoo: TEVA
-- id: FANG
-  name: Diamondback Energy, Inc.
+  yahoo: NVO
+- id: NEE
+  name: NextEra Energy, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: FANG
-- id: LHX
-  name: L3Harris Technologies, Inc.
+  yahoo: NEE
+- id: WFC-PY
+  name: Wells Fargo & Company
   market: us
   kind: aktie
   unit: $
-  yahoo: LHX
-- id: WAB
-  name: Westinghouse Air Brake Technologies Corporation
+  yahoo: WFC-PY
+- id: COP
+  name: ConocoPhillips
   market: us
   kind: aktie
   unit: $
-  yahoo: WAB
-- id: INFY
-  name: Infosys Limited
+  yahoo: COP
+- id: BUD
+  name: Anheuser-Busch InBev SA/NV
   market: us
   kind: aktie
   unit: $
-  yahoo: INFY
-- id: XYZ
-  name: Block, Inc.
+  yahoo: BUD
+- id: DHR
+  name: Danaher Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: XYZ
-- id: VMRK
-  name: AvalonBay Communities, Inc.
+  yahoo: DHR
+- id: SCHW
+  name: The Charles Schwab Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: VMRK
-- id: FERG
-  name: Ferguson Enterprises Inc.
+  yahoo: SCHW
+- id: SONY
+  name: Sony Group Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: FERG
-- id: VEEV
-  name: Veeva Systems Inc.
+  yahoo: SONY
+- id: SMFG
+  name: Sumitomo Mitsui Financial Group, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: VEEV
-- id: A
-  name: Agilent Technologies, Inc.
+  yahoo: SMFG
+- id: TJX
+  name: The TJX Companies, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: A
-- id: FITB
-  name: Fifth Third Bancorp
+  yahoo: TJX
+- id: MRVL
+  name: Marvell Technology, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: FITB
-- id: BKR
-  name: Baker Hughes Company
+  yahoo: MRVL
+- id: ACN
+  name: Accenture plc
   market: us
   kind: aktie
   unit: $
-  yahoo: BKR
-- id: WCN
-  name: Waste Connections, Inc.
+  yahoo: ACN
+- id: UBS
+  name: UBS Group AG
   market: us
   kind: aktie
   unit: $
-  yahoo: WCN
-- id: MT
-  name: ArcelorMittal S.A.
+  yahoo: UBS
+- id: SCCO
+  name: Southern Copper Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: MT
-- id: KDP
-  name: Keurig Dr Pepper Inc.
+  yahoo: SCCO
+- id: UL
+  name: Unilever PLC
   market: us
   kind: aktie
   unit: $
-  yahoo: KDP
-- id: VYLR
-  name: Vylor Inc.
+  yahoo: UL
+- id: CB
+  name: Chubb Limited
   market: us
   kind: aktie
   unit: $
-  yahoo: VYLR
-- id: VALE
-  name: Vale S.A.
+  yahoo: CB
+- id: ETN
+  name: Eaton Corporation plc
   market: us
   kind: aktie
   unit: $
-  yahoo: VALE
-- id: CTA-PB
-  name: EIDP, Inc.
+  yahoo: ETN
+- id: VRTX
+  name: Vertex Pharmaceuticals Incorporated
   market: us
   kind: aktie
   unit: $
-  yahoo: CTA-PB
-- id: FNV
-  name: Franco-Nevada Corporation
+  yahoo: VRTX
+- id: PGR
+  name: The Progressive Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: FNV
-- id: F
-  name: Ford Motor Company
+  yahoo: PGR
+- id: SPGI
+  name: S&P Global Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: F
-- id: ONC
-  name: BeOne Medicines AG
+  yahoo: SPGI
+- id: RIO
+  name: Rio Tinto Group
   market: us
   kind: aktie
   unit: $
-  yahoo: ONC
-- id: VTR
-  name: Ventas, Inc.
+  yahoo: RIO
+- id: SNDK
+  name: Sandisk Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: VTR
-- id: TRI
-  name: Thomson Reuters Corporation
+  yahoo: SNDK
+- id: HDB
+  name: HDFC Bank Limited
   market: us
   kind: aktie
   unit: $
-  yahoo: TRI
-- id: ROP
-  name: Roper Technologies, Inc.
+  yahoo: HDB
+- id: BTI
+  name: British American Tobacco p.l.c.
   market: us
   kind: aktie
   unit: $
-  yahoo: ROP
-- id: STT
-  name: State Street Corporation
+  yahoo: BTI
+- id: APP
+  name: AppLovin Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: STT
-- id: EXC
-  name: Exelon Corporation
+  yahoo: APP
+- id: MO
+  name: Altria Group, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: EXC
-- id: NOK
-  name: Nokia Oyj
+  yahoo: MO
+- id: MDT
+  name: Medtronic plc
   market: us
   kind: aktie
   unit: $
-  yahoo: NOK
-- id: NTRA
-  name: Natera, Inc.
+  yahoo: MDT
+- id: LOW
+  name: Lowe's Companies, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: NTRA
-- id: MSCI
-  name: MSCI Inc.
+  yahoo: LOW
+- id: BMY
+  name: Bristol-Myers Squibb Company
   market: us
   kind: aktie
   unit: $
-  yahoo: MSCI
-- id: WDAY
-  name: Workday, Inc.
+  yahoo: BMY
+- id: STX
+  name: Seagate Technology Holdings plc
   market: us
   kind: aktie
   unit: $
-  yahoo: WDAY
-- id: COHR
-  name: Coherent Corp.
+  yahoo: STX
+- id: MCK
+  name: McKesson Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: COHR
-- id: VST
-  name: Vistra Corp.
+  yahoo: MCK
+- id: IBN
+  name: ICICI Bank Limited
   market: us
   kind: aktie
   unit: $
-  yahoo: VST
-- id: SE
-  name: Sea Limited
+  yahoo: IBN
+- id: PLD
+  name: Prologis, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: SE
-- id: ROK
-  name: Rockwell Automation, Inc.
+  yahoo: PLD
+- id: MFG
+  name: Mizuho Financial Group, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: ROK
-- id: IQV
-  name: IQVIA Holdings Inc.
+  yahoo: MFG
+- id: ADP
+  name: Automatic Data Processing, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: IQV
-- id: AMP
-  name: Ameriprise Financial, Inc.
+  yahoo: ADP
+- id: PH
+  name: Parker-Hannifin Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: AMP
-- id: FMX
-  name: Fomento Económico Mexicano, S.A.B. de C.V.
+  yahoo: PH
+- id: BMO
+  name: Bank of Montreal
   market: us
   kind: aktie
   unit: $
-  yahoo: FMX
-- id: CMG
-  name: Chipotle Mexican Grill, Inc.
+  yahoo: BMO
+- id: BKNG
+  name: Booking Holdings Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: CMG
-- id: CARR
-  name: Carrier Global Corporation
+  yahoo: BKNG
+- id: SYK
+  name: Stryker Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: CARR
-- id: AU
-  name: AngloGold Ashanti plc
+  yahoo: SYK
+- id: BP
+  name: BP p.l.c.
   market: us
   kind: aktie
   unit: $
-  yahoo: AU
-- id: ED
-  name: Consolidated Edison, Inc.
+  yahoo: BP
+- id: PBR
+  name: Petróleo Brasileiro S.A. - Petrobras
   market: us
   kind: aktie
   unit: $
-  yahoo: ED
-- id: FER
-  name: Ferrovial N.V.
+  yahoo: PBR
+- id: WDC
+  name: Western Digital Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: FER
-- id: HMC
-  name: Honda Motor Co., Ltd.
+  yahoo: WDC
+- id: COF
+  name: Capital One Financial Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: HMC
-- id: RKLB
-  name: Rocket Lab Corporation
+  yahoo: COF
+- id: SNY
+  name: Sanofi
   market: us
   kind: aktie
   unit: $
-  yahoo: RKLB
-- id: AIG
-  name: American International Group, Inc.
+  yahoo: SNY
+- id: CVS
+  name: CVS Health Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: AIG
-- id: YUM
-  name: Yum! Brands, Inc.
+  yahoo: CVS
+- id: NET
+  name: Cloudflare, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: YUM
-- id: TTWO
-  name: Take-Two Interactive Software, Inc.
+  yahoo: NET
+- id: BNS
+  name: The Bank of Nova Scotia
   market: us
   kind: aktie
   unit: $
-  yahoo: TTWO
-- id: LYV
-  name: Live Nation Entertainment, Inc.
+  yahoo: BNS
+- id: CME
+  name: CME Group Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: LYV
-- id: ABEV
-  name: Ambev S.A.
+  yahoo: CME
+- id: MPC
+  name: Marathon Petroleum Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: ABEV
-- id: PRU
-  name: Prudential Financial, Inc.
+  yahoo: MPC
+- id: PDD
+  name: PDD Holdings Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: PRU
-- id: CIEN
-  name: Ciena Corporation
+  yahoo: PDD
+- id: MAR
+  name: Marriott International, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: CIEN
-- id: UI
-  name: Ubiquiti Inc.
+  yahoo: MAR
+- id: SO
+  name: The Southern Company
   market: us
   kind: aktie
   unit: $
-  yahoo: UI
-- id: KR
-  name: The Kroger Co.
+  yahoo: SO
+- id: ENB
+  name: Enbridge Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: KR
-- id: TER
-  name: Teradyne, Inc.
+  yahoo: ENB
+- id: EQIX
+  name: Equinix, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: TER
-- id: PAYX
-  name: Paychex, Inc.
+  yahoo: EQIX
+- id: SNOW
+  name: Snowflake Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: PAYX
-- id: SLF
-  name: Sun Life Financial Inc.
+  yahoo: SNOW
+- id: CM
+  name: Canadian Imperial Bank of Commerce
   market: us
   kind: aktie
   unit: $
-  yahoo: SLF
-- id: HLN
-  name: Haleon plc
+  yahoo: CM
+- id: HCA
+  name: HCA Healthcare, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: HLN
-- id: ALAB
-  name: Astera Labs, Inc.
+  yahoo: HCA
+- id: VLO
+  name: Valero Energy Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: ALAB
-- id: VIK
-  name: Viking Holdings Ltd
+  yahoo: VLO
+- id: GLW
+  name: Corning Incorporated
   market: us
   kind: aktie
   unit: $
-  yahoo: VIK
-- id: UMC
-  name: United Microelectronics Corporation
+  yahoo: GLW
+- id: BNY
+  name: The Bank of New York Mellon Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: UMC
-- id: FIX
-  name: Comfort Systems USA, Inc.
+  yahoo: BNY
+- id: PSX
+  name: Phillips 66
   market: us
   kind: aktie
   unit: $
-  yahoo: FIX
-- id: CCL
-  name: Carnival Corporation Ltd.
+  yahoo: PSX
+- id: GSK
+  name: GSK plc
   market: us
   kind: aktie
   unit: $
-  yahoo: CCL
-- id: KB
-  name: KB Financial Group Inc.
+  yahoo: GSK
+- id: EQNR
+  name: Equinor ASA
   market: us
   kind: aktie
   unit: $
-  yahoo: KB
-- id: DHI
-  name: D.R. Horton, Inc.
+  yahoo: EQNR
+- id: DUK
+  name: Duke Energy Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: DHI
-- id: RKT
-  name: Rocket Companies, Inc.
+  yahoo: DUK
+- id: CNQ
+  name: Canadian Natural Resources Limited
   market: us
   kind: aktie
   unit: $
-  yahoo: RKT
-- id: WEC
-  name: WEC Energy Group, Inc.
+  yahoo: CNQ
+- id: ICE
+  name: Intercontinental Exchange, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: WEC
-- id: TEAM
-  name: Atlassian Corporation
+  yahoo: ICE
+- id: CEG
+  name: Constellation Energy Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: TEAM
-- id: CBOE
-  name: Cboe Global Markets, Inc.
+  yahoo: CEG
+- id: REGN
+  name: Regeneron Pharmaceuticals, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: CBOE
-- id: SKYD
-  name: Skydance Corporation
+  yahoo: REGN
+- id: GD
+  name: General Dynamics Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: SKYD
-- id: CBRE
-  name: CBRE Group, Inc.
+  yahoo: GD
+- id: MRSH
+  name: Marsh & McLennan Companies, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: CBRE
-- id: CCI
-  name: Crown Castle Inc.
+  yahoo: MRSH
+- id: WM
+  name: Waste Management, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: CCI
-- id: RVMD
-  name: Revolution Medicines, Inc.
+  yahoo: WM
+- id: CSX
+  name: CSX Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: RVMD
-- id: CHT
-  name: Chunghwa Telecom Co., Ltd.
+  yahoo: CSX
+- id: MMM
+  name: 3M Company
   market: us
   kind: aktie
   unit: $
-  yahoo: CHT
-- id: BSBR
-  name: Banco Santander (Brasil) S.A.
+  yahoo: MMM
+- id: FTNT
+  name: Fortinet, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: BSBR
-- id: SYY
-  name: Sysco Corporation
+  yahoo: FTNT
+- id: USB
+  name: U.S. Bancorp
   market: us
   kind: aktie
   unit: $
-  yahoo: SYY
-- id: PEG
-  name: Public Service Enterprise Group Incorporated
+  yahoo: USB
+- id: BX
+  name: Blackstone Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: PEG
-- id: FOXA
-  name: Fox Corporation
+  yahoo: BX
+- id: ING
+  name: ING Groep N.V.
   market: us
   kind: aktie
   unit: $
-  yahoo: FOXA
-- id: JD
-  name: JD.com, Inc.
+  yahoo: ING
+- id: MRNA
+  name: Moderna, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: JD
-- id: BIIB
-  name: Biogen Inc.
+  yahoo: MRNA
+- id: ELV
+  name: Elevance Health, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: BIIB
-- id: GEHC
-  name: GE HealthCare Technologies Inc.
+  yahoo: ELV
+- id: TT
+  name: Trane Technologies plc
   market: us
   kind: aktie
   unit: $
-  yahoo: GEHC
-- id: IBKR
-  name: Interactive Brokers Group, Inc.
+  yahoo: TT
+- id: PNC
+  name: The PNC Financial Services Group, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: IBKR
-- id: RBLX
-  name: Roblox Corporation
+  yahoo: PNC
+- id: EMR
+  name: Emerson Electric Co.
   market: us
   kind: aktie
   unit: $
-  yahoo: RBLX
-- id: MLM
-  name: Martin Marietta Materials, Inc.
+  yahoo: EMR
+- id: CDNS
+  name: Cadence Design Systems, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: MLM
-- id: P
-  name: Everpure, Inc.
+  yahoo: CDNS
+- id: PWR
+  name: Quanta Services, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: P
-- id: HIG
-  name: The Hartford Insurance Group, Inc.
+  yahoo: PWR
+- id: WAT
+  name: Waters Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: HIG
-- id: IX
-  name: ORIX Corporation
+  yahoo: WAT
+- id: CTAS
+  name: Cintas Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: IX
-- id: NTAP
-  name: NetApp, Inc.
+  yahoo: CTAS
+- id: AEM
+  name: Agnico Eagle Mines Limited
   market: us
   kind: aktie
   unit: $
-  yahoo: NTAP
-- id: UAL
-  name: United Airlines Holdings, Inc.
+  yahoo: AEM
+- id: MNST
+  name: Monster Beverage Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: UAL
-- id: VMC
-  name: Vulcan Materials Company
+  yahoo: MNST
+- id: HWM
+  name: Howmet Aerospace Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: VMC
-- id: VOD
-  name: Vodafone Group Public Limited Company
+  yahoo: HWM
+- id: SNPS
+  name: Synopsys, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: VOD
-- id: ACGL
-  name: Arch Capital Group Ltd.
+  yahoo: SNPS
+- id: CMCSA
+  name: Comcast Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: ACGL
-- id: HEI-A
-  name: HEICO Corporation
+  yahoo: CMCSA
+- id: AMT
+  name: American Tower Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: HEI-A
-- id: ODFL
-  name: Old Dominion Freight Line, Inc.
+  yahoo: AMT
+- id: MSI
+  name: Motorola Solutions, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: ODFL
-- id: MDLN
-  name: Medline Inc.
+  yahoo: MSI
+- id: MCO
+  name: Moody's Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: MDLN
-- id: NBIS
-  name: Nebius Group N.V.
+  yahoo: MCO
+- id: WMB
+  name: The Williams Companies, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: NBIS
-- id: HSY
-  name: The Hershey Company
+  yahoo: WMB
+- id: FCX
+  name: Freeport-McMoRan Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: HSY
-- id: CNC
-  name: Centene Corporation
+  yahoo: FCX
+- id: KKR
+  name: KKR & Co. Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: CNC
-- id: ALC
-  name: Alcon Inc.
+  yahoo: KKR
+- id: JCI
+  name: Johnson Controls International plc
   market: us
   kind: aktie
   unit: $
-  yahoo: ALC
-- id: MTD
-  name: Mettler-Toledo International Inc.
+  yahoo: JCI
+- id: RCL
+  name: Royal Caribbean Cruises Ltd.
   market: us
   kind: aktie
   unit: $
-  yahoo: MTD
-- id: ERIC
-  name: Telefonaktiebolaget LM Ericsson (publ)
+  yahoo: RCL
+- id: ECL
+  name: Ecolab Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: ERIC
-- id: IRM
-  name: Iron Mountain Incorporated
+  yahoo: ECL
+- id: SHW
+  name: The Sherwin-Williams Company
   market: us
   kind: aktie
   unit: $
-  yahoo: IRM
-- id: ESLT
-  name: Elbit Systems Ltd.
+  yahoo: SHW
+- id: MDLZ
+  name: Mondelez International, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: ESLT
-- id: MCHP
-  name: Microchip Technology Incorporated
+  yahoo: MDLZ
+- id: NGG
+  name: National Grid plc
   market: us
   kind: aktie
   unit: $
-  yahoo: MCHP
-- id: ADM
-  name: Archer-Daniels-Midland Company
+  yahoo: NGG
+- id: HLT
+  name: Hilton Worldwide Holdings Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: ADM
-- id: NTR
-  name: Nutrien Ltd.
+  yahoo: HLT
+- id: TRV
+  name: The Travelers Companies, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: NTR
-- id: STLD
-  name: Steel Dynamics, Inc.
+  yahoo: TRV
+- id: CP
+  name: Canadian Pacific Kansas City Limited
   market: us
   kind: aktie
   unit: $
-  yahoo: STLD
-- id: ZTS
-  name: Zoetis Inc.
+  yahoo: CP
+- id: BAM
+  name: Brookfield Asset Management Ltd.
   market: us
   kind: aktie
   unit: $
-  yahoo: ZTS
-- id: RMD
-  name: ResMed Inc.
+  yahoo: BAM
+- id: ITW
+  name: Illinois Tool Works Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: RMD
-- id: SUNB
-  name: Sunbelt Rentals Holdings, Inc.
+  yahoo: ITW
+- id: ITUB
+  name: Itaú Unibanco Holding S.A.
   market: us
   kind: aktie
   unit: $
-  yahoo: SUNB
-- id: VG
-  name: Venture Global, Inc.
+  yahoo: ITUB
+- id: VRT
+  name: Vertiv Holdings Co
   market: us
   kind: aktie
   unit: $
-  yahoo: VG
-- id: EXR
-  name: Extra Space Storage Inc.
+  yahoo: VRT
+- id: EOG
+  name: EOG Resources, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: EXR
-- id: TWLO
-  name: Twilio Inc.
+  yahoo: EOG
+- id: EPD
+  name: Enterprise Products Partners L.P.
   market: us
   kind: aktie
   unit: $
-  yahoo: TWLO
-- id: IR
-  name: Ingersoll Rand Inc.
+  yahoo: EPD
+- id: E
+  name: Eni S.p.A.
   market: us
   kind: aktie
   unit: $
-  yahoo: IR
-- id: EQT
-  name: EQT Corporation
+  yahoo: E
+- id: ASX
+  name: ASE Technology Holding Co., Ltd.
   market: us
   kind: aktie
   unit: $
-  yahoo: EQT
-- id: FISV
-  name: Fiserv, Inc.
+  yahoo: ASX
+- id: NTES
+  name: NetEase, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: FISV
-- id: NTRS
-  name: Northern Trust Corporation
+  yahoo: NTES
+- id: CVNA
+  name: Carvana Co.
   market: us
   kind: aktie
   unit: $
-  yahoo: NTRS
-- id: RJF
-  name: Raymond James Financial, Inc.
+  yahoo: CVNA
+- id: CI
+  name: The Cigna Group
   market: us
   kind: aktie
   unit: $
-  yahoo: RJF
-- id: CLS
-  name: Celestica Inc.
+  yahoo: CI
+- id: NOC
+  name: Northrop Grumman Corporation
   market: us
   kind: aktie
   unit: $
-  yahoo: CLS
-- id: OKTA
-  name: Okta, Inc.
+  yahoo: NOC
+- id: CL
+  name: Colgate-Palmolive Company
   market: us
   kind: aktie
   unit: $
-  yahoo: OKTA
-- id: GMAB
-  name: Genmab A/S
+  yahoo: CL
+- id: RSG
+  name: Republic Services, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: GMAB
-- id: HBAN
-  name: Huntington Bancshares Incorporated
+  yahoo: RSG
+- id: CNI
+  name: Canadian National Railway Company
   market: us
   kind: aktie
   unit: $
-  yahoo: HBAN
-- id: ILMN
-  name: Illumina, Inc.
+  yahoo: CNI
+- id: AMX
+  name: América Móvil, S.A.B. de C.V.
   market: us
   kind: aktie
   unit: $
-  yahoo: ILMN
-- id: GFI
-  name: Gold Fields Limited
+  yahoo: AMX
+- id: ROST
+  name: Ross Stores, Inc.
   market: us
   kind: aktie
   unit: $
-  yahoo: GFI
+  yahoo: ROST
+- id: BCS
+  name: Barclays PLC
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BCS
+- id: DASH
+  name: DoorDash, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: DASH
+- id: SLB
+  name: SLB N.V.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SLB
+- id: NSC
+  name: Norfolk Southern Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: NSC
+- id: MELI
+  name: MercadoLibre, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: MELI
+- id: FDX
+  name: FedEx Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FDX
+- id: LYG
+  name: Lloyds Banking Group plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LYG
+- id: ORLY
+  name: O'Reilly Automotive, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ORLY
+- id: HOOD
+  name: Robinhood Markets, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: HOOD
+- id: TGT
+  name: Target Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TGT
+- id: GM
+  name: General Motors Company
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: GM
+- id: MFC
+  name: Manulife Financial Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: MFC
+- id: APO
+  name: Apollo Global Management, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: APO
+- id: KMI
+  name: Kinder Morgan, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: KMI
+- id: AJG
+  name: Arthur J. Gallagher & Co.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AJG
+- id: HON
+  name: Honeywell International Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: HON
+- id: AON
+  name: Aon plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AON
+- id: MPWR
+  name: Monolithic Power Systems, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: MPWR
+- id: URI
+  name: United Rentals, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: URI
+- id: APD
+  name: Air Products and Chemicals, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: APD
+- id: GWW
+  name: W.W. Grainger, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: GWW
+- id: AEP
+  name: American Electric Power Company, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AEP
+- id: RELX
+  name: RELX PLC
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RELX
+- id: DLR
+  name: Digital Realty Trust, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: DLR
+- id: DB
+  name: Deutsche Bank Aktiengesellschaft
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: DB
+- id: TAK
+  name: Takeda Pharmaceutical Company Limited
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TAK
+- id: NXPI
+  name: NXP Semiconductors N.V.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: NXPI
+- id: TRP
+  name: TC Energy Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TRP
+- id: COR
+  name: Cencora, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: COR
+- id: DDOG
+  name: Datadog, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: DDOG
+- id: HPE
+  name: Hewlett Packard Enterprise Company
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: HPE
+- id: ALL
+  name: The Allstate Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ALL
+- id: GS-PA
+  name: The Goldman Sachs Group, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: GS-PA
+- id: KMB
+  name: Kimberly-Clark Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: KMB
+- id: TDG
+  name: TransDigm Group Incorporated
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TDG
+- id: CAH
+  name: Cardinal Health, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CAH
+- id: BSX
+  name: Boston Scientific Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BSX
+- id: MET
+  name: MetLife, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: MET
+- id: FAST
+  name: Fastenal Company
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FAST
+- id: TRGP
+  name: Targa Resources Corp.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TRGP
+- id: LNG
+  name: Cheniere Energy, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LNG
+- id: AFL
+  name: Aflac Incorporated
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AFL
+- id: CRH
+  name: CRH plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CRH
+- id: TEL
+  name: TE Connectivity plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TEL
+- id: CMI
+  name: Cummins Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CMI
+- id: PSA
+  name: Public Storage
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PSA
+- id: NWG
+  name: NatWest Group plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: NWG
+- id: ARGX
+  name: argenx SE
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ARGX
+- id: B
+  name: Barrick Mining Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: B
+- id: MTB
+  name: M&T Bank Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: MTB
+- id: ZS
+  name: Zscaler, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ZS
+- id: EC
+  name: Ecopetrol S.A.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: EC
+- id: AEE
+  name: Ameren Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AEE
+- id: CCJ
+  name: Cameco Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CCJ
+- id: CRWV
+  name: CoreWeave, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CRWV
+- id: SN
+  name: SharkNinja, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SN
+- id: PUK
+  name: Prudential plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PUK
+- id: EXPE
+  name: Expedia Group, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: EXPE
+- id: TS
+  name: Tenaris S.A.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TS
+- id: RPRX
+  name: Royalty Pharma plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RPRX
+- id: FTS
+  name: Fortis Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FTS
+- id: DXCM
+  name: DexCom, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: DXCM
+- id: ARES
+  name: Ares Management Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ARES
+- id: WTW
+  name: Willis Towers Watson Public Limited Company
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: WTW
+- id: LH
+  name: Labcorp Holdings Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LH
+- id: TECK
+  name: Teck Resources Limited
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TECK
+- id: TDY
+  name: Teledyne Technologies Incorporated
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TDY
+- id: RYAAY
+  name: Ryanair Holdings plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RYAAY
+- id: ATO
+  name: Atmos Energy Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ATO
+- id: CQP
+  name: Cheniere Energy Partners, L.P.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CQP
+- id: CPRT
+  name: Copart, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CPRT
+- id: SHG
+  name: Shinhan Financial Group Co., Ltd.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SHG
+- id: WSM
+  name: Williams-Sonoma, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: WSM
+- id: AWK
+  name: American Water Works Company, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AWK
+- id: PHG
+  name: Koninklijke Philips N.V.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PHG
+- id: OTIS
+  name: Otis Worldwide Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: OTIS
+- id: CINF
+  name: Cincinnati Financial Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CINF
+- id: CPAY
+  name: Corpay, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CPAY
+- id: PBA
+  name: Pembina Pipeline Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PBA
+- id: BAP
+  name: Credicorp Ltd.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BAP
+- id: EME
+  name: EMCOR Group, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: EME
+- id: KHC
+  name: The Kraft Heinz Company
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: KHC
+- id: ROIV
+  name: Roivant Sciences Ltd.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ROIV
+- id: FLEX
+  name: Flex Ltd.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FLEX
+- id: 'ON'
+  name: ON Semiconductor Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: 'ON'
+- id: WRB
+  name: W. R. Berkley Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: WRB
+- id: WST
+  name: West Pharmaceutical Services, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: WST
+- id: VLTO
+  name: Veralto Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: VLTO
+- id: PCG
+  name: PG&E Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PCG
+- id: DGX
+  name: Quest Diagnostics Incorporated
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: DGX
+- id: ECHO
+  name: EchoStar Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ECHO
+- id: ZM
+  name: Zoom Communications, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ZM
+- id: CTSH
+  name: Cognizant Technology Solutions Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CTSH
+- id: VRSN
+  name: VeriSign, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: VRSN
+- id: BBD
+  name: Banco Bradesco S.A.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BBD
+- id: NMR
+  name: Nomura Holdings, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: NMR
+- id: FWONK
+  name: Formula One Group
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FWONK
+- id: DOV
+  name: Dover Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: DOV
+- id: ULTA
+  name: Ulta Beauty, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ULTA
+- id: TW
+  name: Tradeweb Markets Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TW
+- id: CPNG
+  name: Coupang, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CPNG
+- id: MDB
+  name: MongoDB, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: MDB
+- id: VICI
+  name: VICI Properties Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: VICI
+- id: TCOM
+  name: Trip.com Group Limited
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TCOM
+- id: CFG
+  name: Citizens Financial Group, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CFG
+- id: CNP
+  name: CenterPoint Energy, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CNP
+- id: HAL
+  name: Halliburton Company
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: HAL
+- id: PPG
+  name: PPG Industries, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PPG
+- id: FE
+  name: FirstEnergy Corp.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FE
+- id: ES
+  name: Eversource Energy
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ES
+- id: JBL
+  name: Jabil Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: JBL
+- id: AER
+  name: AerCap Holdings N.V.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AER
+- id: DLTR
+  name: Dollar Tree, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: DLTR
+- id: PPL
+  name: PPL Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PPL
+- id: VRSK
+  name: Verisk Analytics, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: VRSK
+- id: BIDU
+  name: Baidu, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BIDU
+- id: CHD
+  name: Church & Dwight Co., Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CHD
+- id: QSR
+  name: Restaurant Brands International Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: QSR
+- id: CRDO
+  name: Credo Technology Group Holding Ltd
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CRDO
+- id: CASY
+  name: Casey's General Stores, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CASY
+- id: TPR
+  name: Tapestry, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TPR
+- id: HPQ
+  name: HP Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: HPQ
+- id: IHG
+  name: InterContinental Hotels Group PLC
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: IHG
+- id: INSM
+  name: Insmed Incorporated
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: INSM
+- id: ATI
+  name: ATI Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ATI
+- id: DRI
+  name: Darden Restaurants, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: DRI
+- id: Q
+  name: Qnity Electronics, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: Q
+- id: FCNCA
+  name: First Citizens BancShares, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FCNCA
+- id: LVS
+  name: Las Vegas Sands Corp.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LVS
+- id: UTHR
+  name: United Therapeutics Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: UTHR
+- id: EXPD
+  name: Expeditors International of Washington, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: EXPD
+- id: FTI
+  name: TechnipFMC plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FTI
+- id: AXON
+  name: Axon Enterprise, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AXON
+- id: INCY
+  name: Incyte Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: INCY
+- id: STE
+  name: STERIS plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: STE
+- id: STZ
+  name: Constellation Brands, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: STZ
+- id: KGC
+  name: Kinross Gold Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: KGC
+- id: RF
+  name: Regions Financial Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RF
+- id: IOT
+  name: Samsara Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: IOT
+- id: DOW
+  name: Dow Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: DOW
+- id: MKL
+  name: Markel Group Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: MKL
+- id: PFG
+  name: Principal Financial Group, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PFG
+- id: ROKU
+  name: Roku, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ROKU
+- id: OMC
+  name: Omnicom Group Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: OMC
+- id: GFS
+  name: GLOBALFOUNDRIES Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: GFS
+- id: VTRS
+  name: Viatris Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: VTRS
+- id: ENTG
+  name: Entegris, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ENTG
+- id: BRO
+  name: Brown & Brown, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BRO
+- id: PHM
+  name: PulteGroup, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PHM
+- id: GPN
+  name: Global Payments Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: GPN
+- id: USFD
+  name: US Foods Holding Corp.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: USFD
+- id: CBRS
+  name: Cerebras Systems Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CBRS
+- id: ARXS
+  name: Arxis, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ARXS
+- id: HUBB
+  name: Hubbell Incorporated
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: HUBB
+- id: RL
+  name: Ralph Lauren Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RL
+- id: TROW
+  name: T. Rowe Price Group, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TROW
+- id: EIX
+  name: Edison International
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: EIX
+- id: THC
+  name: Tenet Healthcare Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: THC
+- id: LPLA
+  name: LPL Financial Holdings Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LPLA
+- id: RBRK
+  name: Rubrik, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RBRK
+- id: SW
+  name: Smurfit Westrock Plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SW
+- id: L
+  name: Loews Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: L
+- id: KEY
+  name: KeyCorp
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: KEY
+- id: PKG
+  name: Packaging Corporation of America
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PKG
+- id: AFRM
+  name: Affirm Holdings, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AFRM
+- id: SYF
+  name: Synchrony Financial
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SYF
+- id: U
+  name: Unity Software Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: U
+- id: LUV
+  name: Southwest Airlines Co.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LUV
+- id: RS
+  name: Reliance, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RS
+- id: NI
+  name: NiSource Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: NI
+- id: XPO
+  name: XPO, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: XPO
+- id: EFX
+  name: Equifax Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: EFX
+- id: AMRZ
+  name: Amrize Ltd
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AMRZ
+- id: CMS
+  name: CMS Energy Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CMS
+- id: BBY
+  name: Best Buy Co., Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BBY
+- id: BR
+  name: Broadridge Financial Solutions, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BR
+- id: RGLD
+  name: Royal Gold, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RGLD
+- id: CDW
+  name: CDW Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CDW
+- id: XYL
+  name: Xylem Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: XYL
+- id: PTC
+  name: PTC Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PTC
+- id: JBHT
+  name: J.B. Hunt Transport Services, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: JBHT
+- id: SWKS
+  name: Skyworks Solutions, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SWKS
+- id: BNTX
+  name: BioNTech SE
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BNTX
+- id: WIT
+  name: Wipro Limited
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: WIT
+- id: ALNY
+  name: Alnylam Pharmaceuticals, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ALNY
+- id: GH
+  name: Guardant Health, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: GH
+- id: CIB
+  name: Grupo Cibest S.A.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CIB
+- id: TSN
+  name: Tyson Foods, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TSN
+- id: EVRG
+  name: Evergy, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: EVRG
+- id: LYB
+  name: LyondellBasell Industries N.V.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LYB
+- id: NRG
+  name: NRG Energy, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: NRG
+- id: DD
+  name: DuPont de Nemours, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: DD
+- id: SOFI
+  name: SoFi Technologies, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SOFI
+- id: EXE
+  name: Expand Energy Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: EXE
+- id: AMCR
+  name: Amcor plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AMCR
+- id: FTV
+  name: Fortive Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FTV
+- id: IFF
+  name: International Flavors & Fragrances Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: IFF
+- id: BCE
+  name: BCE Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BCE
+- id: LEN
+  name: Lennar Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LEN
+- id: ZBH
+  name: Zimmer Biomet Holdings, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ZBH
+- id: WWD
+  name: Woodward, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: WWD
+- id: FDXF
+  name: FedEx Freight Holding Company, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FDXF
+- id: BCH
+  name: Banco de Chile
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BCH
+- id: SBAC
+  name: SBA Communications Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SBAC
+- id: TOST
+  name: Toast, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TOST
+- id: TPL
+  name: Texas Pacific Land Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TPL
+- id: SNX
+  name: TD SYNNEX Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SNX
+- id: BEKE
+  name: KE Holdings Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BEKE
+- id: RDDT
+  name: Reddit, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RDDT
+- id: CNH
+  name: CNH Industrial N.V.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CNH
+- id: BG
+  name: Bunge Global SA
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BG
+- id: ITT
+  name: ITT Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ITT
+- id: PR
+  name: Permian Resources Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PR
+- id: VIV
+  name: Telefônica Brasil S.A.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: VIV
+- id: TSCO
+  name: Tractor Supply Company
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TSCO
+- id: SNA
+  name: Snap-on Incorporated
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SNA
+- id: LNT
+  name: Alliant Energy Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LNT
+- id: MTSI
+  name: MACOM Technology Solutions Holdings, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: MTSI
+- id: FTAI
+  name: FTAI Aviation Ltd.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FTAI
+- id: RIVN
+  name: Rivian Automotive, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RIVN
+- id: NVT
+  name: nVent Electric plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: NVT
+- id: SSNC
+  name: SS&C Technologies Holdings, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SSNC
+- id: J
+  name: Jacobs Solutions Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: J
+- id: FSLR
+  name: First Solar, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FSLR
+- id: APG
+  name: APi Group Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: APG
+- id: BEN
+  name: Franklin Templeton Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BEN
+- id: MEDP
+  name: Medpace Holdings, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: MEDP
+- id: CF
+  name: CF Industries Holdings, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CF
+- id: NDSN
+  name: Nordson Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: NDSN
+- id: ROL
+  name: Rollins, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ROL
+- id: FFIV
+  name: F5, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FFIV
+- id: BIP
+  name: Brookfield Infrastructure Partners L.P.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BIP
+- id: IP
+  name: International Paper Company
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: IP
+- id: EWBC
+  name: East West Bancorp, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: EWBC
+- id: GIS
+  name: General Mills, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: GIS
+- id: TSEM
+  name: Tower Semiconductor Ltd.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TSEM
+- id: RGA
+  name: Reinsurance Group of America, Incorporated
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RGA
+- id: SMCI
+  name: Super Micro Computer, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SMCI
+- id: RCI
+  name: Rogers Communications Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RCI
+- id: GEN
+  name: Gen Digital Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: GEN
+- id: PS
+  name: Pershing Square Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PS
+- id: ASND
+  name: Ascendis Pharma A/S
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ASND
+- id: AS
+  name: Amer Sports, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AS
+- id: RVTY
+  name: Revvity, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RVTY
+- id: ESS
+  name: Essex Property Trust, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ESS
+- id: HST
+  name: Host Hotels & Resorts, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: HST
+- id: IEX
+  name: IDEX Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: IEX
+- id: H
+  name: Hyatt Hotels Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: H
+- id: OVV
+  name: Ovintiv Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: OVV
+- id: PFGC
+  name: Performance Food Group Company
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PFGC
+- id: CW
+  name: Curtiss-Wright Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CW
+- id: DINO
+  name: HF Sinclair Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: DINO
+- id: WES
+  name: Western Midstream Partners, LP
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: WES
+- id: PAA
+  name: Plains All American Pipeline, L.P.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PAA
+- id: NBIX
+  name: Neurocrine Biosciences, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: NBIX
+- id: RBA
+  name: RB Global, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RBA
+- id: WF
+  name: Woori Financial Group Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: WF
+- id: EXEL
+  name: Exelixis, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: EXEL
+- id: HAS
+  name: Hasbro, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: HAS
+- id: GPC
+  name: Genuine Parts Company
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: GPC
+- id: KIM
+  name: Kimco Realty Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: KIM
+- id: LSCC
+  name: Lattice Semiconductor Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LSCC
+- id: BALL
+  name: Ball Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BALL
+- id: KSPI
+  name: Joint Stock Company Kaspi.kz
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: KSPI
+- id: TYL
+  name: Tyler Technologies, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TYL
+- id: TLN
+  name: Talen Energy Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TLN
+- id: SWK
+  name: Stanley Black & Decker, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SWK
+- id: JLL
+  name: Jones Lang LaSalle Incorporated
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: JLL
+- id: GIB
+  name: CGI Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: GIB
+- id: NTNX
+  name: Nutanix, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: NTNX
+- id: WMG
+  name: Warner Music Group Corp.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: WMG
+- id: YUMC
+  name: Yum China Holdings, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: YUMC
+- id: ULS
+  name: UL Solutions Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ULS
+- id: CRCL
+  name: Circle Internet Group
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CRCL
+- id: CRL
+  name: Charles River Laboratories International, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CRL
+- id: MAS
+  name: Masco Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: MAS
+- id: LAMR
+  name: Lamar Advertising Company
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LAMR
+- id: ALLE
+  name: Allegion plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ALLE
+- id: MGA
+  name: Magna International Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: MGA
+- id: JHX
+  name: James Hardie Industries plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: JHX
+- id: APA
+  name: APA Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: APA
+- id: LDOS
+  name: Leidos Holdings, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LDOS
+- id: WCC
+  name: WESCO International, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: WCC
+- id: BURL
+  name: Burlington Stores, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BURL
+- id: CRBG
+  name: Corebridge Financial, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CRBG
+- id: AIZ
+  name: Assurant, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: AIZ
+- id: HTHT
+  name: H World Group Limited
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: HTHT
+- id: NWS
+  name: News Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: NWS
+- id: EMA
+  name: Emera Incorporated
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: EMA
+- id: EG
+  name: Everest Group, Ltd.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: EG
+- id: CHRW
+  name: C.H. Robinson Worldwide, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CHRW
+- id: PAAS
+  name: Pan American Silver Corp.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PAAS
+- id: CLH
+  name: Clean Harbors, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CLH
+- id: RBC
+  name: RBC Bearings Incorporated
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: RBC
+- id: TRU
+  name: TransUnion
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: TRU
+- id: JAZZ
+  name: Jazz Pharmaceuticals plc
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: JAZZ
+- id: LECO
+  name: Lincoln Electric Holdings, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: LECO
+- id: SQM
+  name: Sociedad Química y Minera de Chile S.A.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SQM
+- id: NVR
+  name: NVR, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: NVR
+- id: INVH
+  name: Invitation Homes Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: INVH
+- id: FICO
+  name: Fair Isaac Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: FICO
+- id: W
+  name: Wayfair Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: W
+- id: BBIO
+  name: BridgeBio Pharma, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BBIO
+- id: PKX
+  name: POSCO Holdings Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PKX
+- id: CHTR
+  name: Charter Communications, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CHTR
+- id: CSL
+  name: Carlisle Companies Incorporated
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CSL
+- id: GFL
+  name: GFL Environmental Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: GFL
+- id: CX
+  name: CEMEX, S.A.B. de C.V.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CX
+- id: SOLV
+  name: Solventum Corporation
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: SOLV
+- id: BSAC
+  name: Banco Santander-Chile
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: BSAC
+- id: CHKP
+  name: Check Point Software Technologies Ltd.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: CHKP
+- id: ICLR
+  name: ICON Public Limited Company
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ICLR
+- id: PNFP
+  name: Pinnacle Financial Partners, Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: PNFP
+- id: ZTO
+  name: ZTO Express (Cayman) Inc.
+  market: us
+  kind: aktie
+  unit: $
+  yahoo: ZTO
