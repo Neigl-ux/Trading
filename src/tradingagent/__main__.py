@@ -94,6 +94,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("export").set_defaults(func=cmd_export)
     sub.add_parser("status").set_defaults(func=cmd_status)
     sub.add_parser("heartbeat").set_defaults(func=cmd_heartbeat)
+    sub.add_parser("verify", help="Asset-Datenbank gegen die Quellen prüfen").set_defaults(
+        func=lambda args: __import__("tradingagent.verify", fromlist=["main"]).main())
     sub.add_parser("tradegate-check", help="Tradegate-Echtzeitkurse prüfen").set_defaults(
         func=lambda args: __import__("tradingagent.tradegate_check", fromlist=["main"]).main())
     args = parser.parse_args(argv)
