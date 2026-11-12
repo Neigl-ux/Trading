@@ -29,10 +29,10 @@ UA = {"User-Agent": "Mozilla/5.0 (tradingagent; privates Forschungsprojekt)"}
 XETRA_PAGE = "https://www.xetra.com/xetra-en/instruments/instruments"
 
 # Zielgrößen (zusätzlich zu den handverlesenen Werten)
-N_SHARES_XETRA = 260
+N_SHARES_XETRA = 300
 N_ETF = 260
 N_ETC = 40
-N_US = 460
+N_US = 500
 
 # Aktien aus diesen Xetra-Gruppen sind meist US-Werte in Euro; die kommen über die US-Börse
 SKIP_GROUPS = {"NORDAMERIKA"}
@@ -148,7 +148,7 @@ def us_largest(n: int) -> list[dict]:
     q = EquityQuery("and", [EquityQuery("eq", ["region", "us"]), EquityQuery("gt", ["intradaymarketcap", 2_000_000_000])])
     rows: list[dict] = []
     import time
-    for offset in range(0, n + 500, 250):
+    for offset in range(0, n + 1250, 250):
         res = {}
         for wait in (0, 30, 90, 180):  # bei Ratenbegrenzung mit wachsender Pause erneut
             time.sleep(wait)
@@ -160,7 +160,7 @@ def us_largest(n: int) -> list[dict]:
         quotes = res.get("quotes", [])
         rows += [x for x in quotes if x.get("quoteType") == "EQUITY" and x.get("currency") == "USD"
                  and x.get("exchange") in US_EXCHANGES]  # keine außerbörslichen OTC-Werte
-        if len(quotes) < 250 or len(rows) >= n + 60:
+        if len(quotes) < 250 or len(rows) >= n + 400:
             break
     print(f"US-Screener: {len(rows)} Unternehmen")
     return rows

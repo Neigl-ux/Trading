@@ -774,6 +774,7 @@ function updatePerf() {
     b.title = p && p.ref ? `Vergleich mit ${fmtPrice(p.ref.price, unitOf(asset.entry))} (${fmtTime(p.ref.time, true)} Uhr)` : "Für diesen Zeitraum liegen noch keine passenden Daten vor";
   }
   updateHeader();
+  if (!state.hovering) showLastInLegend();
 }
 
 function buildStrip() {
@@ -922,20 +923,28 @@ function updateHeader() {
   const unit = unitOf(e);
   $("q-price").textContent = priceText(e, asset.price);
   const day = lastPerf["1D"];
+  // Veränderung, Hoch, Tief und Volumen beziehen sich auf den gewählten Zeitraum (5m = letzte 5 Minuten …)
+  const per = lastPerf[viewKey];
+  const short = PERIOD_SHORT[viewKey] || "";
   const ch = $("q-change");
-  if (day && day.ref) {
+  if (per && per.ref) {
+    const abs = asset.price - per.ref.price;
+    ch.textContent = `${abs >= 0 ? "+" : "-"}${fmtPrice(Math.abs(abs), unit)} (${formatPct(per.pct)}) ${short}`;
+    ch.className = "change " + pctClass(per.pct);
+  } else if (day && day.ref) {
     const abs = asset.price - day.ref.price;
     ch.textContent = `${abs >= 0 ? "+" : "-"}${fmtPrice(Math.abs(abs), unit)} (${formatPct(day.pct)}) heute`;
     ch.className = "change " + pctClass(day.pct);
   } else {
     ch.textContent = "";
   }
-  const stats = asset.stats || todayStats();
+  const ps = periodSummary();
+  const stats = ps ? { high: ps.high, low: ps.low, volume: ps.volume } : null;
   const box = $("q-stats");
   box.replaceChildren();
   if (!stats) return;
-  const label = stats.kind === "24h" ? ["24 Std Hoch", "24 Std Tief", "24 Std Volumen"] : ["Tageshoch", "Tagestief", "Volumen heute"];
-  const vals = [fmtPrice(stats.high, unit), fmtPrice(stats.low, unit), fmtVolume(stats.volume, stats.volumeUnit)];
+  const label = [`Hoch ${short}`, `Tief ${short}`, `Volumen ${short}`];
+  const vals = [fmtPrice(stats.high, unit), fmtPrice(stats.low, unit), fmtVolume(stats.volume)];
   label.forEach((l, i) => {
     const d = document.createElement("div");
     const dt = document.createElement("dt"); dt.textContent = l;
@@ -1239,6 +1248,8 @@ function renderLegendRow(i) {
   const chg = el.querySelector(".lg-prev");
   chg.textContent = formatPct(pct);
   chg.className = "lg-prev " + pctClass(pct);
+  chg.previousElementSibling.textContent = "zur Vorkerze";
+  close.previousElementSibling.textContent = "Schluss";
   const unit = unitOf(state.entry);
   el.querySelector(".lg-unit").textContent = k !== 1
     ? `Werte in $, umgerechnet mit 1 € = ${nf(4).format(k)} $`
@@ -1246,10 +1257,61 @@ function renderLegendRow(i) {
   el.hidden = false;
 }
 
+// Ohne Finger/Maus über dem Chart: Werte des ganzen Zeitraums. Beim Darüberfahren: die einzelne Kerze.
+const PERIOD_LONG = { "1m": "Letzte Minute", "5m": "Letzte 5 Minuten", "15m": "Letzte 15 Minuten", "30m": "Letzte 30 Minuten",
+  "1h": "Letzte Stunde", "4h": "Letzte 4 Stunden", "12h": "Letzte 12 Stunden", "1D": "Heute", "1W": "Letzte 7 Tage",
+  "1M": "Letzter Monat", "6M": "Letzte 6 Monate", "1J": "Letztes Jahr", "3J": "Letzte 3 Jahre", "5J": "Letzte 5 Jahre", "10J": "Letzte 10 Jahre" };
+const PERIOD_SHORT = { "1m": "1 Min", "5m": "5 Min", "15m": "15 Min", "30m": "30 Min", "1h": "1 Std", "4h": "4 Std", "12h": "12 Std",
+  "1D": "heute", "1W": "7 Tage", "1M": "1 Monat", "6M": "6 Monate", "1J": "1 Jahr", "3J": "3 Jahre", "5J": "5 Jahre", "10J": "10 Jahre" };
+
+/** Eröffnung, Hoch, Tief, Schluss und Volumen über den gewählten Zeitraum. */
+function periodSummary() {
+  const rows = state.rows || [];
+  if (!rows.length) return null;
+  const view = VIEW_BY_KEY[viewKey];
+  const { start, end } = viewRange(view, rows);
+  let part = rows.filter((r) => r[0] >= start && r[0] < end);
+  if (!part.length) part = rows.slice(-1);
+  const live = asset.price != null && asset.asOf != null && asset.asOf >= part[part.length - 1][0];
+  const close = live ? asset.price : part[part.length - 1][4];
+  let high = Math.max(...part.map((r) => r[2])), low = Math.min(...part.map((r) => r[3]));
+  if (live) { high = Math.max(high, close); low = Math.min(low, close); }
+  const per = lastPerf[viewKey];
+  return {
+    start: part[0][0], end: live ? asset.asOf : part[part.length - 1][0] + (STEP[state.interval] || 0),
+    open: part[0][1], high, low, close,
+    volume: part.reduce((a, r) => a + (r[5] || 0), 0),
+    pct: per && per.pct != null ? per.pct : (close / part[0][1] - 1) * 100,
+  };
+}
+
 function showLastInLegend() {
   const rows = state.rows || [];
   if (!rows.length) { $("legend").hidden = true; return; }
-  renderLegendRow(rows.length - 1);
+  const ps = periodSummary();
+  if (!ps) return renderLegendRow(rows.length - 1);
+  const el = $("legend");
+  const k = curFactor(unitOf(state.entry));
+  const f = (x) => numFmt(x * k);
+  const span = STEP[state.interval] >= 86400
+    ? `${fmtDate(ps.start)} – ${fmtDate(ps.end)}`
+    : `${fmtTime(ps.start, true)} – ${fmtTime(ps.end)} Uhr`;
+  el.querySelector(".lg-date").textContent = `${PERIOD_LONG[viewKey] || ""}: ${span}`;
+  el.querySelector(".lg-open").textContent = f(ps.open);
+  el.querySelector(".lg-high").textContent = f(ps.high);
+  el.querySelector(".lg-low").textContent = f(ps.low);
+  const close = el.querySelector(".lg-close");
+  close.textContent = f(ps.close);
+  close.className = "lg-close " + trendClass(ps.close - ps.open);
+  close.previousElementSibling.textContent = "Aktuell";
+  el.querySelector(".lg-vol").textContent = fmtVolume(ps.volume);
+  const chg = el.querySelector(".lg-prev");
+  chg.textContent = formatPct(ps.pct);
+  chg.className = "lg-prev " + pctClass(ps.pct);
+  chg.previousElementSibling.textContent = "im Zeitraum";
+  const unit = unitOf(state.entry);
+  el.querySelector(".lg-unit").textContent = k !== 1 ? `Werte in $, umgerechnet mit 1 € = ${nf(4).format(k)} $` : `Werte in ${unit}`;
+  el.hidden = false;
 }
 
 
