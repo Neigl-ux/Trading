@@ -182,3 +182,16 @@ def test_summary_uses_tradegate_and_day_reference(settings):
     live = _summary(_Loader(storage, inst), now, Quote(206.85, now))
     assert live["last"] == 206.85 and live["last_source"] == "tradegate"
     assert live["change_1d"] == pytest.approx(206.85 / 200 - 1)
+
+
+def test_live_symbols_finnhub_and_binance():
+    from tradingagent.config import Instrument
+    from tradingagent.export import live_symbols
+    us = Instrument(id="BRK-B", name="Berkshire", market="us", symbols={"yahoo": "BRK-B"}, unit="$")
+    assert live_symbols(us) == {"finnhub": "BRK.B"}
+    idx = Instrument(id="SPX", name="S&P 500", market="us", symbols={"yahoo": "^GSPC"}, kind="index")
+    assert live_symbols(idx) is None
+    btc = Instrument(id="BTC-EUR", name="Bitcoin", market="crypto", symbols={"binance": "BTCEUR"}, kind="krypto")
+    assert live_symbols(btc) == {"binance": "BTCEUR"}
+    sap = Instrument(id="SAP", name="SAP", market="xetra", symbols={"yahoo": "SAP.DE"})
+    assert live_symbols(sap) is None

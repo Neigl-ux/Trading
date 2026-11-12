@@ -24,7 +24,7 @@ export async function deriveKey(passphrase, kdf) {
     base,
     { name: "AES-GCM", length: 256 },
     true,
-    ["decrypt"],
+    ["decrypt", "encrypt"],
   );
 }
 
@@ -33,7 +33,7 @@ export async function exportKey(key) {
 }
 
 export async function importKey(rawB64) {
-  return crypto.subtle.importKey("raw", b64ToBytes(rawB64), { name: "AES-GCM" }, true, ["decrypt"]);
+  return crypto.subtle.importKey("raw", b64ToBytes(rawB64), { name: "AES-GCM" }, true, ["decrypt", "encrypt"]);
 }
 
 // Öffnet eine Datei aus dem Export. Unverschlüsselte Dateien (privater Server) gehen auch.
@@ -41,4 +41,16 @@ export async function openSealed(key, sealed) {
   if (!sealed.enc) return sealed.data;
   const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToBytes(sealed.iv) }, key, b64ToBytes(sealed.ct));
   return JSON.parse(dec.decode(plain));
+}
+
+// Kleine Geheimnisse (z. B. einen API-Schlüssel) auf dem Gerät verschlüsselt ablegen
+export async function sealText(key, text) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(text));
+  return { iv: bytesToB64(iv), ct: bytesToB64(ct) };
+}
+
+export async function openText(key, box) {
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToBytes(box.iv) }, key, b64ToBytes(box.ct));
+  return dec.decode(plain);
 }

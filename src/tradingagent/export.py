@@ -169,6 +169,17 @@ def _summary(loader: _Loader, now: pd.Timestamp, quote=None) -> dict[str, Any]:
     }
 
 
+def live_symbols(inst) -> dict | None:
+    """Symbole für Live-Ströme in der App: Binance für Krypto, Finnhub für US-Aktien."""
+    if inst.market == "crypto":
+        return {"binance": inst.symbol_for("binance")}
+    if inst.market == "us" and inst.kind == "aktie":
+        sym = inst.symbol_for("finnhub") or inst.symbol_for("yahoo")
+        if sym and not sym.startswith("^"):
+            return {"finnhub": sym.replace("-", ".")}  # Finnhub schreibt BRK.B statt BRK-B
+    return None
+
+
 def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, status: dict[str, Any],
                passphrase: str | None, quotes: dict | None = None) -> Path:
     """Schreibt alle Dateien für die App. Gibt den Export-Ordner zurück."""
@@ -226,7 +237,7 @@ def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, statu
                         "unit": loader.unit, "kind": inst.kind, "isin": inst.isin,
                         "converted_from": "USD" if loader.convert else None,
                         "delay_minutes": market_cfg.delay_minutes,
-                        "live": {"binance": inst.symbol_for("binance")} if inst.market == "crypto" else None,
+                        "live": live_symbols(inst),
                         **summary})
 
     index_payload = {

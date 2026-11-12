@@ -1,4 +1,5 @@
-import { deriveKey, exportKey, importKey, openSealed } from "./crypto.js";
+import { deriveKey, exportKey, importKey, openSealed, sealText, openText } from "./crypto.js";
+import { FinnhubStream, usMarketOpen } from "./finnhub.js";
 import { candleLabel, tickLabel } from "./format.js";
 import { fetchQuote, tradegateOpen } from "./tradegate.js";
 import { VIEWS, STEP, TZ as PERF_TZ, computeAll, formatPct, pctClass, periodStart, berlinParts, berlinToUtc } from "./perf.js";
@@ -136,9 +137,24 @@ function showMain() {
   $("main").hidden = false;
   updateFreshness();
   buildFilterStrip();
-  renderList();
   renderStatus();
   startAutoRefresh();
+  // Nach dem Neuladen (z. B. Wischen nach unten) dort weitermachen, wo man war
+  const r = routeNow();
+  if (!(history.state && history.state.app)) {
+    if (r.startsWith("chart/")) {
+      history.replaceState({ route: "markets", app: true, depth: 0 }, "", "#markets");
+      history.pushState({ route: r, app: true, depth: 1 }, "", "#" + r);
+    } else {
+      history.replaceState({ route: r, app: true, depth: 0 }, "", "#" + r);
+    }
+  }
+  applyRoute(r);
+  if (r === "markets") {
+    const y = Number(sessionStorage.getItem(SCROLL_STORE) || 0);
+    if (y) requestAnimationFrame(() => window.scrollTo(0, y));
+  }
+  loadFinnhubKey().then(startFinnhub);
 }
 
 function updateFreshness() {
@@ -357,22 +373,68 @@ function renderStatus() {
 
 // ---------- Tabs ----------
 const TABS = { markets: "view-markets", advisor: "view-advisor", sim: "view-sim", status: "view-status" };
+// Jeder Wechsel steht im Browserverlauf: Zurück (Handy-Geste oder Pfeil am PC) geht einen Schritt
+// zurück statt die App zu schließen, und Neuladen landet wieder auf derselben Seite.
+const SCROLL_STORE = "ta.scroll";
+history.scrollRestoration = "manual";
+let listScroll = 0;
+const routeNow = () => decodeURIComponent(location.hash.slice(1)) || "markets";
+function navigate(route, replace = false) {
+  const depth = (history.state && history.state.depth) || 0;
+  const url = "#" + route.split("/").map(encodeURIComponent).join("/");
+  if (replace) history.replaceState({ route, app: true, depth }, "", url);
+  else history.pushState({ route, app: true, depth: depth + 1 }, "", url);
+  applyRoute(route);
+}
+function applyRoute(route) {
+  if (!state.index) return;
+  const [tab, ...rest] = route.split("/");
+  if (tab === "chart") {
+    const id = rest.join("/");
+    const e = state.index.instruments.find((x) => x.id === id);
+    if (e) {
+      if ($("view-chart").hidden || !state.entry || state.entry.id !== id) showChart(e);
+      return;
+    }
+    history.replaceState({ route: "markets", app: true, depth: (history.state && history.state.depth) || 0 }, "", "#markets");
+    return showTab("markets");
+  }
+  showTab(TABS[tab] ? tab : "markets");
+}
+window.addEventListener("popstate", () => applyRoute(routeNow()));
+function setTabActive(tab) {
+  document.querySelectorAll(".tabbar button").forEach((x) => x.classList.toggle("active", x.dataset.tab === tab));
+}
+function showTab(tab) {
+  const fromChart = !$("view-chart").hidden;
+  setTabActive(tab);
+  stopLive();
+  stopListLive();
+  $("view-chart").hidden = true;
+  for (const [t, id] of Object.entries(TABS)) $(id).hidden = t !== tab;
+  if (tab === "markets") {
+    renderList();
+    if (fromChart) requestAnimationFrame(() => window.scrollTo(0, listScroll));
+  } else {
+    window.scrollTo(0, 0);
+  }
+}
 document.querySelectorAll(".tabbar button").forEach((b) =>
   b.addEventListener("click", () => {
-    document.querySelectorAll(".tabbar button").forEach((x) => x.classList.toggle("active", x === b));
-    stopLive();
-    stopListLive();
-    $("view-chart").hidden = true;
-    for (const [tab, id] of Object.entries(TABS)) $(id).hidden = tab !== b.dataset.tab;
-    if (b.dataset.tab === "markets") renderList();
+    if (routeNow() === b.dataset.tab) return showTab(b.dataset.tab);
+    navigate(b.dataset.tab);
   }),
 );
 $("back-btn").addEventListener("click", () => {
-  stopLive();
-  $("view-chart").hidden = true;
-  $("view-markets").hidden = false;
-  renderList();
+  if (history.state && history.state.depth > 0) history.back();
+  else navigate("markets", true);
 });
+let scrollQueued = false;
+window.addEventListener("scroll", () => {
+  if (scrollQueued || $("view-markets").hidden) return;
+  scrollQueued = true;
+  setTimeout(() => { scrollQueued = false; if (!$("view-markets").hidden) try { sessionStorage.setItem(SCROLL_STORE, String(Math.round(window.scrollY))); } catch {} }, 300);
+}, { passive: true });
 $("q-star").addEventListener("click", () => {
   if (!state.entry) return;
   toggleFav(state.entry.id);
@@ -411,7 +473,13 @@ function closeAsset() {
 }
 function stopLive() { closeAsset(); }
 
-async function openChart(entry) {
+function openChart(entry) { navigate(`chart/${entry.id}`); }
+
+async function showChart(entry) {
+  if (!$("view-markets").hidden) listScroll = window.scrollY;
+  for (const id of Object.values(TABS)) $(id).hidden = true;
+  setTabActive("markets");
+  window.scrollTo(0, 0);
   stopListLive();
   closeAsset();
   const gen = asset.gen;
@@ -420,7 +488,7 @@ async function openChart(entry) {
   $("view-markets").hidden = true;
   $("view-chart").hidden = false;
   $("q-name").textContent = entry.name;
-  $("rt-wrap").hidden = !rtAvailable(entry) || isCrypto(entry);
+  $("rt-wrap").hidden = isCrypto(entry) || !(rtAvailable(entry) || (fhSymbol(entry) && fh.token));
   $("rt-switch").checked = rtWanted();
   $("rt-list-switch").checked = rtWanted();
   paintStar($("q-star"), entry.id);
@@ -449,7 +517,7 @@ async function openChart(entry) {
       asset.price = entry.last;
       asset.asOf = entry.last_ts;
     }
-    if (rtAvailable(entry) && rtWanted()) startTradegate();
+    if (rtWanted() && (rtAvailable(entry) || fhSymbol(entry))) startTradegate();
   }
   await selectView(viewKey);
   updateHeader();
@@ -786,6 +854,8 @@ function updateMeta() {
   if (isCrypto(e)) {
     const src = asset.source === "kraken" ? "Kraken (Ersatz)" : "Binance";
     text = asset.status === "live" ? `Live über ${src}` : asset.status ? `${src}: ${asset.status}` : `Verbinde mit ${src} …`;
+  } else if (fhFresh(e)) {
+    text = "Live von der US-Börse über Finnhub, Kerzenhistorie von Yahoo";
   } else if (rtActive()) {
     text = "Live über Tradegate, Kerzenhistorie von Yahoo";
   } else {
@@ -801,7 +871,7 @@ const rt = { line: null, failures: 0 };
 // Standard: an. Nur wer ausdrücklich ausschaltet, bekommt verzögerte Kurse.
 function rtWanted() { try { return localStorage.getItem(RT_STORE) !== "0"; } catch { return true; } }
 function rtAvailable(e) { return Boolean(e && e.isin && unitOf(e) === "€"); }
-function rtActive() { return Boolean(asset.rtTimer || asset.rtAbort) && rtAvailable(asset.entry); }
+function rtActive() { return (Boolean(asset.rtTimer || asset.rtAbort) && rtAvailable(asset.entry)) || fhFresh(asset.entry); }
 
 function setRealtime(on) {
   try { localStorage.setItem(RT_STORE, on ? "1" : "0"); } catch {}
@@ -828,11 +898,15 @@ function stopTradegate() {
   if (rt.line && state.candles) { try { state.candles.removePriceLine(rt.line.c); state.line.removePriceLine(rt.line.l); } catch {} }
   rt.line = null;
   $("rt-info").textContent = "";
+  if (fh.chartSym) { fh.chartSym = null; updateFinnhubWant(); }
 }
 
 function startTradegate() {
   stopTradegate();
-  if (!rtAvailable(asset.entry) || isCrypto(asset.entry) || $("view-chart").hidden) return;
+  if (isCrypto(asset.entry) || $("view-chart").hidden) return;
+  fh.chartSym = fhSymbol(asset.entry);
+  if (fh.chartSym) updateFinnhubWant();
+  if (!rtAvailable(asset.entry)) { updateMeta(); return; }
   rt.failures = 0;
   pollTradegate();
   // Tradegate aktualisiert alle 10 Sekunden; außerhalb der Handelszeit genügt eine Abfrage pro Minute
@@ -876,6 +950,12 @@ function lastTradegateClose(now) {
 function applyQuote(q) {
   const unit = unitOf(asset.entry);
   const now = Date.now() / 1000;
+  if (fhFresh(asset.entry)) {
+    // Der Kurs kommt gerade direkt von der US-Börse; Tradegate liefert nur Hoch, Tief und Volumen in Euro
+    asset.stats = { kind: "day", high: q.high, low: q.low, volume: q.volume, volumeUnit: "Stück" };
+    updateHeader();
+    return;
+  }
   const open = tradegateOpen();
   asset.price = q.last;
   asset.asOf = open ? now : lastTradegateClose(now);
@@ -887,11 +967,15 @@ function applyQuote(q) {
   updateMeta();
   updateHeader();
   schedulePerf();
+  livePriceLine(q.last);
+  if (open && state.candles) updateLiveCandle(q.last, now);
+}
+
+function livePriceLine(price) {
   if (!state.candles) return;
-  const opts = { price: q.last, color: "#f2b544", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "Live" };
-  if (rt.line) { rt.line.c.applyOptions({ price: q.last }); rt.line.l.applyOptions({ price: q.last }); }
+  const opts = { price, color: "#f2b544", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "Live" };
+  if (rt.line) { rt.line.c.applyOptions({ price }); rt.line.l.applyOptions({ price }); }
   else rt.line = { c: state.candles.createPriceLine(opts), l: state.line.createPriceLine(opts) };
-  if (open) updateLiveCandle(q.last, now);
 }
 
 // Die laufende Kerze des gewählten Intervalls wächst mit jedem Live-Kurs.
@@ -1059,6 +1143,7 @@ function stopListLive() {
   if (listLive.ws) { try { listLive.ws.onclose = null; listLive.ws.close(); } catch {} listLive.ws = null; }
   if (listLive.observer) { listLive.observer.disconnect(); listLive.observer = null; }
   listLive.visible.clear();
+  if (fh.listSyms.size) { fh.listSyms = new Set(); updateFinnhubWant(); }
 }
 
 function startListLive() {
@@ -1078,10 +1163,12 @@ function startListLive() {
           }
         } else listLive.visible.delete(id);
       }
+      listFinnhubSymbols();
     }, { rootMargin: "80px 0px" });
     for (const r of rowEls.values()) listLive.observer.observe(r.item);
   } else {
     for (const id of rowEls.keys()) listLive.visible.add(id);
+    listFinnhubSymbols();
   }
   listLive.timer = setInterval(() => pollVisible(run), tradegateOpen() ? 15_000 : 60_000);
   const crypto = [...rowEls.values()].map((r) => r.entry).filter(isCrypto);
@@ -1100,6 +1187,7 @@ async function pollVisible(run) {
 async function pollOne(e, run) {
   try {
     const q = await fetchQuote(e.isin);
+    if (fhFresh(e)) return; // US-Börse ist gerade die Quelle
     if (tradegateOpen()) recordTick(e.id, Date.now() / 1000, q.last);
     if (run === listLive.run) paintLive(e.id, q.last);
   } catch {}
@@ -1138,11 +1226,12 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden && state.index) { refreshIndex(); startListLive(); }
   if (document.hidden) { stopListLive(); pauseAsset(); }
   else if (!$("view-chart").hidden && asset.entry) resumeAsset();
+  updateFinnhubWant();
 });
 
 function pauseAsset() {
   if (asset.feed) { asset.feed.stop(); asset.paused = true; }
-  if (asset.rtTimer) { stopTradegate(); asset.rtPaused = true; }
+  if (asset.rtTimer || fh.chartSym) { stopTradegate(); asset.rtPaused = true; }
 }
 function resumeAsset() {
   if (asset.paused && isCrypto(asset.entry)) { asset.paused = false; startCryptoFeed(); resyncCrypto(asset.gen); }
@@ -1172,3 +1261,154 @@ function setCurrency(cur) {
 }
 for (const b of document.querySelectorAll(".cur-toggle button")) b.addEventListener("click", () => setCurrency(b.dataset.cur));
 paintCurrency();
+
+// ---------- Finnhub: US-Aktien live von der US-Börse ----------
+// Der Schlüssel liegt nur auf diesem Gerät, verschlüsselt mit dem App-Passwort.
+const FH_STORE = "ta.finnhub.v1";
+const fh = { token: null, stream: null, status: "", msg: "", last: new Map(), listSyms: new Set(), chartSym: null, dirty: new Set(), flush: null };
+function fhSymbol(e) { return (e && e.live && e.live.finnhub) || null; }
+function fhFresh(e) {
+  const sym = fhSymbol(e);
+  const t = sym && fh.token && fh.last.get(sym);
+  return Boolean(t && Date.now() / 1000 - t.recv < 90);
+}
+
+async function loadFinnhubKey() {
+  try {
+    const box = JSON.parse(localStorage.getItem(FH_STORE) || "null");
+    if (!box) return null;
+    if (box.plain) return box.plain;
+    return state.key ? await openText(state.key, box) : null;
+  } catch {
+    return null;
+  }
+}
+async function saveFinnhubKey(token) {
+  const box = state.key ? await sealText(state.key, token) : { plain: token };
+  localStorage.setItem(FH_STORE, JSON.stringify(box));
+}
+
+function startFinnhub(token) {
+  if (fh.stream) fh.stream.stop();
+  fh.stream = null;
+  fh.token = token || null;
+  fh.status = "";
+  fh.last.clear();
+  if (fh.token) {
+    fh.stream = new FinnhubStream({
+      token: fh.token,
+      onTrade: onFinnhubTrade,
+      onStatus: (st, msg) => { fh.status = st; fh.msg = msg || ""; paintFinnhubState(); },
+    });
+    updateFinnhubWant();
+  }
+  paintFinnhubState();
+}
+
+function updateFinnhubWant() {
+  if (!fh.stream) return;
+  const want = new Set();
+  if (!document.hidden && usMarketOpen()) {
+    if (fh.chartSym) want.add(fh.chartSym);
+    for (const sym of fh.listSyms) want.add(sym);
+  }
+  fh.stream.want(want);
+  paintFinnhubState();
+}
+setInterval(updateFinnhubWant, 60_000); // Börsenbeginn und -schluss mitbekommen
+
+function listFinnhubSymbols() {
+  const syms = new Set();
+  for (const id of listLive.visible) {
+    const r = rowEls.get(id);
+    const sym = r && fhSymbol(r.entry);
+    if (sym) syms.add(sym);
+  }
+  fh.listSyms = syms;
+  updateFinnhubWant();
+}
+
+function onFinnhubTrade(sym, usd, time) {
+  const rate = usdRate();
+  if (!rate || !(usd > 0)) return;
+  fh.last.set(sym, { eur: usd / rate, usd, time: Math.floor(time), recv: Date.now() / 1000 });
+  fh.dirty.add(sym);
+  // höchstens einmal pro Sekunde zeichnen
+  if (!fh.flush) fh.flush = setTimeout(flushFinnhub, 1000);
+}
+
+function flushFinnhub() {
+  fh.flush = null;
+  if (!state.index) return;
+  for (const sym of fh.dirty) {
+    const t = fh.last.get(sym);
+    for (const e of state.index.instruments) {
+      if (fhSymbol(e) !== sym) continue;
+      recordTick(e.id, t.time, t.eur);
+      if (!$("view-markets").hidden && rowEls.has(e.id)) paintLive(e.id, t.eur);
+      if (asset.entry && asset.entry.id === e.id && !$("view-chart").hidden && fh.chartSym === sym) applyFinnhub(t);
+    }
+  }
+  fh.dirty.clear();
+}
+
+function applyFinnhub(t) {
+  asset.price = t.eur;
+  asset.asOf = t.time;
+  asset.ticks = tickStore.get(asset.entry.id) || [];
+  const time = new Intl.DateTimeFormat("de-DE", { timeStyle: "medium", timeZone: TZ }).format(new Date(t.time * 1000));
+  $("rt-info").textContent = `US-Börse über Finnhub, Stand ${time} Uhr, ${nf(2).format(t.usd)} $ umgerechnet mit 1 € = ${nf(4).format(usdRate())} $`;
+  updateMeta();
+  updateHeader();
+  schedulePerf();
+  livePriceLine(t.eur);
+  if (state.candles) updateLiveCandle(t.eur, t.time);
+}
+
+function paintFinnhubState() {
+  const el = $("fh-state");
+  if (!el) return;
+  $("fh-remove").hidden = !fh.token;
+  let text;
+  if (!fh.token) text = "Kein Schlüssel hinterlegt. US-Aktien laufen live über Tradegate (in Euro).";
+  else if (fh.status === "rejected") text = "Finnhub nimmt die Verbindung nicht an. Prüfe, ob der Schlüssel stimmt, und speichere ihn neu.";
+  else if (fh.status === "error") text = `Finnhub meldet: ${fh.msg}`;
+  else if (!usMarketOpen()) text = "Schlüssel gespeichert. Die US-Börse ist gerade geschlossen (Haupthandel meist 15:30 bis 22:00 Uhr). Bis dahin zeigt die App Tradegate.";
+  else if (fh.status === "live") text = "Verbunden. US-Aktien kommen live von der US-Börse.";
+  else if (fh.status === "reconnect") text = "Verbindung unterbrochen, verbinde neu …";
+  else text = "Schlüssel gespeichert. Die Verbindung startet, sobald du eine US-Aktie siehst.";
+  el.textContent = text;
+}
+
+$("fh-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const token = $("fh-key").value.trim();
+  if (!token) return;
+  const el = $("fh-state");
+  el.textContent = "Prüfe den Schlüssel …";
+  let note = "";
+  try {
+    const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=AAPL&token=${encodeURIComponent(token)}`, { cache: "no-store" });
+    if (res.status === 401 || res.status === 403) {
+      el.textContent = "Finnhub lehnt diesen Schlüssel ab. Kopiere ihn noch einmal vollständig aus deinem Finnhub-Konto.";
+      return;
+    }
+    const q = await res.json();
+    if (q && q.c) note = ` Test: Apple zuletzt ${nf(2).format(q.c)} $.`;
+  } catch {
+    note = " (Der Test war von hier aus nicht möglich, der Schlüssel ist trotzdem gespeichert.)";
+  }
+  try {
+    await saveFinnhubKey(token);
+  } catch {
+    el.textContent = "Der Schlüssel konnte auf diesem Gerät nicht gespeichert werden.";
+    return;
+  }
+  $("fh-key").value = "";
+  startFinnhub(token);
+  el.textContent += note;
+});
+$("fh-remove").addEventListener("click", () => {
+  try { localStorage.removeItem(FH_STORE); } catch {}
+  startFinnhub(null);
+});

@@ -124,7 +124,16 @@
       <h3>Hinweise zur Datenqualität</h3>
       <ul id="status-warnings" class="warnings"></ul>
       <h3>Datenquellen</h3>
-      <p class="small">Krypto: Kraken und Binance, live. Deutsche Aktien und ETFs: Yahoo Finance, 15 Minuten verzögert, nur zur privaten Information. Keine Anlageberatung.</p>
+      <p class="small">Krypto: Kraken und Binance, live. Deutsche und europäische Werte: Kursverlauf von Yahoo Finance, live über Tradegate. US-Aktien: live über Tradegate oder, mit Schlüssel, über Finnhub. Nur zur privaten Information. Keine Anlageberatung.</p>
+      <h3>US-Aktien live (Finnhub)</h3>
+      <p class="small">Mit einem kostenlosen Finnhub-Schlüssel kommen US-Aktien während der US-Handelszeit direkt von der US-Börse. Der Schlüssel bleibt verschlüsselt auf diesem Gerät und wird nirgends hochgeladen.</p>
+      <form id="fh-form" class="fh-form" autocomplete="off">
+        <label class="visually-hidden" for="fh-key">Finnhub-Schlüssel</label>
+        <input id="fh-key" type="password" placeholder="Finnhub-Schlüssel einfügen" autocomplete="off" spellcheck="false">
+        <button type="submit">Speichern</button>
+      </form>
+      <p id="fh-state" class="small fh-state"></p>
+      <button id="fh-remove" type="button" class="secondary fh-remove" hidden>Schlüssel entfernen</button>
       <button id="logout" type="button" class="secondary">Auf diesem Gerät abmelden</button>
     </section>
 
