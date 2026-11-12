@@ -12,6 +12,7 @@ const F = {
   date: fmt({ day: "2-digit", month: "2-digit", year: "numeric" }),
   weekdayDate: fmt({ weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" }),
   time: fmt({ hour: "2-digit", minute: "2-digit" }),
+  timeSec: fmt({ hour: "2-digit", minute: "2-digit", second: "2-digit" }),
 };
 
 // Typen der Achsenbeschriftung wie in Lightweight Charts (TickMarkType)
@@ -31,6 +32,8 @@ export function tickLabel(sec, type) {
     }
     case TICK.DayOfMonth:
       return F.day.format(d(sec));
+    case TICK.TimeWithSeconds:
+      return F.timeSec.format(d(sec));
     default: {
       // Uhrzeit; um Mitternacht stattdessen das Datum, damit Tageswechsel sichtbar sind
       const date = d(sec);
@@ -51,6 +54,10 @@ export function candleLabel(sec, interval) {
       return `2 Wochen ab ${F.date.format(date)}`;
     case "1d":
       return F.weekdayDate.format(date);
+    case "1s":
+    case "5s":
+    case "15s":
+      return `${F.weekdayDate.format(date)}, ${F.timeSec.format(date)} Uhr`;
     default:
       return `${F.weekdayDate.format(date)}, ${F.time.format(date)} Uhr`;
   }

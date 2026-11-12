@@ -603,9 +603,41 @@ function startCryptoFeed() {
   asset.feed.start();
 }
 
+const SUBSEC = { "1s": 1, "5s": 5, "15s": 15 };
+const baseOf = (c) => (SUBSEC[c] ? "1s" : c);
 function feedIntervals() {
-  const sel = VIEW_BY_KEY[viewKey].interval;
+  const sel = baseOf(VIEW_BY_KEY[viewKey].candle);
   return [...new Set(["1m", "1h", "1d", "1w", sel])];
+}
+
+/** Kerzen zu größeren Kerzen zusammenfassen (z. B. 1-Sekunden- zu 5-Sekunden-Kerzen). */
+function aggregate(rows, step) {
+  const out = [];
+  for (const r of rows) {
+    const t = Math.floor(r[0] / step) * step;
+    const last = out[out.length - 1];
+    if (last && last[0] === t) { last[2] = Math.max(last[2], r[2]); last[3] = Math.min(last[3], r[3]); last[4] = r[4]; last[5] += r[5] || 0; }
+    else out.push([t, r[1], r[2], r[3], r[4], r[5] || 0]);
+  }
+  return out;
+}
+/** Kerzen aus einzelnen Live-Kursen bauen (Aktien: Tradegate/Finnhub). */
+function tickCandles(ticks, step) {
+  return aggregate(ticks.map(([t, p]) => [t, p, p, p, p, 0]), step);
+}
+
+/** Beginn und Ende des Zeitraums einer Ansicht, bezogen auf den aktuellen Kurszeitpunkt. */
+function viewRange(view, rows) {
+  const lastRow = rows[rows.length - 1];
+  const lastEnd = lastRow ? lastRow[0] + (STEP[state.interval] || 60) : null;
+  let end = asset.asOf || lastEnd || Date.now() / 1000;
+  let start = periodStart(view.perf, end);
+  // Liegt im Zeitraum keine Kerze (z. B. Börse heute noch zu), den letzten Zeitraum mit Daten zeigen
+  if (lastRow && !rows.some((r) => r[0] >= start && r[0] < end)) {
+    end = lastEnd;
+    start = periodStart(view.perf, end);
+  }
+  return { start, end };
 }
 
 /** Nach einem Verbindungsabbruch die Lücke per REST schließen. */
@@ -635,6 +667,20 @@ function onKline(interval, row) {
   else if (!last || row[0] > last[0]) rows.push(row);
   else return; // ältere Kerze: ignorieren, keine Doppelten
   if (interval === state.interval) pushToChart(row);
+  if (interval === "1s") {
+    for (const [iv, step] of [["5s", 5], ["15s", 15]]) {
+      const d = asset.src[iv];
+      if (!d || !d.live) continue;
+      const t = Math.floor(row[0] / step) * step;
+      const parts = rows.filter((r) => r[0] >= t && r[0] < t + step);
+      const agg = aggregate(parts, step)[0];
+      if (!agg) continue;
+      const dl = d.rows[d.rows.length - 1];
+      if (dl && dl[0] === t) d.rows[d.rows.length - 1] = agg;
+      else if (!dl || t > dl[0]) d.rows.push(agg);
+      if (iv === state.interval) pushToChart(agg);
+    }
+  }
   if (interval === "1m" && asset.price == null) { asset.price = row[4]; asset.asOf = Date.now() / 1000; }
   schedulePerf();
 }
@@ -755,27 +801,49 @@ async function selectView(key) {
   document.querySelector(`#tf-strip button[data-key="${key}"]`)?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
 
   const view = VIEW_BY_KEY[key];
-  let interval = view.interval;
+  let candle = view.candle;
   let note = "";
   if (isCrypto(asset.entry)) {
-    if (!asset.src[interval] || !asset.src[interval].live) {
+    const base = baseOf(candle);
+    if (!asset.src[base] || !asset.src[base].live) {
       try {
-        const rows = await binanceKlines(asset.entry.live.binance, interval, 1000);
+        const rows = await binanceKlines(asset.entry.live.binance, base, 1000);
         if (gen !== asset.gen) return;
-        asset.src[interval] = { name: `binance-${interval}`, rows, step: STEP[interval], live: true };
+        asset.src[base] = { name: `binance-${base}`, rows, step: STEP[base], live: true };
       } catch {
         note = "Binance ist gerade nicht erreichbar. Angezeigt werden die zuletzt gesammelten Kerzen.";
       }
     }
     if (asset.feed) asset.feed.setIntervals(feedIntervals());
-  }
-  if (!asset.src[interval] || !asset.src[interval].rows.length) {
-    if (interval === "1m") {
-      interval = "5m";
-      note = "Für Aktien und ETFs gibt es kostenlos keine 1-Minuten-Kerzen. Angezeigt werden 5-Minuten-Kerzen. Die 1m-Veränderung oben entsteht aus den Live-Kursen, sobald eine Minute Echtzeit vorliegt.";
+    if (SUBSEC[candle] && candle !== "1s" && asset.src["1s"]) {
+      asset.src[candle] = { name: `binance-${candle}`, rows: aggregate(asset.src["1s"].rows, SUBSEC[candle]), step: SUBSEC[candle], live: true };
+    }
+  } else if (STEP[candle] < 300) {
+    // Aktien: Kerzen unter 5 Minuten gibt es kostenlos nur aus den Live-Kursen dieser App
+    const bucket = Math.max(5, STEP[candle]);
+    const key2 = bucket === 5 ? "5s" : candle;
+    const rows = tickCandles(asset.ticks || [], bucket);
+    const span = view.perf.rolling || 3600;
+    const covers = rows.length >= 2 && rows[0][0] <= (asset.asOf || Date.now() / 1000) - span * 0.5;
+    if (covers && rtActive()) {
+      asset.src[key2] = { name: `ticks-${key2}`, rows, step: bucket, live: false };
+      candle = key2;
+      note = "Kerzen aus den Live-Kursen von Tradegate bzw. der US-Börse, gesammelt seit die App offen ist.";
+    } else {
+      candle = "5m";
+      note = "Für diesen kurzen Zeitraum liegen noch nicht genug Live-Kurse vor (sie werden gesammelt, solange die App offen und die Börse geöffnet ist). Angezeigt werden 5-Minuten-Kerzen.";
     }
   }
-  state.interval = interval;
+  // Ersatz, wenn die gewünschte Kerzenlänge fehlt: die nächstgröbere vorhandene
+  if (!asset.src[candle] || !asset.src[candle].rows.length) {
+    const order = ["1m", "5m", "15m", "30m", "1h", "4h", "12h", "1d", "1w", "1M"];
+    const alt = order.filter((i) => STEP[i] >= (STEP[candle] || 0)).find((i) => asset.src[i] && asset.src[i].rows.length);
+    if (alt && alt !== candle) {
+      if (!note) note = `Für diesen Wert gibt es keine ${candle}-Kerzen. Angezeigt werden ${alt}-Kerzen.`;
+      candle = alt;
+    }
+  }
+  state.interval = candle;
   $("chart-note").textContent = note;
   showRows(view);
   schedulePerf();
@@ -806,15 +874,18 @@ function showRows(view = VIEW_BY_KEY[viewKey]) {
     return;
   }
   const intraday = STEP[state.interval] < 86400;
-  state.chart.applyOptions({ timeScale: { timeVisible: intraday, secondsVisible: false } });
+  state.chart.applyOptions({ timeScale: { timeVisible: intraday, secondsVisible: STEP[state.interval] < 60 } });
   state.timeIndex = new Map(rows.map((r, i) => [shift(r[0]), i]));
   state.candles.setData(rows.map(toCandle));
   state.line.setData(rows.map(toLine));
   state.volume.setData(rows.map(toVolume));
   if (rows.length) {
-    const last = rows[rows.length - 1][0];
-    const first = Math.max(rows[0][0], last - view.window);
-    try { state.chart.timeScale().setVisibleRange({ from: shift(first), to: shift(last) }); }
+    // genau der eingestellte Zeitraum: 1m = letzte Minute, 1D = heute, 1W = diese Woche …
+    const { start, end } = viewRange(view, rows);
+    const from = Math.max(rows[0][0], start);
+    const lastStart = rows[rows.length - 1][0];
+    const to = Math.max(from, Math.min(lastStart, end));
+    try { state.chart.timeScale().setVisibleRange({ from: shift(from), to: shift(to) }); }
     catch { state.chart.timeScale().fitContent(); }
   }
 }
@@ -2045,11 +2116,12 @@ const OV_TABS = [
   { key: "rohstoff", label: "Rohstoffe", filter: "rohstoff" },
   { key: "devisen", label: "Forex", filter: "devisen" },
 ];
-const DC_INTERVALS = [["5m", "5m"], ["15m", "15m"], ["30m", "30m"], ["1h", "1h"], ["4h", "4h"], ["12h", "12h"], ["1d", "1D"], ["1w", "1W"], ["1M", "1M"]];
+// Zeiträume wie im großen Chart: genau dieser Zeitraum, in passenden Kerzen aus den gesammelten Daten
+const DC_VIEWS = [["1h", "5m"], ["4h", "5m"], ["12h", "15m"], ["1D", "5m"], ["1W", "1h"], ["1M", "4h"], ["1J", "1d"]];
 const dash = (() => {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(DASH_STORE) || "{}"); } catch {}
-  return { id: saved.id || "BTC-EUR", iv: saved.iv || "1h", ov: saved.ov || "index", chart: null, candles: null, vol: null, rows: [], gen: 0, queued: false, last: null };
+  return { id: saved.id || "BTC-EUR", iv: DC_VIEWS.some(([k]) => k === saved.iv) ? saved.iv : "1D", ov: saved.ov || "index", chart: null, candles: null, vol: null, rows: [], gen: 0, queued: false, last: null };
 })();
 const saveDash = () => { try { localStorage.setItem(DASH_STORE, JSON.stringify({ id: dash.id, iv: dash.iv, ov: dash.ov })); } catch {} };
 const homeVisible = () => state.index && !$("view-home").hidden && !$("main").hidden;
@@ -2266,10 +2338,10 @@ async function renderDashChart() {
   const gen = ++dash.gen;
   // Kerzenlängen-Leiste
   const tf = $("dc-tf");
-  tf.replaceChildren(...DC_INTERVALS.map(([iv, label]) => {
+  tf.replaceChildren(...DC_VIEWS.map(([iv]) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.textContent = label;
+    b.textContent = VIEW_BY_KEY[iv].label;
     b.setAttribute("aria-pressed", String(iv === dash.iv));
     b.addEventListener("click", () => { dash.iv = iv; saveDash(); renderDashChart(); });
     return b;
@@ -2289,7 +2361,7 @@ async function renderDashChart() {
       crosshair: { mode: 1 },
       handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: false, vertTouchDrag: false },
       handleScale: { mouseWheel: true, pinch: true },
-      localization: { locale: "de-DE", priceFormatter: (p) => numFmt(p * curFactor(unitOf(dashEntry()))), timeFormatter: (t) => candleLabel(t, dash.iv) },
+      localization: { locale: "de-DE", priceFormatter: (p) => numFmt(p * curFactor(unitOf(dashEntry()))), timeFormatter: (t) => candleLabel(t, dash.ivUsed || "1h") },
     });
     dash.candles = dash.chart.addCandlestickSeries({ upColor: c("--up"), downColor: c("--down"), borderVisible: false, wickUpColor: c("--up"), wickDownColor: c("--down") });
     dash.vol = dash.chart.addHistogramSeries({ priceScaleId: "vol", priceFormat: { type: "volume" }, lastValueVisible: false, priceLineVisible: false });
@@ -2298,9 +2370,12 @@ async function renderDashChart() {
   let data;
   try { data = await loadInstrument(e); } catch { return; }
   if (gen !== dash.gen) return;
-  const iv = (data.series || {})[dash.iv] && data.series[dash.iv].length ? dash.iv : "1d";
+  const want = (DC_VIEWS.find(([k]) => k === dash.iv) || DC_VIEWS[3])[1];
+  const iv = (data.series || {})[want] && data.series[want].length ? want : "1d";
   dash.rows = mergeSameLocalTime(((data.series || {})[iv] || []).map((r) => r.slice()));
   dash.step = STEP[iv];
+  dash.ivUsed = iv;
+  dash.chart.applyOptions({ timeScale: { timeVisible: STEP[iv] < 86400 } });
   dash.last = null;
   drawDash(true);
 }
@@ -2311,9 +2386,15 @@ function drawDash(fit = false) {
   const up = css.getPropertyValue("--up-a").trim(), down = css.getPropertyValue("--down-a").trim();
   dash.candles.setData(dash.rows.map((r) => ({ time: shift(r[0]), open: r[1], high: r[2], low: r[3], close: r[4] })));
   dash.vol.setData(dash.rows.map((r) => ({ time: shift(r[0]), value: r[5], color: r[4] >= r[1] ? up : down })));
-  if (fit) {
-    const n = dash.rows.length;
-    if (n) dash.chart.timeScale().setVisibleLogicalRange({ from: Math.max(0, n - 90), to: n + 2 });
+  if (fit && dash.rows.length) {
+    // genau der gewählte Zeitraum (z. B. 1D = heute), sonst der letzte Zeitraum mit Daten
+    const rows = dash.rows;
+    const perf = VIEW_BY_KEY[dash.iv].perf;
+    let end = rows[rows.length - 1][0] + dash.step;
+    let start = periodStart(perf, end);
+    const from = Math.max(rows[0][0], start);
+    try { dash.chart.timeScale().setVisibleRange({ from: shift(from), to: shift(rows[rows.length - 1][0]) }); }
+    catch { dash.chart.timeScale().fitContent(); }
   }
 }
 

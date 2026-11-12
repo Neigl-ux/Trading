@@ -10,24 +10,27 @@
 
 export const TZ = "Europe/Berlin";
 
-export const STEP = { "1m": 60, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "4h": 14400, "12h": 43200, "1d": 86400, "1w": 604800, "1M": 2678400 };
+export const STEP = { "1s": 1, "5s": 5, "15s": 15, "1m": 60, "5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "4h": 14400, "12h": 43200, "1d": 86400, "1w": 604800, "1M": 2678400 };
 
+// Jede Ansicht zeigt genau ihren Zeitraum (perf), in feineren Kerzen (candle):
+// 1m = letzte Minute in Sekundenkerzen, 1D = heutiger Tag in 5-Minuten-Kerzen usw.
+// „interval“ ist die frühere Kerzenlänge und wird nur noch als Ersatz genutzt.
 export const VIEWS = [
-  { key: "1m", label: "1m", interval: "1m", window: 3 * 3600, perf: { rolling: 60 } },
-  { key: "5m", label: "5m", interval: "5m", window: 86400, perf: { rolling: 300 } },
-  { key: "15m", label: "15m", interval: "15m", window: 3 * 86400, perf: { rolling: 900 } },
-  { key: "30m", label: "30m", interval: "30m", window: 7 * 86400, perf: { rolling: 1800 } },
-  { key: "1h", label: "1h", interval: "1h", window: 14 * 86400, perf: { rolling: 3600 } },
-  { key: "4h", label: "4h", interval: "4h", window: 60 * 86400, perf: { rolling: 14400 } },
-  { key: "12h", label: "12h", interval: "12h", window: 180 * 86400, perf: { rolling: 43200 } },
-  { key: "1D", label: "1D", interval: "1d", window: 365 * 86400, perf: { calendar: "day" } },
-  { key: "1W", label: "1W", interval: "1w", window: 5 * 365 * 86400, perf: { calendar: "week" } },
-  { key: "1M", label: "1M", interval: "1M", window: 10 * 365 * 86400, perf: { calendar: "month" } },
-  { key: "6M", label: "6 Mon", interval: "1d", window: 183 * 86400, perf: { months: 6 }, range: true },
-  { key: "1J", label: "1 Jahr", interval: "1d", window: 366 * 86400, perf: { months: 12 }, range: true },
-  { key: "3J", label: "3 Jahre", interval: "1w", window: 3 * 366 * 86400, perf: { months: 36 }, range: true },
-  { key: "5J", label: "5 Jahre", interval: "1w", window: 5 * 366 * 86400, perf: { months: 60 }, range: true },
-  { key: "10J", label: "10 Jahre", interval: "1M", window: 10 * 366 * 86400, perf: { months: 120 }, range: true },
+  { key: "1m", label: "1m", candle: "1s", interval: "1m", window: 3 * 3600, perf: { rolling: 60 } },
+  { key: "5m", label: "5m", candle: "5s", interval: "5m", window: 86400, perf: { rolling: 300 } },
+  { key: "15m", label: "15m", candle: "15s", interval: "15m", window: 3 * 86400, perf: { rolling: 900 } },
+  { key: "30m", label: "30m", candle: "1m", interval: "30m", window: 7 * 86400, perf: { rolling: 1800 } },
+  { key: "1h", label: "1h", candle: "1m", interval: "1h", window: 14 * 86400, perf: { rolling: 3600 } },
+  { key: "4h", label: "4h", candle: "5m", interval: "4h", window: 60 * 86400, perf: { rolling: 14400 } },
+  { key: "12h", label: "12h", candle: "15m", interval: "12h", window: 180 * 86400, perf: { rolling: 43200 } },
+  { key: "1D", label: "1D", candle: "5m", interval: "1d", window: 365 * 86400, perf: { calendar: "day" } },
+  { key: "1W", label: "1W", candle: "1h", interval: "1w", window: 5 * 365 * 86400, perf: { calendar: "week" } },
+  { key: "1M", label: "1M", candle: "4h", interval: "1M", window: 10 * 365 * 86400, perf: { calendar: "month" } },
+  { key: "6M", label: "6 Mon", candle: "1d", interval: "1d", window: 183 * 86400, perf: { months: 6 }, range: true },
+  { key: "1J", label: "1 Jahr", candle: "1d", interval: "1d", window: 366 * 86400, perf: { months: 12 }, range: true },
+  { key: "3J", label: "3 Jahre", candle: "1w", interval: "1w", window: 3 * 366 * 86400, perf: { months: 36 }, range: true },
+  { key: "5J", label: "5 Jahre", candle: "1w", interval: "1w", window: 5 * 366 * 86400, perf: { months: 60 }, range: true },
+  { key: "10J", label: "10 Jahre", candle: "1M", interval: "1M", window: 10 * 366 * 86400, perf: { months: 120 }, range: true },
 ];
 
 // ---------- deutsche Zeit ----------
