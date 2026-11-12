@@ -46,7 +46,7 @@ instruments:
   - {id: DHL, name: DHL Group, market: xetra, kind: aktie, isin: DE0005552004, yahoo: DHL.DE}
   - {id: DTE, name: Deutsche Telekom, market: xetra, kind: aktie, isin: DE0005557508, yahoo: DTE.DE}
   - {id: EOAN, name: E.ON, market: xetra, kind: aktie, isin: DE000ENAG999, yahoo: EOAN.DE}
-  - {id: FRE, name: Fresenius, market: xetra, kind: aktie, isin: DE0005785604, yahoo: FRE.DE}
+  - {id: FRE, name: Fresenius, market: xetra, kind: aktie, yahoo: FRE.DE}
   - {id: FME, name: Fresenius Medical Care, market: xetra, kind: aktie, isin: DE0005785802, yahoo: FME.DE}
   - {id: HNR1, name: Hannover Rück, market: xetra, kind: aktie, isin: DE0008402215, yahoo: HNR1.DE}
   - {id: HEI, name: Heidelberg Materials, market: xetra, kind: aktie, isin: DE0006047004, yahoo: HEI.DE}

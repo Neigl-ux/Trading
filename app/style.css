@@ -85,6 +85,14 @@ main { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
   font-size: 1.35rem; line-height: 1; padding: 12px 0 12px 14px; min-width: 44px; min-height: 44px;
 }
 .star[aria-pressed=true] { color: var(--mark); }
+.rt-toggle { display: inline-flex; align-items: center; gap: 10px; margin-top: 12px; cursor: pointer; user-select: none; }
+.rt-toggle input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.rt-track { width: 40px; height: 22px; border-radius: 11px; background: var(--deck); border: 1px solid var(--line); position: relative; flex: none; transition: background .15s; }
+.rt-track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--mute); transition: transform .15s, background .15s; }
+.rt-toggle input:checked + .rt-track { background: rgba(242, 181, 68, .25); border-color: var(--mark); }
+.rt-toggle input:checked + .rt-track::after { transform: translateX(18px); background: var(--mark); }
+.rt-toggle input:focus-visible + .rt-track { outline: 2px solid var(--mark); outline-offset: 2px; }
+.rt-info:empty { display: none; }
 .quote-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .quote-title h2 { margin: 0; }
 .quote-title .star { padding: 6px 0 6px 12px; }

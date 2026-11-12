@@ -1,5 +1,6 @@
 import { deriveKey, exportKey, importKey, openSealed } from "./crypto.js";
 import { candleLabel, tickLabel } from "./format.js";
+import { fetchQuote, tradegateOpen } from "./tradegate.js";
 
 const KEY_STORE = "ta.key.v1";
 const TZ = "Europe/Berlin";
@@ -332,6 +333,8 @@ async function openChart(entry) {
   $("view-markets").hidden = true;
   $("view-chart").hidden = false;
   $("q-name").textContent = entry.name;
+  $("rt-wrap").hidden = !rtAvailable(entry);
+  $("rt-switch").checked = rtWanted();
   paintStar($("q-star"), entry.id);
   $("q-price").textContent = fmtPrice(entry.last, unitOf(entry));
   $("q-change").textContent = "";
@@ -434,6 +437,10 @@ async function selectView(key) {
   showLastInLegend();
   updateQuote(rows, SECONDS[interval] !== undefined, source);
   $("chart-note").textContent = note;
+  if (rtAvailable(entry) && rtWanted()) {
+    startRealtime();
+    if (SECONDS[interval]) $("chart-note").textContent = (note ? note + " " : "") + "Die Kerzen bis vor 15 Minuten kommen von Yahoo, die aktuelle Kerze baut sich aus den Tradegate-Kursen auf.";
+  }
   if (!ensureChart()) {
     $("chart-note").textContent = "Die Chart-Bibliothek konnte nicht geladen werden. Prüfe die Internetverbindung und lade neu.";
     return;
@@ -511,6 +518,92 @@ function startLive(symbol, interval) {
 
 function stopLive() {
   if (state.ws) { try { state.ws.close(); } catch {} state.ws = null; }
+  stopRealtime();
+}
+
+// ---------- Echtzeit von Tradegate (umschaltbar) ----------
+const RT_STORE = "ta.realtime.v1";
+const rt = { timer: null, abort: null, line: null, failures: 0 };
+function rtWanted() { try { return localStorage.getItem(RT_STORE) === "1"; } catch { return false; } }
+function rtAvailable(e) { return Boolean(e && e.isin && unitOf(e) === "€"); }
+
+$("rt-switch").addEventListener("change", (ev) => {
+  try { localStorage.setItem(RT_STORE, ev.target.checked ? "1" : "0"); } catch {}
+  if (ev.target.checked) startRealtime();
+  else { stopRealtime(); selectView(state.viewKey); }
+});
+
+function stopRealtime() {
+  clearInterval(rt.timer);
+  rt.timer = null;
+  if (rt.abort) rt.abort.abort();
+  rt.abort = null;
+  if (rt.line && state.candles) { try { state.candles.removePriceLine(rt.line); } catch {} }
+  rt.line = null;
+  $("rt-info").textContent = "";
+}
+
+function startRealtime() {
+  stopRealtime();
+  if (!rtAvailable(state.entry) || !rtWanted() || $("view-chart").hidden) return;
+  rt.failures = 0;
+  pollRealtime();
+  if (tradegateOpen()) rt.timer = setInterval(pollRealtime, 10_000); // Tradegate aktualisiert alle 10 Sekunden
+}
+
+async function pollRealtime() {
+  const entry = state.entry;
+  if (rt.abort) rt.abort.abort();
+  rt.abort = new AbortController();
+  try {
+    const q = await fetchQuote(entry.isin, rt.abort.signal);
+    if (entry !== state.entry) return;
+    rt.failures = 0;
+    applyQuote(q);
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    rt.failures += 1;
+    $("rt-info").textContent = "Tradegate liefert gerade keinen Kurs für diesen Wert. Angezeigt werden die verzögerten Daten.";
+    if (rt.failures >= 3) { clearInterval(rt.timer); rt.timer = null; }
+  }
+}
+
+function applyQuote(q) {
+  const unit = unitOf(state.entry);
+  $("q-price").textContent = fmtPrice(q.last, unit);
+  if (q.prevClose) {
+    const change = q.last / q.prevClose - 1;
+    const ch = $("q-change");
+    ch.textContent = `${fmtPct(change)} heute`;
+    ch.className = "change " + trendClass(change);
+  }
+  const time = new Intl.DateTimeFormat("de-DE", { timeStyle: "medium", timeZone: TZ }).format(new Date());
+  const spread = q.bid != null && q.ask != null ? `, Geld ${fmtPrice(q.bid, unit)}, Brief ${fmtPrice(q.ask, unit)}` : "";
+  const closed = tradegateOpen() ? "" : " (Börse geschlossen, letzter Kurs)";
+  $("rt-info").textContent = `Echtzeit Tradegate, Stand ${time} Uhr${spread}${closed}`;
+  if (!state.candles) return;
+  if (rt.line) rt.line.applyOptions({ price: q.last });
+  else rt.line = state.candles.createPriceLine({ price: q.last, color: "#f2b544", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "Live" });
+  updateLiveCandle(q.last);
+}
+
+// Bei Minuten- und Stundenansichten wächst die aktuelle Kerze mit jedem Abruf.
+function updateLiveCandle(price) {
+  const step = SECONDS[state.interval];
+  if (!step || !tradegateOpen()) return;
+  const bucket = Math.floor(Date.now() / 1000 / step) * step;
+  const rows = state.rows;
+  const lastRow = rows[rows.length - 1];
+  let row;
+  if (lastRow && lastRow[0] === bucket) {
+    row = [bucket, lastRow[1], Math.max(lastRow[2], price), Math.min(lastRow[3], price), price, lastRow[5]];
+    rows[rows.length - 1] = row;
+  } else if (!lastRow || lastRow[0] < bucket) {
+    row = [bucket, price, price, price, price, 0];
+    rows.push(row);
+  } else return;
+  try { state.candles.update(toCandle(row)); } catch {}
+  if (!state.hovering) showLastInLegend();
 }
 
 document.addEventListener("visibilitychange", () => {
