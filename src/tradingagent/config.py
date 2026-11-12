@@ -23,6 +23,7 @@ class Instrument:
     symbols: dict[str, str] = field(default_factory=dict)  # Anbieter -> Symbol
     unit: str = "€"  # Indizes: "Punkte", US-Aktien: "$"
     kind: str = "aktie"  # aktie | etf | index | krypto
+    isin: str | None = None  # für Tradegate-Echtzeitkurse in der App
 
     def symbol_for(self, provider: str) -> str | None:
         return self.symbols.get(provider)
@@ -55,7 +56,7 @@ class Settings:
 
 
 # Alle anderen Schlüssel eines Instruments gelten als Anbieter-Symbol (kraken, binance, yahoo, ...).
-_RESERVED_KEYS = ("id", "name", "market", "unit", "kind")
+_RESERVED_KEYS = ("id", "name", "market", "unit", "kind", "isin")
 
 
 def _resolve(path: str, root: Path) -> Path:
@@ -101,6 +102,7 @@ def load_settings(config_dir: Path | None = None, root: Path | None = None) -> S
                 symbols={k: str(v) for k, v in item.items() if k not in _RESERVED_KEYS},
                 unit=str(item.get("unit", "€")),
                 kind=str(item.get("kind", "aktie")),
+                isin=item.get("isin"),
             )
         )
 

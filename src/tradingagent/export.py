@@ -130,7 +130,7 @@ def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, statu
         }
         (tmp_dir / "s" / f"{file_id}.json").write_text(json.dumps(wrap(payload), separators=(",", ":")), encoding="utf-8")
         entries.append({"id": inst.id, "name": inst.name, "market": inst.market, "file": f"s/{file_id}.json",
-                        "unit": inst.unit, "kind": inst.kind,
+                        "unit": inst.unit, "kind": inst.kind, "isin": inst.isin,
                         "delay_minutes": market_cfg.delay_minutes,
                         "live": {"binance": inst.symbol_for("binance")} if inst.market == "crypto" else None,
                         **_summary(storage, inst)})

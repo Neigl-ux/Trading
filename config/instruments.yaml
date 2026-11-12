@@ -15,71 +15,71 @@ instruments:
   - {id: DJI, name: Dow Jones, market: us, kind: index, unit: Punkte, yahoo: ^DJI}
 
   # ---------- ETFs und ETCs auf Xetra (in €) ----------
-  - {id: EUNL, name: iShares Core MSCI World, market: xetra, kind: etf, yahoo: EUNL.DE}
-  - {id: XDWD, name: Xtrackers MSCI World, market: xetra, kind: etf, yahoo: XDWD.DE}
-  - {id: VWCE, name: Vanguard FTSE All-World (thesaurierend), market: xetra, kind: etf, yahoo: VWCE.DE}
-  - {id: VGWL, name: Vanguard FTSE All-World (ausschüttend), market: xetra, kind: etf, yahoo: VGWL.DE}
-  - {id: IUSQ, name: iShares MSCI ACWI, market: xetra, kind: etf, yahoo: IUSQ.DE}
-  - {id: IS3N, name: iShares Core MSCI Emerging Markets IMI, market: xetra, kind: etf, yahoo: IS3N.DE}
-  - {id: SXR8, name: iShares Core S&P 500, market: xetra, kind: etf, yahoo: SXR8.DE}
-  - {id: EXXT, name: iShares Nasdaq-100, market: xetra, kind: etf, yahoo: EXXT.DE}
-  - {id: EUNK, name: iShares Core MSCI Europe, market: xetra, kind: etf, yahoo: EUNK.DE}
-  - {id: EXS1, name: iShares Core DAX, market: xetra, kind: etf, yahoo: EXS1.DE}
-  - {id: QDVE, name: iShares S&P 500 Information Technology, market: xetra, kind: etf, yahoo: QDVE.DE}
-  - {id: IQQH, name: iShares Global Clean Energy, market: xetra, kind: etf, yahoo: IQQH.DE}
-  - {id: 4GLD, name: Xetra-Gold (ETC), market: xetra, kind: etf, yahoo: 4GLD.DE}
+  - {id: EUNL, name: iShares Core MSCI World, market: xetra, kind: etf, isin: IE00B4L5Y983, yahoo: EUNL.DE}
+  - {id: XDWD, name: Xtrackers MSCI World, market: xetra, kind: etf, isin: IE00BJ0KDQ92, yahoo: XDWD.DE}
+  - {id: VWCE, name: Vanguard FTSE All-World (thesaurierend), market: xetra, kind: etf, isin: IE00BK5BQT80, yahoo: VWCE.DE}
+  - {id: VGWL, name: Vanguard FTSE All-World (ausschüttend), market: xetra, kind: etf, isin: IE00B3RBWM25, yahoo: VGWL.DE}
+  - {id: IUSQ, name: iShares MSCI ACWI, market: xetra, kind: etf, isin: IE00B6R52259, yahoo: IUSQ.DE}
+  - {id: IS3N, name: iShares Core MSCI Emerging Markets IMI, market: xetra, kind: etf, isin: IE00BKM4GZ66, yahoo: IS3N.DE}
+  - {id: SXR8, name: iShares Core S&P 500, market: xetra, kind: etf, isin: IE00B5BMR087, yahoo: SXR8.DE}
+  - {id: EXXT, name: iShares Nasdaq-100, market: xetra, kind: etf, isin: DE000A0F5UF5, yahoo: EXXT.DE}
+  - {id: EUNK, name: iShares Core MSCI Europe, market: xetra, kind: etf, isin: IE00B4K48X80, yahoo: EUNK.DE}
+  - {id: EXS1, name: iShares Core DAX, market: xetra, kind: etf, isin: DE0005933931, yahoo: EXS1.DE}
+  - {id: QDVE, name: iShares S&P 500 Information Technology, market: xetra, kind: etf, isin: IE00B3WJKG14, yahoo: QDVE.DE}
+  - {id: IQQH, name: iShares Global Clean Energy, market: xetra, kind: etf, isin: IE00B1XNHC34, yahoo: IQQH.DE}
+  - {id: 4GLD, name: Xetra-Gold (ETC), market: xetra, kind: etf, isin: DE000A0S9GB0, yahoo: 4GLD.DE}
 
   # ---------- Deutsche Aktien (Xetra, in €) ----------
-  - {id: ADS, name: adidas, market: xetra, kind: aktie, yahoo: ADS.DE}
-  - {id: AIR, name: Airbus, market: xetra, kind: aktie, yahoo: AIR.DE}
-  - {id: ALV, name: Allianz, market: xetra, kind: aktie, yahoo: ALV.DE}
-  - {id: BAS, name: BASF, market: xetra, kind: aktie, yahoo: BAS.DE}
-  - {id: BAYN, name: Bayer, market: xetra, kind: aktie, yahoo: BAYN.DE}
-  - {id: BEI, name: Beiersdorf, market: xetra, kind: aktie, yahoo: BEI.DE}
-  - {id: BMW, name: BMW, market: xetra, kind: aktie, yahoo: BMW.DE}
-  - {id: BNR, name: Brenntag, market: xetra, kind: aktie, yahoo: BNR.DE}
-  - {id: CBK, name: Commerzbank, market: xetra, kind: aktie, yahoo: CBK.DE}
-  - {id: CON, name: Continental, market: xetra, kind: aktie, yahoo: CON.DE}
-  - {id: DTG, name: Daimler Truck, market: xetra, kind: aktie, yahoo: DTG.DE}
-  - {id: DBK, name: Deutsche Bank, market: xetra, kind: aktie, yahoo: DBK.DE}
-  - {id: DB1, name: Deutsche Börse, market: xetra, kind: aktie, yahoo: DB1.DE}
-  - {id: DHL, name: DHL Group, market: xetra, kind: aktie, yahoo: DHL.DE}
-  - {id: DTE, name: Deutsche Telekom, market: xetra, kind: aktie, yahoo: DTE.DE}
-  - {id: EOAN, name: E.ON, market: xetra, kind: aktie, yahoo: EOAN.DE}
-  - {id: FRE, name: Fresenius, market: xetra, kind: aktie, yahoo: FRE.DE}
-  - {id: FME, name: Fresenius Medical Care, market: xetra, kind: aktie, yahoo: FME.DE}
-  - {id: HNR1, name: Hannover Rück, market: xetra, kind: aktie, yahoo: HNR1.DE}
-  - {id: HEI, name: Heidelberg Materials, market: xetra, kind: aktie, yahoo: HEI.DE}
-  - {id: HEN3, name: Henkel, market: xetra, kind: aktie, yahoo: HEN3.DE}
-  - {id: IFX, name: Infineon, market: xetra, kind: aktie, yahoo: IFX.DE}
-  - {id: MBG, name: Mercedes-Benz Group, market: xetra, kind: aktie, yahoo: MBG.DE}
-  - {id: MRK, name: Merck KGaA, market: xetra, kind: aktie, yahoo: MRK.DE}
-  - {id: MTX, name: MTU Aero Engines, market: xetra, kind: aktie, yahoo: MTX.DE}
-  - {id: MUV2, name: Münchener Rück, market: xetra, kind: aktie, yahoo: MUV2.DE}
-  - {id: P911, name: Porsche AG, market: xetra, kind: aktie, yahoo: P911.DE}
-  - {id: PAH3, name: Porsche SE, market: xetra, kind: aktie, yahoo: PAH3.DE}
+  - {id: ADS, name: adidas, market: xetra, kind: aktie, isin: DE000A1EWWW0, yahoo: ADS.DE}
+  - {id: AIR, name: Airbus, market: xetra, kind: aktie, isin: NL0000235190, yahoo: AIR.DE}
+  - {id: ALV, name: Allianz, market: xetra, kind: aktie, isin: DE0008404005, yahoo: ALV.DE}
+  - {id: BAS, name: BASF, market: xetra, kind: aktie, isin: DE000BASF111, yahoo: BAS.DE}
+  - {id: BAYN, name: Bayer, market: xetra, kind: aktie, isin: DE000BAY0017, yahoo: BAYN.DE}
+  - {id: BEI, name: Beiersdorf, market: xetra, kind: aktie, isin: DE0005200000, yahoo: BEI.DE}
+  - {id: BMW, name: BMW, market: xetra, kind: aktie, isin: DE0005190003, yahoo: BMW.DE}
+  - {id: BNR, name: Brenntag, market: xetra, kind: aktie, isin: DE000A1DAHH0, yahoo: BNR.DE}
+  - {id: CBK, name: Commerzbank, market: xetra, kind: aktie, isin: DE000CBK1001, yahoo: CBK.DE}
+  - {id: CON, name: Continental, market: xetra, kind: aktie, isin: DE0005439004, yahoo: CON.DE}
+  - {id: DTG, name: Daimler Truck, market: xetra, kind: aktie, isin: DE000DTR0CK8, yahoo: DTG.DE}
+  - {id: DBK, name: Deutsche Bank, market: xetra, kind: aktie, isin: DE0005140008, yahoo: DBK.DE}
+  - {id: DB1, name: Deutsche Börse, market: xetra, kind: aktie, isin: DE0005810055, yahoo: DB1.DE}
+  - {id: DHL, name: DHL Group, market: xetra, kind: aktie, isin: DE0005552004, yahoo: DHL.DE}
+  - {id: DTE, name: Deutsche Telekom, market: xetra, kind: aktie, isin: DE0005557508, yahoo: DTE.DE}
+  - {id: EOAN, name: E.ON, market: xetra, kind: aktie, isin: DE000ENAG999, yahoo: EOAN.DE}
+  - {id: FRE, name: Fresenius, market: xetra, kind: aktie, isin: DE0005785604, yahoo: FRE.DE}
+  - {id: FME, name: Fresenius Medical Care, market: xetra, kind: aktie, isin: DE0005785802, yahoo: FME.DE}
+  - {id: HNR1, name: Hannover Rück, market: xetra, kind: aktie, isin: DE0008402215, yahoo: HNR1.DE}
+  - {id: HEI, name: Heidelberg Materials, market: xetra, kind: aktie, isin: DE0006047004, yahoo: HEI.DE}
+  - {id: HEN3, name: Henkel, market: xetra, kind: aktie, isin: DE0006048432, yahoo: HEN3.DE}
+  - {id: IFX, name: Infineon, market: xetra, kind: aktie, isin: DE0006231004, yahoo: IFX.DE}
+  - {id: MBG, name: Mercedes-Benz Group, market: xetra, kind: aktie, isin: DE0007100000, yahoo: MBG.DE}
+  - {id: MRK, name: Merck KGaA, market: xetra, kind: aktie, isin: DE0006599905, yahoo: MRK.DE}
+  - {id: MTX, name: MTU Aero Engines, market: xetra, kind: aktie, isin: DE000A0D9PT0, yahoo: MTX.DE}
+  - {id: MUV2, name: Münchener Rück, market: xetra, kind: aktie, isin: DE0008430026, yahoo: MUV2.DE}
+  - {id: P911, name: Porsche AG, market: xetra, kind: aktie, isin: DE000PAG9113, yahoo: P911.DE}
+  - {id: PAH3, name: Porsche SE, market: xetra, kind: aktie, isin: DE000PAH0038, yahoo: PAH3.DE}
   - {id: QIA, name: Qiagen, market: xetra, kind: aktie, yahoo: QIA.DE}
-  - {id: RHM, name: Rheinmetall, market: xetra, kind: aktie, yahoo: RHM.DE}
-  - {id: RWE, name: RWE, market: xetra, kind: aktie, yahoo: RWE.DE}
-  - {id: SAP, name: SAP, market: xetra, kind: aktie, yahoo: SAP.DE}
-  - {id: SRT3, name: Sartorius, market: xetra, kind: aktie, yahoo: SRT3.DE}
-  - {id: SIE, name: Siemens, market: xetra, kind: aktie, yahoo: SIE.DE}
-  - {id: ENR, name: Siemens Energy, market: xetra, kind: aktie, yahoo: ENR.DE}
-  - {id: SHL, name: Siemens Healthineers, market: xetra, kind: aktie, yahoo: SHL.DE}
-  - {id: SY1, name: Symrise, market: xetra, kind: aktie, yahoo: SY1.DE}
-  - {id: VOW3, name: Volkswagen, market: xetra, kind: aktie, yahoo: VOW3.DE}
-  - {id: VNA, name: Vonovia, market: xetra, kind: aktie, yahoo: VNA.DE}
-  - {id: ZAL, name: Zalando, market: xetra, kind: aktie, yahoo: ZAL.DE}
+  - {id: RHM, name: Rheinmetall, market: xetra, kind: aktie, isin: DE0007030009, yahoo: RHM.DE}
+  - {id: RWE, name: RWE, market: xetra, kind: aktie, isin: DE0007037129, yahoo: RWE.DE}
+  - {id: SAP, name: SAP, market: xetra, kind: aktie, isin: DE0007164600, yahoo: SAP.DE}
+  - {id: SRT3, name: Sartorius, market: xetra, kind: aktie, isin: DE0007165631, yahoo: SRT3.DE}
+  - {id: SIE, name: Siemens, market: xetra, kind: aktie, isin: DE0007236101, yahoo: SIE.DE}
+  - {id: ENR, name: Siemens Energy, market: xetra, kind: aktie, isin: DE000ENER6Y0, yahoo: ENR.DE}
+  - {id: SHL, name: Siemens Healthineers, market: xetra, kind: aktie, isin: DE000SHL1006, yahoo: SHL.DE}
+  - {id: SY1, name: Symrise, market: xetra, kind: aktie, isin: DE000SYM9999, yahoo: SY1.DE}
+  - {id: VOW3, name: Volkswagen, market: xetra, kind: aktie, isin: DE0007664039, yahoo: VOW3.DE}
+  - {id: VNA, name: Vonovia, market: xetra, kind: aktie, isin: DE000A1ML7J1, yahoo: VNA.DE}
+  - {id: ZAL, name: Zalando, market: xetra, kind: aktie, isin: DE000ZAL1111, yahoo: ZAL.DE}
 
   # ---------- Europäische Aktien (in €) ----------
-  - {id: ASML, name: ASML, market: europe, kind: aktie, yahoo: ASML.AS}
-  - {id: MC, name: LVMH, market: europe, kind: aktie, yahoo: MC.PA}
-  - {id: OR, name: L'Oréal, market: europe, kind: aktie, yahoo: OR.PA}
-  - {id: TTE, name: TotalEnergies, market: europe, kind: aktie, yahoo: TTE.PA}
-  - {id: SAN, name: Sanofi, market: europe, kind: aktie, yahoo: SAN.PA}
-  - {id: AI, name: Air Liquide, market: europe, kind: aktie, yahoo: AI.PA}
-  - {id: SU, name: Schneider Electric, market: europe, kind: aktie, yahoo: SU.PA}
-  - {id: ITX, name: Inditex, market: europe, kind: aktie, yahoo: ITX.MC}
+  - {id: ASML, name: ASML, market: europe, kind: aktie, isin: NL0010273215, yahoo: ASML.AS}
+  - {id: MC, name: LVMH, market: europe, kind: aktie, isin: FR0000121014, yahoo: MC.PA}
+  - {id: OR, name: L'Oréal, market: europe, kind: aktie, isin: FR0000120321, yahoo: OR.PA}
+  - {id: TTE, name: TotalEnergies, market: europe, kind: aktie, isin: FR0000120271, yahoo: TTE.PA}
+  - {id: SAN, name: Sanofi, market: europe, kind: aktie, isin: FR0000120578, yahoo: SAN.PA}
+  - {id: AI, name: Air Liquide, market: europe, kind: aktie, isin: FR0000120073, yahoo: AI.PA}
+  - {id: SU, name: Schneider Electric, market: europe, kind: aktie, isin: FR0000121972, yahoo: SU.PA}
+  - {id: ITX, name: Inditex, market: europe, kind: aktie, isin: ES0148396007, yahoo: ITX.MC}
 
   # ---------- US-Aktien (in US-Dollar) ----------
   - {id: AAPL, name: Apple, market: us, kind: aktie, unit: $, yahoo: AAPL}
