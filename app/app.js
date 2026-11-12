@@ -337,7 +337,11 @@ function paintStar(b, id) {
   b.setAttribute("aria-label", on ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen");
 }
 
-$("search").addEventListener("input", () => renderList());
+// Suchen geht von überall: wer im Chart tippt, landet in der Trefferliste (Zurück führt wieder zum Chart)
+$("search").addEventListener("input", () => {
+  if ($("view-markets").hidden) navigate("markets");
+  else renderList();
+});
 
 function renderStatus() {
   const s = state.index.status || {};
