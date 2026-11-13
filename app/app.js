@@ -3,6 +3,7 @@ import { FinnhubStream, usMarketOpen } from "./finnhub.js";
 import { CATEGORIES, EMPTY_FILTER, SIGNALS, SORTS, STATUS_LABEL, WINDOWS, dataStatus, dayPerf, onQuote, perfOf, pushQuote, quoteOf, screen, topFlop } from "./engine.js";
 import { candleLabel, tickLabel } from "./format.js";
 import { answer, SUGGESTIONS } from "./assistant.js";
+import { RISK, sizePosition, stopFromAtr } from "./risk.js";
 import { fetchQuote, tradegateOpen } from "./tradegate.js";
 import { VIEWS, STEP, TZ as PERF_TZ, computeAll, formatPct, pctClass, periodStart, berlinParts, berlinToUtc } from "./perf.js";
 import { CryptoFeed, binanceKlines, mergeRows } from "./feeds.js";
@@ -68,7 +69,7 @@ const shift = (sec) => sec + berlinOffset(sec);
 // Datenquelle: zuerst dein Server (alle 5 Minuten frisch, Einstellungen → Server-Adresse),
 // fällt er aus, automatisch GitHub (alle 15–60 Minuten). Beide sind gleich verschlüsselt.
 // ---------- App-Version: zeigt an, wenn eine neuere Fassung veröffentlicht ist ----------
-const APP_VERSION = 37;
+const APP_VERSION = 38;
 let versionSeen = null;
 async function checkVersion() {
   try {
@@ -4180,3 +4181,83 @@ async function pollCollectState() {
     }
   });
 })();
+
+
+// =====================================================================
+// Phase 4: Positionsrechner (Simulator-Seite). Rechnet nur, handelt nicht.
+// =====================================================================
+const pc = { entry: null, atr: null, auto: { price: true, stop: true } };
+function fillAssetList(dl) {
+  if (dl.childElementCount || !state.index) return;
+  dl.append(...state.index.instruments.filter((e) => e.kind !== "index" && e.kind !== "devisen").map((e) => {
+    const o = document.createElement("option");
+    o.value = `${e.name} (${e.ticker || e.id})`;
+    return o;
+  }));
+}
+const eur = (x) => `${nf(2).format(x)} €`;
+function renderPositionCalc() {
+  fillAssetList($("pc-assets"));
+  const e = pc.entry;
+  const kind = e ? e.kind : "aktie";
+  const price = Number($("pc-price").value);
+  const stop = Number($("pc-stop").value);
+  const equity = Number($("pc-equity").value);
+  const out = $("pc-result");
+  out.textContent = "";
+  if (!(price > 0) || !(equity > 0)) return;
+  const r = sizePosition({ equity, price, stop, kind, riskPct: Number($("pc-risk").value) });
+  const item = (label, value) => {
+    const d = document.createElement("div"); d.className = "pc-item";
+    const a = document.createElement("span"); a.className = "pc-label"; a.textContent = label;
+    const b = document.createElement("span"); b.className = "pc-value"; b.textContent = value;
+    d.append(a, b); return d;
+  };
+  const p = (cls, text) => { const x = document.createElement("p"); x.className = cls; x.textContent = text; return x; };
+  if (r.reject) { out.append(p("pc-reject", r.reject)); }
+  if (r.qty > 0) {
+    out.append(
+      item("Stückzahl", kind === "krypto" ? nf(6).format(r.qty) : String(r.qty)),
+      item("Betrag", eur(r.amount)),
+      item("Gebühr", eur(r.fee)),
+      item("Verlust bis Stop", eur(r.riskEur + r.fee * 2)),
+    );
+    out.append(p("pc-note", `Kaufkurs mit Spread und Schlupf: ${numFmt(r.fill)} €. Risiko-Budget ${eur(r.budget)}` +
+      (r.cappedBy ? `, begrenzt durch ${r.cappedBy}.` : ".") + " „Verlust bis Stop“ enthält die Gebühren für Kauf und Verkauf."));
+  }
+}
+async function pickCalcAsset() {
+  const e = findEntry($("pc-asset").value);
+  pc.entry = e; pc.atr = null;
+  const hint = $("pc-hint");
+  if (!e) { hint.textContent = $("pc-asset").value ? "Wert nicht gefunden. Kurs und Stop kannst du auch von Hand eintragen." : ""; return renderPositionCalc(); }
+  const price = curPriceOf(e);
+  if (price > 0) { $("pc-price").value = Number(price.toPrecision(6)); pc.auto.price = true; }
+  hint.textContent = "Lade Tageskerzen für die ATR …";
+  try {
+    const data = await loadInstrument(e);
+    const rows = (data.series && data.series["1d"]) || [];
+    const a = atrCalc(rows, 14);
+    pc.atr = a.length ? a[a.length - 1] : null;
+  } catch { pc.atr = null; }
+  if (pc.entry !== e) return;
+  if (pc.atr > 0) {
+    const p = Number($("pc-price").value);
+    if (p > 0) { $("pc-stop").value = Number(stopFromAtr(p, pc.atr).toPrecision(6)); pc.auto.stop = true; }
+    hint.textContent = `ATR (14 Tage): ${numFmt(pc.atr)} €. Vorschlag Stop = Kurs − ${RISK.stopAtr} × ATR; du kannst ihn ändern.`;
+  } else {
+    hint.textContent = "Keine Tageskerzen für die ATR – trag den Stop bitte selbst ein.";
+  }
+  renderPositionCalc();
+}
+$("pc-asset").addEventListener("focus", () => fillAssetList($("pc-assets")));
+$("pc-asset").addEventListener("change", pickCalcAsset);
+$("pc-price").addEventListener("input", () => {
+  pc.auto.price = false;
+  const p = Number($("pc-price").value);
+  if (pc.atr > 0 && pc.auto.stop && p > 0) $("pc-stop").value = Number(stopFromAtr(p, pc.atr).toPrecision(6));
+  renderPositionCalc();
+});
+$("pc-stop").addEventListener("input", () => { pc.auto.stop = false; renderPositionCalc(); });
+for (const id of ["pc-equity", "pc-risk"]) $(id).addEventListener("input", renderPositionCalc);
+$("pc-form").addEventListener("submit", (ev) => ev.preventDefault());

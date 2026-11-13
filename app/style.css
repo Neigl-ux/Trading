@@ -694,3 +694,13 @@ article.card.folded .card-head { margin-bottom: 0; }
 .update-bar .ub-text { flex: 1; min-width: 0; }
 .update-bar button { min-height: 36px; padding: 0 12px; border-radius: 8px; border: 0; font: inherit; font-weight: 600; cursor: pointer; background: #fff; color: var(--accent); }
 .update-bar #update-later { background: transparent; color: #fff; font-weight: 400; }
+
+/* Positionsrechner */
+.pc-card, .pc-rules { margin-top: 12px; }
+.pc-result { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.pc-result .pc-item { display: flex; flex-direction: column; gap: 2px; }
+.pc-result .pc-label { color: var(--mute); font-size: .78rem; }
+.pc-result .pc-value { font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pc-result .pc-note { grid-column: 1 / -1; margin: 0; color: var(--mute); font-size: .85rem; }
+.pc-result .pc-reject { grid-column: 1 / -1; margin: 0; color: var(--warn); font-weight: 600; }
+.pc-rule-list { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; font-size: .9rem; }

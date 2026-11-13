@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=37">
+  <link rel="stylesheet" href="style.css?v=38">
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
-  <script type="module" src="app.js?v=37"></script>
+  <script type="module" src="app.js?v=38"></script>
 </head>
 <body>
   <!-- Entsperren -->
@@ -316,7 +316,35 @@
     <!-- Simulator -->
     <section id="view-sim" class="view" hidden>
       <h2>Simulator</h2>
-      <p class="placeholder">Der Simulator handelt ab Phase 7 selbstständig mit Spielgeld. Bis dahin sammelt das System im Hintergrund die Kursdaten, auf denen er später lernt und getestet wird.</p>
+      <p class="placeholder">Der Simulator handelt ab Phase 7 selbstständig mit Spielgeld. Jede seiner Order muss dann durch die Risikoregeln unten.</p>
+      <article class="card pc-card">
+        <header class="card-head"><h3>Positionsrechner</h3></header>
+        <p class="small">Wie viele Stück darf ein Kauf haben, damit bis zum Stop höchstens 1 % des Kontos verloren geht? Der Rechner rechnet nur, er handelt nicht.</p>
+        <form id="pc-form" class="pf-form" autocomplete="off">
+          <label class="fld pf-wide"><span>Wert (Name, Kürzel, ISIN oder WKN)</span><input id="pc-asset" list="pc-assets" placeholder="z. B. SAP"></label>
+          <datalist id="pc-assets"></datalist>
+          <label class="fld"><span>Kontowert in €</span><input id="pc-equity" type="number" step="any" min="0" inputmode="decimal" value="5000"></label>
+          <label class="fld"><span>Risiko je Trade</span><select id="pc-risk"><option value="0.5">0,5 %</option><option value="1" selected>1 %</option></select></label>
+          <label class="fld"><span>Kaufkurs in €</span><input id="pc-price" type="number" step="any" min="0" inputmode="decimal"></label>
+          <label class="fld"><span>Stop in €</span><input id="pc-stop" type="number" step="any" min="0" inputmode="decimal"></label>
+        </form>
+        <p id="pc-hint" class="small"></p>
+        <div id="pc-result" class="pc-result" aria-live="polite"></div>
+      </article>
+      <article class="card pc-rules">
+        <header class="card-head"><h3>Risikoregeln des Simulators</h3></header>
+        <ul class="pc-rule-list">
+          <li>Spielgeld 5.000 € je Strategie, je ein Konto für Daytrading und für Halten über Nacht</li>
+          <li>Kosten: 8 € je Order bei Aktien und ETFs, 0,2 % bei Krypto, dazu Spread und Schlupf</li>
+          <li>Höchstens 1 % Risiko je Trade, Stop 2 × ATR unter dem Kauf, nur nachgezogen</li>
+          <li>Je Position höchstens 20 % des Kontos (Krypto 10 %, Krypto zusammen 20 %)</li>
+          <li>Höchstens 5 Positionen, höchstens 2 je Branche</li>
+          <li>−2 % am Tag: heute keine neuen Trades; −5 % in der Woche: bis Montag keine</li>
+          <li>5 Verluste in Folge: 2 Handelstage Pause</li>
+          <li>−15 % vom Höchststand, technischer Fehler oder mehr als 20 Order am Tag: Kill Switch, alles wird geschlossen, Neustart nur von Hand</li>
+          <li>Keine Leerverkäufe, kein Hebel, kein Kredit</li>
+        </ul>
+      </article>
     </section>
 
     <!-- Status -->

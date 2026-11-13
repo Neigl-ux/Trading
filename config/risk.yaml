@@ -1,0 +1,42 @@
+# Phase 4 – Risikomanagement für den Simulator (Spielgeld).
+# Freigegeben am 13.11.2026. Jede Order des Simulators muss durch diese Regeln.
+# Gilt NICHT für Ratgeber, Sparplan und Nachkauf-Pyramide.
+
+konto:
+  startkapital_eur: 5000        # je Strategie ein eigenes Konto
+  modi: [daytrading, ueber_nacht] # beides als getrennte Konten testen
+  leerverkaeufe: false          # nur Kaufen und Verkaufen eigener Stücke; kein Hebel, kein Kredit
+
+kosten:
+  gebuehr_aktie_etf_eur: 8      # je Kauf und je Verkauf
+  gebuehr_krypto_prozent: 0.2   # vom Betrag
+  spread_ersatz_prozent: 0.1    # wenn Tradegate keinen Geld-/Briefkurs liefert
+  spread_ersatz_krypto_prozent: 0.05
+  schlupf_prozent: 0.05         # je Order zusätzlich
+  schlupf_stop_prozent: 0.2     # bei ausgelösten Stops
+  steuer_prozent: 26.375        # nur für den Bericht geschätzt (25 % + Soli), nicht abgezogen
+
+position:
+  risiko_prozent: 1.0           # höchstens 1 % des Kontos je Trade
+  stop_atr_faktor: 2.0          # Stop = Einstieg − 2 × ATR(14) der Tageskerzen; wird nur nachgezogen
+  atr_tage: 14
+  max_anteil_prozent: 20        # je Position
+  max_anteil_krypto_prozent: 10
+  max_gebuehr_anteil_prozent: 1 # Gebühr über 1 % des Betrags: nicht handeln
+
+limits:
+  max_positionen: 5
+  max_je_branche: 2
+  krypto_gesamt_prozent: 20
+  tagesverlust_prozent: 2       # heute keine neuen Trades
+  wochenverlust_prozent: 5      # bis Montag keine neuen Trades
+  verlustserie: 5               # Verlust-Trades in Folge …
+  pause_handelstage: 2          # … pausieren die Strategie so lange
+  handelszeit_von: "09:15"      # Aktien/ETFs, deutsche Zeit
+  handelszeit_bis: "21:45"
+  max_kursalter_s: 120
+  max_sprung_prozent: 10        # größerer Sprung ohne Bestätigung: keine Order
+
+kill_switch:
+  rueckgang_vom_hoch_prozent: 15
+  max_order_je_tag: 20
