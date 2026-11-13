@@ -117,8 +117,29 @@ class Recorder:
                           index=pd.DatetimeIndex([cur["t"]]))
         try:
             self.storage.upsert_bars(vid, "5m", df, source="tradegate")
+            self._roll_up(vid, cur["t"])
         except Exception as err:  # noqa: BLE001 – Datenbank kurz gesperrt: Kerze fehlt, Lücken-Reparatur hilft nicht, aber der Dienst läuft weiter
             print(f"Mitschnitt {vid}: {err}", flush=True)
+
+    def _roll_up(self, vid: str, t: pd.Timestamp) -> None:
+        """Aus den mitgeschriebenen 5-Minuten-Kerzen auch 15-Minuten- und Stundenkerzen bilden
+        (für die 12-Stunden- und Wochenansicht). Nur Zeitblöcke, die ganz außerhalb der Hauptbörsenzeit liegen,
+        damit keine Kerze der Börse überschrieben wird. US-Stundenkerzen beginnen wie bei Yahoo zur halben Stunde."""
+        us = self.kind.get(vid) == "us"
+        main_hours = us_hours if us else xetra_hours
+        for interval, minutes in (("15m", 15), ("1h", 60)):
+            offset = pd.Timedelta(minutes=30) if (us and interval == "1h") else pd.Timedelta(0)
+            start = (t - offset).floor(f"{minutes}min") + offset
+            end = start + pd.Timedelta(minutes=minutes)
+            if any(main_hours(start + pd.Timedelta(minutes=m)) for m in range(0, minutes, 5)):
+                continue
+            bars = self.storage.load_bars(vid, "5m", start, end)
+            if bars.empty:
+                continue
+            agg = pd.DataFrame({"open": [bars["open"].iloc[0]], "high": [bars["high"].max()],
+                                "low": [bars["low"].min()], "close": [bars["close"].iloc[-1]],
+                                "volume": [float(bars["volume"].sum())]}, index=pd.DatetimeIndex([start]))
+            self.storage.upsert_bars(vid, interval, agg, source="tradegate")
 
 
 class Live:

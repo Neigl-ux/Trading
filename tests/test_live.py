@@ -67,3 +67,28 @@ def test_us_quotes_recorded_in_dollar_before_us_open():
     rec.add_quote(nvda, t2, 100.0)
     rec.flush_old(t2 + pd.Timedelta(minutes=6))
     assert len(st.load_bars("NVDA", "5m")) == 1
+
+
+def test_recorder_builds_15m_and_1h_bars_outside_xetra():
+    st = SQLiteStorage(":memory:")
+    rec = live.Recorder(st)
+    t0 = pd.Timestamp("2026-11-13T17:00Z")  # 18:00 Berlin
+    for i in range(13):  # 18:00 … 19:00, eine Kerze je 5 Minuten
+        rec.add("SAP", t0 + pd.Timedelta(minutes=5 * i), 100.0 + i)
+    rec.flush_old(t0 + pd.Timedelta(minutes=70))
+    h = st.load_bars("SAP", "1h")
+    assert list(h.index) == [t0, t0 + pd.Timedelta(hours=1)]
+    first = h.iloc[0]
+    assert (first["open"], first["high"], first["low"], first["close"]) == (100.0, 111.0, 100.0, 111.0)
+    q = st.load_bars("SAP", "15m")
+    assert len(q) == 5 and q.iloc[0]["close"] == 102.0
+
+
+def test_recorder_leaves_hour_with_xetra_trading_alone():
+    st = SQLiteStorage(":memory:")
+    rec = live.Recorder(st)
+    t = pd.Timestamp("2026-11-13T16:30Z")  # 17:30 Berlin: 15-Minuten-Block ja, Stundenblock 17–18 Uhr nein
+    rec.add("SAP", t, 50.0)
+    rec.flush_old(t + pd.Timedelta(minutes=6))
+    assert len(st.load_bars("SAP", "15m")) == 1
+    assert st.load_bars("SAP", "1h").empty
