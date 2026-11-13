@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import argparse
 import os
+import time
+import json
 import sys
 from pathlib import Path
 
@@ -28,8 +30,40 @@ def _passphrase() -> str | None:
     return value.strip() if value else None
 
 
+def _collect_state(settings, **changes) -> None:
+    """Server: Zeitpunkte des Sammel-Laufs für die App (site/collect.json, nur Uhrzeiten, keine Kurse)."""
+    if not os.environ.get("TA_QUOTES_FILE"):
+        return
+    path = settings.export_dir.parent / "collect.json"
+    try:
+        state = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except (OSError, ValueError):
+        state = {}
+    state.update(changes)
+    state["pause"] = int(os.environ.get("TA_COLLECT_PAUSE", "300"))
+    if state.get("finished") and not state.get("running"):
+        state["next"] = int(state["finished"]) + state["pause"]
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(state), encoding="utf-8")
+        tmp.replace(path)
+    except OSError:
+        pass
+
+
 def cmd_collect(args) -> int:
     settings = load_settings()
+    t0 = time.time()
+    _collect_state(settings, running=True, started=int(t0))
+    try:
+        return _collect(settings, args)
+    finally:
+        t1 = time.time()
+        _collect_state(settings, running=False, finished=int(t1), duration=int(t1 - t0))
+
+
+def _collect(settings, args) -> int:
     storage = open_storage(settings.storage_path)
     names = sorted({p for m in settings.markets.values() if m.enabled for p in (*m.providers, *m.daily_providers)})
     summary = collect(settings, storage, build_providers(names))

@@ -279,3 +279,17 @@ def test_us_hourly_bars_at_half_past_are_not_gaps():
     rep = QualityReport("AAPL", "1h")
     check_gaps(df, "AAPL", "1h", "us", rep)
     assert not [i for i in rep.issues if i.kind == "luecke"]
+
+
+def test_collect_state_file(tmp_path, monkeypatch):
+    import json
+    from types import SimpleNamespace
+
+    from tradingagent import __main__ as m
+
+    monkeypatch.setenv("TA_QUOTES_FILE", str(tmp_path / "q.json"))
+    s = SimpleNamespace(export_dir=tmp_path / "site" / "data")
+    m._collect_state(s, running=True, started=100)
+    m._collect_state(s, running=False, finished=400, duration=300)
+    st = json.loads((tmp_path / "site" / "collect.json").read_text())
+    assert st["started"] == 100 and st["duration"] == 300 and st["next"] == 700 and st["running"] is False

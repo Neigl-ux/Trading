@@ -68,7 +68,7 @@ const shift = (sec) => sec + berlinOffset(sec);
 // Datenquelle: zuerst dein Server (alle 5 Minuten frisch, Einstellungen → Server-Adresse),
 // fällt er aus, automatisch GitHub (alle 15–60 Minuten). Beide sind gleich verschlüsselt.
 // ---------- App-Version: zeigt an, wenn eine neuere Fassung veröffentlicht ist ----------
-const APP_VERSION = 36;
+const APP_VERSION = 37;
 let versionSeen = null;
 async function checkVersion() {
   try {
@@ -96,6 +96,7 @@ setInterval(checkVersion, 60000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkVersion(); });
 
 const SERVER_STORE = "ta.server";
+const collectState = { data: null, at: 0, busy: false }; // Sammel-Status des Servers
 let dataBase = "data/";
 // Ohne eigene Einstellung nutzt jedes Gerät (Handy wie PC) den eigenen Server; „aus“ = bewusst nur GitHub.
 const DEFAULT_SERVER = "https://92-5-110-28.sslip.io";
@@ -225,10 +226,23 @@ function showMain() {
   startServerLive();
 }
 
+/** Wann kommen die nächsten Daten? Server: aus dem Sammel-Status (collect.json); GitHub: etwa alle 15 Minuten. */
+function nextUpdateText() {
+  const now = Date.now() / 1000;
+  const hm = (t) => fmtTime(t, false);
+  const c = collectState.data;
+  if (state.dataSource === "server" && c && collectState.at > Date.now() - 120000) {
+    const dur = Math.max(60, c.duration || 300);
+    if (c.running) return ` · wird gerade aktualisiert, fertig ca. ${hm(Math.max(now + 30, c.started + dur))} Uhr`;
+    if (c.next) return ` · nächste ca. ${hm(Math.max(now + 30, c.next + dur))} Uhr`;
+  }
+  if (state.dataSource !== "server") return ` · nächste ca. ${hm(Math.max(now + 60, state.index.updated + 15 * 60))} Uhr`;
+  return "";
+}
 function updateFreshness() {
   const age = Date.now() / 1000 - state.index.updated;
   const fresh = $("freshness");
-  fresh.textContent = `Daten von ${fmtTime(state.index.updated, age > 20 * 3600)} Uhr${state.dataSource === "server" ? " · Server" : serverUrl() ? " · GitHub (Server nicht erreicht)" : ""}`;
+  fresh.textContent = `Daten von ${fmtTime(state.index.updated, age > 20 * 3600)} Uhr${state.dataSource === "server" ? " · Server" : serverUrl() ? " · GitHub (Server nicht erreicht)" : ""}${nextUpdateText()}`;
   fresh.style.color = age > 45 * 60 ? "var(--warn)" : "";
   fresh.title = age > 45 * 60 ? "Der letzte Sammel-Lauf liegt länger zurück. Prüfe den Status." : "";
 }
@@ -4111,7 +4125,28 @@ function startServerLive() {
   clearInterval(serverLive.timer);
   if (!serverUrl()) return;
   pollServerLive();
-  serverLive.timer = setInterval(pollServerLive, 20000);
+  pollCollectState();
+  serverLive.timer = setInterval(() => { pollServerLive(); pollCollectState(); }, 20000);
+}
+
+// Sammel-Status des Servers: zeigt die nächste Aktualisierung und lädt neue Daten, sobald ein Lauf fertig ist
+async function pollCollectState() {
+  const srv = serverUrl();
+  if (!srv || !state.index || document.hidden || collectState.busy) return;
+  collectState.busy = true;
+  try {
+    collectState.data = await fetchRaw(`${srv}/collect.json`, 8000);
+    collectState.at = Date.now();
+    const c = collectState.data;
+    // neuer Lauf fertig (der Datenstand trägt die Startzeit des Laufs)
+    if (c && !c.running && c.started > state.index.updated + 30 && state.dataSource === "server" && collectState.loadedFor !== c.started) {
+      collectState.loadedFor = c.started; // pro Lauf nur einmal nachladen
+      await refreshIndex();
+    }
+    updateFreshness();
+  } catch {} finally {
+    collectState.busy = false;
+  }
 }
 
 // Einstellung: Server-Adresse
