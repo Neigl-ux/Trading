@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=31">
+  <link rel="stylesheet" href="style.css?v=32">
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
-  <script type="module" src="app.js?v=31"></script>
+  <script type="module" src="app.js?v=32"></script>
 </head>
 <body>
   <!-- Entsperren -->
@@ -29,6 +29,11 @@
     </form>
   </section>
 
+  <div id="update-bar" class="update-bar" role="status" hidden>
+    <span class="ub-text"></span>
+    <button type="button" id="update-load">Jetzt laden</button>
+    <button type="button" id="update-later" aria-label="Später">Später</button>
+  </div>
   <main id="main" hidden>
     <header class="topbar">
       <span class="brand"><svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1"/><rect x="8" y="10" width="4" height="12" rx="1"/><rect x="14" y="6" width="4" height="16" rx="1"/><rect x="20" y="2" width="3" height="20" rx="1"/></svg>Trading-Agent</span>
@@ -317,6 +322,7 @@
     <!-- Status -->
     <section id="view-status" class="view" hidden>
       <h2>Einstellungen</h2>
+      <p id="set-version" class="small">Version wird geprüft …</p>
       <div class="card settings">
         <div class="set-row"><span>Design</span><div class="seg" id="set-theme" role="group" aria-label="Design">
           <button type="button" data-v="light" aria-pressed="false">Hell</button><button type="button" data-v="dark" aria-pressed="true">Dunkel</button><button type="button" data-v="auto" aria-pressed="false">Auto</button></div></div>

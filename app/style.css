@@ -687,3 +687,10 @@ article.card.folded .card-head { margin-bottom: 0; }
 .adv-todo.has-todo { border-left-color: var(--warn); }
 .ag-foot { margin: 0 0 12px; font-size: .78rem; color: var(--mute); }
 #adv-body > article.card { margin-bottom: 10px; }
+
+/* Hinweis auf neue App-Version */
+.update-bar { position: fixed; z-index: 50; left: 12px; right: 12px; top: calc(env(safe-area-inset-top) + 8px); display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--accent); color: #fff; box-shadow: 0 6px 20px rgba(0,0,0,.25); font-size: .9rem; }
+.update-bar[hidden] { display: none; }
+.update-bar .ub-text { flex: 1; min-width: 0; }
+.update-bar button { min-height: 36px; padding: 0 12px; border-radius: 8px; border: 0; font: inherit; font-weight: 600; cursor: pointer; background: #fff; color: var(--accent); }
+.update-bar #update-later { background: transparent; color: #fff; font-weight: 400; }

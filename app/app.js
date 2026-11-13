@@ -67,6 +67,34 @@ const shift = (sec) => sec + berlinOffset(sec);
 // ---------- Laden ----------
 // Datenquelle: zuerst dein Server (alle 5 Minuten frisch, Einstellungen → Server-Adresse),
 // fällt er aus, automatisch GitHub (alle 15–60 Minuten). Beide sind gleich verschlüsselt.
+// ---------- App-Version: zeigt an, wenn eine neuere Fassung veröffentlicht ist ----------
+const APP_VERSION = 32;
+let versionSeen = null;
+async function checkVersion() {
+  try {
+    const res = await fetch(`version.json?t=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) return;
+    const v = await res.json();
+    const info = document.getElementById("set-version");
+    if (info) info.textContent = `Version ${APP_VERSION}` + (v.v === APP_VERSION && v.date ? ` vom ${v.date} Uhr` : "") +
+      (v.v > APP_VERSION ? ` · neuere Version ${v.v} verfügbar` : " · aktuell");
+    if (!(v.v > APP_VERSION) || versionSeen === v.v) return;
+    versionSeen = v.v;
+    const bar = document.getElementById("update-bar");
+    bar.querySelector(".ub-text").textContent = `Neue Version ${v.v}${v.note ? `: ${v.note}` : ""}`;
+    bar.hidden = false;
+  } catch {}
+}
+document.getElementById("update-load").addEventListener("click", async () => {
+  try { const keys = await caches.keys(); await Promise.all(keys.map((k) => caches.delete(k))); } catch {}
+  try { const reg = await navigator.serviceWorker?.getRegistration(); await reg?.update(); } catch {}
+  location.reload();
+});
+document.getElementById("update-later").addEventListener("click", () => { document.getElementById("update-bar").hidden = true; });
+checkVersion();
+setInterval(checkVersion, 60000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkVersion(); });
+
 const SERVER_STORE = "ta.server";
 let dataBase = "data/";
 // Ohne eigene Einstellung nutzt jedes Gerät (Handy wie PC) den eigenen Server; „aus“ = bewusst nur GitHub.
