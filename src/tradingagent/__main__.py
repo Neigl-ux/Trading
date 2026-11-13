@@ -100,6 +100,8 @@ def main(argv: list[str] | None = None) -> int:
         func=lambda args: __import__("tradingagent.notify", fromlist=["main"]).main())
     sub.add_parser("universe", help="Verzeichnis config/universe.yaml aus öffentlichen Listen erzeugen").set_defaults(
         func=lambda args: __import__("tradingagent.universe", fromlist=["main"]).main())
+    sub.add_parser("backtest", help="Rückblick-Test des Ratgebers").set_defaults(
+        func=lambda args: __import__("tradingagent.backtest", fromlist=["main"]).main())
     sub.add_parser("verify", help="Asset-Datenbank gegen die Quellen prüfen").set_defaults(
         func=lambda args: __import__("tradingagent.verify", fromlist=["main"]).main())
     sub.add_parser("tradegate-check", help="Tradegate-Echtzeitkurse prüfen").set_defaults(
