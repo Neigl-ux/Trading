@@ -1,5 +1,5 @@
 {
- "created": "2026-11-13T00:01+00:00",
+ "created": "2026-11-13T00:55+00:00",
  "pyramid": [
   {
    "series": "MSCI World (iShares, in €)",
@@ -422,6 +422,465 @@
    }
   }
  ],
+ "ladders": {
+  "etf": {
+   "instruments": 24,
+   "drops": {
+    "days_below": {
+     "5": 0.426,
+     "10": 0.241,
+     "15": 0.142,
+     "20": 0.089,
+     "30": 0.035,
+     "40": 0.018,
+     "50": 0.008
+    },
+    "vol_median": 0.167
+   },
+   "ladders": {
+    "bisher": {
+     "label": "Bisher: −10/−15/−20/−25/−30 %",
+     "3J_tagesgeld": {
+      "instruments": 24,
+      "windows": 3487,
+      "win_share": 0.384,
+      "median_diff": -0.0687,
+      "mean_diff": -0.0634,
+      "p10_diff": -0.2668,
+      "p90_diff": 0.1708,
+      "inst_median_diff": -0.073,
+      "avg_cash_left": 0.345
+     },
+     "3J_nach_12M": {
+      "instruments": 24,
+      "windows": 3487,
+      "win_share": 0.401,
+      "median_diff": -0.0415,
+      "mean_diff": -0.0294,
+      "p10_diff": -0.1842,
+      "p90_diff": 0.1636,
+      "inst_median_diff": -0.0426,
+      "avg_cash_left": 0.0
+     },
+     "5J_tagesgeld": {
+      "instruments": 24,
+      "windows": 2913,
+      "win_share": 0.433,
+      "median_diff": -0.0387,
+      "mean_diff": -0.0561,
+      "p10_diff": -0.297,
+      "p90_diff": 0.184,
+      "inst_median_diff": -0.0736,
+      "avg_cash_left": 0.137
+     },
+     "5J_nach_12M": {
+      "instruments": 24,
+      "windows": 2913,
+      "win_share": 0.404,
+      "median_diff": -0.0411,
+      "mean_diff": -0.0274,
+      "p10_diff": -0.1857,
+      "p90_diff": 0.1724,
+      "inst_median_diff": -0.0356,
+      "avg_cash_left": 0.0
+     }
+    },
+    "etf_frueh": {
+     "label": "ETF früh: −5/−10/−15/−20/−25 %, je 20 %",
+     "3J_tagesgeld": {
+      "instruments": 24,
+      "windows": 3487,
+      "win_share": 0.424,
+      "median_diff": -0.0178,
+      "mean_diff": -0.0237,
+      "p10_diff": -0.1282,
+      "p90_diff": 0.0843,
+      "inst_median_diff": -0.0152,
+      "avg_cash_left": 0.014
+     },
+     "3J_nach_12M": {
+      "instruments": 24,
+      "windows": 3487,
+      "win_share": 0.444,
+      "median_diff": -0.0131,
+      "mean_diff": -0.0181,
+      "p10_diff": -0.122,
+      "p90_diff": 0.0887,
+      "inst_median_diff": -0.0092,
+      "avg_cash_left": 0.0
+     },
+     "5J_tagesgeld": {
+      "instruments": 24,
+      "windows": 2913,
+      "win_share": 0.43,
+      "median_diff": -0.0151,
+      "mean_diff": -0.022,
+      "p10_diff": -0.1304,
+      "p90_diff": 0.0869,
+      "inst_median_diff": -0.0179,
+      "avg_cash_left": 0.0
+     },
+     "5J_nach_12M": {
+      "instruments": 24,
+      "windows": 2913,
+      "win_share": 0.444,
+      "median_diff": -0.014,
+      "mean_diff": -0.0186,
+      "p10_diff": -0.1228,
+      "p90_diff": 0.0887,
+      "inst_median_diff": -0.0107,
+      "avg_cash_left": 0.0
+     }
+    },
+    "etf_10_sofort": {
+     "label": "ETF: −10 % = 50 %, −15 % = 25 %, −20 % = 25 %",
+     "3J_tagesgeld": {
+      "instruments": 24,
+      "windows": 3487,
+      "win_share": 0.492,
+      "median_diff": -0.0032,
+      "mean_diff": -0.0324,
+      "p10_diff": -0.1797,
+      "p90_diff": 0.0942,
+      "inst_median_diff": -0.0087,
+      "avg_cash_left": 0.064
+     },
+     "3J_nach_12M": {
+      "instruments": 24,
+      "windows": 3487,
+      "win_share": 0.513,
+      "median_diff": 0.0001,
+      "mean_diff": -0.021,
+      "p10_diff": -0.1553,
+      "p90_diff": 0.0972,
+      "inst_median_diff": -0.0018,
+      "avg_cash_left": 0.0
+     },
+     "5J_tagesgeld": {
+      "instruments": 24,
+      "windows": 2913,
+      "win_share": 0.501,
+      "median_diff": 0.0,
+      "mean_diff": -0.0287,
+      "p10_diff": -0.1785,
+      "p90_diff": 0.0964,
+      "inst_median_diff": -0.0014,
+      "avg_cash_left": 0.008
+     },
+     "5J_nach_12M": {
+      "instruments": 24,
+      "windows": 2913,
+      "win_share": 0.508,
+      "median_diff": 0.0001,
+      "mean_diff": -0.021,
+      "p10_diff": -0.1509,
+      "p90_diff": 0.0979,
+      "inst_median_diff": 0.0001,
+      "avg_cash_left": 0.0
+     }
+    },
+    "etf_haelfte": {
+     "label": "ETF: Hälfte sofort, Rest bei −5/−10/−15/−20 %",
+     "3J_tagesgeld": {
+      "instruments": 24,
+      "windows": 3487,
+      "win_share": 0.487,
+      "median_diff": -0.0024,
+      "mean_diff": -0.0085,
+      "p10_diff": -0.0571,
+      "p90_diff": 0.0383,
+      "inst_median_diff": -0.0056,
+      "avg_cash_left": 0.002
+     },
+     "3J_nach_12M": {
+      "instruments": 24,
+      "windows": 3487,
+      "win_share": 0.494,
+      "median_diff": -0.0011,
+      "mean_diff": -0.0074,
+      "p10_diff": -0.0542,
+      "p90_diff": 0.0388,
+      "inst_median_diff": -0.0018,
+      "avg_cash_left": 0.0
+     },
+     "5J_tagesgeld": {
+      "instruments": 24,
+      "windows": 2913,
+      "win_share": 0.487,
+      "median_diff": -0.0023,
+      "mean_diff": -0.0085,
+      "p10_diff": -0.0573,
+      "p90_diff": 0.0384,
+      "inst_median_diff": -0.0045,
+      "avg_cash_left": 0.0
+     },
+     "5J_nach_12M": {
+      "instruments": 24,
+      "windows": 2913,
+      "win_share": 0.49,
+      "median_diff": -0.0017,
+      "mean_diff": -0.0079,
+      "p10_diff": -0.0546,
+      "p90_diff": 0.0387,
+      "inst_median_diff": -0.0008,
+      "avg_cash_left": 0.0
+     }
+    },
+    "sigma": {
+     "label": "Schwankung: 0,5/0,75/1/1,25/1,5 × Volatilität",
+     "3J_tagesgeld": {
+      "instruments": 24,
+      "windows": 3487,
+      "win_share": 0.316,
+      "median_diff": -0.0704,
+      "mean_diff": -0.0602,
+      "p10_diff": -0.249,
+      "p90_diff": 0.1193,
+      "inst_median_diff": -0.0653,
+      "avg_cash_left": 0.201
+     },
+     "3J_nach_12M": {
+      "instruments": 24,
+      "windows": 3487,
+      "win_share": 0.373,
+      "median_diff": -0.0478,
+      "mean_diff": -0.0317,
+      "p10_diff": -0.1874,
+      "p90_diff": 0.1368,
+      "inst_median_diff": -0.051,
+      "avg_cash_left": 0.0
+     },
+     "5J_tagesgeld": {
+      "instruments": 24,
+      "windows": 2913,
+      "win_share": 0.351,
+      "median_diff": -0.0583,
+      "mean_diff": -0.0553,
+      "p10_diff": -0.2696,
+      "p90_diff": 0.1338,
+      "inst_median_diff": -0.0405,
+      "avg_cash_left": 0.02
+     },
+     "5J_nach_12M": {
+      "instruments": 24,
+      "windows": 2913,
+      "win_share": 0.379,
+      "median_diff": -0.0475,
+      "mean_diff": -0.0309,
+      "p10_diff": -0.191,
+      "p90_diff": 0.1413,
+      "inst_median_diff": -0.0448,
+      "avg_cash_left": 0.0
+     }
+    }
+   }
+  },
+  "aktie": {
+   "instruments": 185,
+   "drops": {
+    "days_below": {
+     "5": 0.674,
+     "10": 0.488,
+     "15": 0.357,
+     "20": 0.264,
+     "30": 0.145,
+     "40": 0.078,
+     "50": 0.04
+    },
+    "vol_median": 0.288
+   },
+   "ladders": {
+    "bisher": {
+     "label": "Bisher: −10/−15/−20/−25/−30 %",
+     "3J_tagesgeld": {
+      "instruments": 185,
+      "windows": 56735,
+      "win_share": 0.547,
+      "median_diff": 0.0001,
+      "mean_diff": -0.0361,
+      "p10_diff": -0.2909,
+      "p90_diff": 0.182,
+      "inst_median_diff": 0.0001,
+      "avg_cash_left": 0.082
+     },
+     "3J_nach_12M": {
+      "instruments": 185,
+      "windows": 56735,
+      "win_share": 0.545,
+      "median_diff": 0.0001,
+      "mean_diff": -0.0234,
+      "p10_diff": -0.2302,
+      "p90_diff": 0.1678,
+      "inst_median_diff": 0.0001,
+      "avg_cash_left": 0.0
+     },
+     "5J_tagesgeld": {
+      "instruments": 180,
+      "windows": 52443,
+      "win_share": 0.539,
+      "median_diff": 0.0001,
+      "mean_diff": -0.0388,
+      "p10_diff": -0.2998,
+      "p90_diff": 0.1837,
+      "inst_median_diff": 0.0001,
+      "avg_cash_left": 0.019
+     },
+     "5J_nach_12M": {
+      "instruments": 180,
+      "windows": 52443,
+      "win_share": 0.538,
+      "median_diff": 0.0001,
+      "mean_diff": -0.0245,
+      "p10_diff": -0.2332,
+      "p90_diff": 0.1696,
+      "inst_median_diff": 0.0001,
+      "avg_cash_left": 0.0
+     }
+    },
+    "aktie_spaet": {
+     "label": "Aktie spät: −15/−25/−35/−45/−55 %",
+     "3J_tagesgeld": {
+      "instruments": 185,
+      "windows": 56735,
+      "win_share": 0.412,
+      "median_diff": -0.083,
+      "mean_diff": -0.0478,
+      "p10_diff": -0.434,
+      "p90_diff": 0.4109,
+      "inst_median_diff": -0.0682,
+      "avg_cash_left": 0.413
+     },
+     "3J_nach_12M": {
+      "instruments": 185,
+      "windows": 56735,
+      "win_share": 0.42,
+      "median_diff": -0.0461,
+      "mean_diff": -0.0224,
+      "p10_diff": -0.2918,
+      "p90_diff": 0.3018,
+      "inst_median_diff": -0.0398,
+      "avg_cash_left": 0.0
+     },
+     "5J_tagesgeld": {
+      "instruments": 180,
+      "windows": 52443,
+      "win_share": 0.413,
+      "median_diff": -0.0917,
+      "mean_diff": -0.0617,
+      "p10_diff": -0.486,
+      "p90_diff": 0.4266,
+      "inst_median_diff": -0.0717,
+      "avg_cash_left": 0.252
+     },
+     "5J_nach_12M": {
+      "instruments": 180,
+      "windows": 52443,
+      "win_share": 0.418,
+      "median_diff": -0.0481,
+      "mean_diff": -0.0229,
+      "p10_diff": -0.2934,
+      "p90_diff": 0.3053,
+      "inst_median_diff": -0.0452,
+      "avg_cash_left": 0.0
+     }
+    },
+    "sigma": {
+     "label": "Schwankung: 0,5/0,75/1/1,25/1,5 × Volatilität",
+     "3J_tagesgeld": {
+      "instruments": 185,
+      "windows": 56735,
+      "win_share": 0.394,
+      "median_diff": -0.0712,
+      "mean_diff": -0.0278,
+      "p10_diff": -0.423,
+      "p90_diff": 0.3129,
+      "inst_median_diff": -0.071,
+      "avg_cash_left": 0.269
+     },
+     "3J_nach_12M": {
+      "instruments": 185,
+      "windows": 56735,
+      "win_share": 0.412,
+      "median_diff": -0.0475,
+      "mean_diff": -0.0169,
+      "p10_diff": -0.309,
+      "p90_diff": 0.2805,
+      "inst_median_diff": -0.0459,
+      "avg_cash_left": 0.0
+     },
+     "5J_tagesgeld": {
+      "instruments": 180,
+      "windows": 52443,
+      "win_share": 0.386,
+      "median_diff": -0.0796,
+      "mean_diff": -0.0435,
+      "p10_diff": -0.4431,
+      "p90_diff": 0.3093,
+      "inst_median_diff": -0.0719,
+      "avg_cash_left": 0.076
+     },
+     "5J_nach_12M": {
+      "instruments": 180,
+      "windows": 52443,
+      "win_share": 0.41,
+      "median_diff": -0.049,
+      "mean_diff": -0.0167,
+      "p10_diff": -0.3108,
+      "p90_diff": 0.2836,
+      "inst_median_diff": -0.0459,
+      "avg_cash_left": 0.0
+     }
+    },
+    "sigma_tief": {
+     "label": "Schwankung tief: 0,75/1/1,5/2/2,5 × Volatilität",
+     "3J_tagesgeld": {
+      "instruments": 185,
+      "windows": 56735,
+      "win_share": 0.325,
+      "median_diff": -0.1577,
+      "mean_diff": -0.05,
+      "p10_diff": -0.5256,
+      "p90_diff": 0.4076,
+      "inst_median_diff": -0.157,
+      "avg_cash_left": 0.718
+     },
+     "3J_nach_12M": {
+      "instruments": 185,
+      "windows": 56735,
+      "win_share": 0.373,
+      "median_diff": -0.0758,
+      "mean_diff": -0.0161,
+      "p10_diff": -0.3431,
+      "p90_diff": 0.3414,
+      "inst_median_diff": -0.0742,
+      "avg_cash_left": 0.0
+     },
+     "5J_tagesgeld": {
+      "instruments": 180,
+      "windows": 52443,
+      "win_share": 0.292,
+      "median_diff": -0.2047,
+      "mean_diff": -0.0962,
+      "p10_diff": -0.5941,
+      "p90_diff": 0.3811,
+      "inst_median_diff": -0.1947,
+      "avg_cash_left": 0.56
+     },
+     "5J_nach_12M": {
+      "instruments": 180,
+      "windows": 52443,
+      "win_share": 0.372,
+      "median_diff": -0.0769,
+      "mean_diff": -0.0154,
+      "p10_diff": -0.3446,
+      "p90_diff": 0.3443,
+      "inst_median_diff": -0.0734,
+      "avg_cash_left": 0.0
+     }
+    }
+   }
+  }
+ },
  "score": {
   "months": [
    "2012-01",
@@ -634,7 +1093,7 @@
  },
  "limits": [
   "Kurse von Yahoo inklusive Dividenden, in Handelswährung, ohne Gebühren und Steuern.",
-  "Getestet werden Werte, die es heute gibt. Verschwundene Firmen fehlen; das lässt Einzelaktien besser aussehen.",
+  "Getestet werden Werte, die es heute gibt. Verschwundene Firmen fehlen; das lässt Einzelaktien besser aussehen und Nachkäufe bei Aktien zu gut (eine Aktie, die nach −50 % pleiteging, fehlt im Test).",
   "Qualität/Bewertung und Nachrichten fehlen im Test (keine freie Historie).",
   "Startpunkte im Monatsabstand überlappen sich stark; sie sind keine unabhängigen Versuche.",
   "Vergangene Ergebnisse sagen künftige nicht sicher voraus."

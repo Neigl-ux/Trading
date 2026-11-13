@@ -1,6 +1,6 @@
 # Rückblick-Test des Ratgebers
 
-Erstellt: 2026-11-13T00:01+00:00 (UTC)
+Erstellt: 2026-11-13T00:55+00:00 (UTC)
 
 ## 1. Nachkauf-Stufen gegen sofortiges Anlegen
 
@@ -58,6 +58,60 @@ Für jeden Monatsanfang als Startpunkt: 1.000 € entweder sofort angelegt oder 
 | Staffel, Rest nach 12 Monaten anlegen | 5J | 371 | 27 % | −8,4 % | −39,4 % | +29,9 % | 0 % |
 | Staffel nur bei Punktzahl ab 65 | 5J | 371 | 8 % | −27,6 % | −54,6 % | +159,1 % | 23 % |
 
+## 1b. Eigene Staffeln für ETFs und Aktien
+
+Alle ETFs (ohne Hebel, Anleihen, Geldmarkt, Rohstoffe) bzw. alle Aktien der App, jeder Monatsanfang als Start. „Schwankung“ = Stufe als Vielfaches der Jahres-Volatilität des Werts in den 12 Monaten davor. „Vorteil“ = Staffel geteilt durch Sofortanlage, minus 1. Schlechte 10 % = jeder zehnte Fall lag mindestens so weit hinten.
+
+### ETFs (24 Werte)
+
+Typische Schwankung (Median): 17 % pro Jahr. Anteil der Tage mindestens x % unter dem 12-Monats-Hoch: 10 %: 24 %, 20 %: 9 %, 30 %: 4 %, 50 %: 1 %.
+
+| Staffel | Rest | Zeitraum | Fälle | Staffel besser | Vorteil Median | schlechte 10 % | gute 10 % | Rest unangelegt (Ø) |
+|---|---|---|---|---|---|---|---|---|
+| Bisher: −10/−15/−20/−25/−30 % | Rest auf Tagesgeld (2 %) | 3J | 3487 | 38 % | −6,9 % | −26,7 % | +17,1 % | 34 % |
+| Bisher: −10/−15/−20/−25/−30 % | Rest nach 12 Monaten anlegen | 3J | 3487 | 40 % | −4,2 % | −18,4 % | +16,4 % | 0 % |
+| Bisher: −10/−15/−20/−25/−30 % | Rest auf Tagesgeld (2 %) | 5J | 2913 | 43 % | −3,9 % | −29,7 % | +18,4 % | 14 % |
+| Bisher: −10/−15/−20/−25/−30 % | Rest nach 12 Monaten anlegen | 5J | 2913 | 40 % | −4,1 % | −18,6 % | +17,2 % | 0 % |
+| ETF früh: −5/−10/−15/−20/−25 %, je 20 % | Rest auf Tagesgeld (2 %) | 3J | 3487 | 42 % | −1,8 % | −12,8 % | +8,4 % | 1 % |
+| ETF früh: −5/−10/−15/−20/−25 %, je 20 % | Rest nach 12 Monaten anlegen | 3J | 3487 | 44 % | −1,3 % | −12,2 % | +8,9 % | 0 % |
+| ETF früh: −5/−10/−15/−20/−25 %, je 20 % | Rest auf Tagesgeld (2 %) | 5J | 2913 | 43 % | −1,5 % | −13,0 % | +8,7 % | 0 % |
+| ETF früh: −5/−10/−15/−20/−25 %, je 20 % | Rest nach 12 Monaten anlegen | 5J | 2913 | 44 % | −1,4 % | −12,3 % | +8,9 % | 0 % |
+| ETF: −10 % = 50 %, −15 % = 25 %, −20 % = 25 % | Rest auf Tagesgeld (2 %) | 3J | 3487 | 49 % | −0,3 % | −18,0 % | +9,4 % | 6 % |
+| ETF: −10 % = 50 %, −15 % = 25 %, −20 % = 25 % | Rest nach 12 Monaten anlegen | 3J | 3487 | 51 % | +0,0 % | −15,5 % | +9,7 % | 0 % |
+| ETF: −10 % = 50 %, −15 % = 25 %, −20 % = 25 % | Rest auf Tagesgeld (2 %) | 5J | 2913 | 50 % | +0,0 % | −17,8 % | +9,6 % | 1 % |
+| ETF: −10 % = 50 %, −15 % = 25 %, −20 % = 25 % | Rest nach 12 Monaten anlegen | 5J | 2913 | 51 % | +0,0 % | −15,1 % | +9,8 % | 0 % |
+| ETF: Hälfte sofort, Rest bei −5/−10/−15/−20 % | Rest auf Tagesgeld (2 %) | 3J | 3487 | 49 % | −0,2 % | −5,7 % | +3,8 % | 0 % |
+| ETF: Hälfte sofort, Rest bei −5/−10/−15/−20 % | Rest nach 12 Monaten anlegen | 3J | 3487 | 49 % | −0,1 % | −5,4 % | +3,9 % | 0 % |
+| ETF: Hälfte sofort, Rest bei −5/−10/−15/−20 % | Rest auf Tagesgeld (2 %) | 5J | 2913 | 49 % | −0,2 % | −5,7 % | +3,8 % | 0 % |
+| ETF: Hälfte sofort, Rest bei −5/−10/−15/−20 % | Rest nach 12 Monaten anlegen | 5J | 2913 | 49 % | −0,2 % | −5,5 % | +3,9 % | 0 % |
+| Schwankung: 0,5/0,75/1/1,25/1,5 × Volatilität | Rest auf Tagesgeld (2 %) | 3J | 3487 | 32 % | −7,0 % | −24,9 % | +11,9 % | 20 % |
+| Schwankung: 0,5/0,75/1/1,25/1,5 × Volatilität | Rest nach 12 Monaten anlegen | 3J | 3487 | 37 % | −4,8 % | −18,7 % | +13,7 % | 0 % |
+| Schwankung: 0,5/0,75/1/1,25/1,5 × Volatilität | Rest auf Tagesgeld (2 %) | 5J | 2913 | 35 % | −5,8 % | −27,0 % | +13,4 % | 2 % |
+| Schwankung: 0,5/0,75/1/1,25/1,5 × Volatilität | Rest nach 12 Monaten anlegen | 5J | 2913 | 38 % | −4,8 % | −19,1 % | +14,1 % | 0 % |
+
+### Aktien (185 Werte)
+
+Typische Schwankung (Median): 29 % pro Jahr. Anteil der Tage mindestens x % unter dem 12-Monats-Hoch: 10 %: 49 %, 20 %: 26 %, 30 %: 14 %, 50 %: 4 %.
+
+| Staffel | Rest | Zeitraum | Fälle | Staffel besser | Vorteil Median | schlechte 10 % | gute 10 % | Rest unangelegt (Ø) |
+|---|---|---|---|---|---|---|---|---|
+| Bisher: −10/−15/−20/−25/−30 % | Rest auf Tagesgeld (2 %) | 3J | 56735 | 55 % | +0,0 % | −29,1 % | +18,2 % | 8 % |
+| Bisher: −10/−15/−20/−25/−30 % | Rest nach 12 Monaten anlegen | 3J | 56735 | 55 % | +0,0 % | −23,0 % | +16,8 % | 0 % |
+| Bisher: −10/−15/−20/−25/−30 % | Rest auf Tagesgeld (2 %) | 5J | 52443 | 54 % | +0,0 % | −30,0 % | +18,4 % | 2 % |
+| Bisher: −10/−15/−20/−25/−30 % | Rest nach 12 Monaten anlegen | 5J | 52443 | 54 % | +0,0 % | −23,3 % | +17,0 % | 0 % |
+| Aktie spät: −15/−25/−35/−45/−55 % | Rest auf Tagesgeld (2 %) | 3J | 56735 | 41 % | −8,3 % | −43,4 % | +41,1 % | 41 % |
+| Aktie spät: −15/−25/−35/−45/−55 % | Rest nach 12 Monaten anlegen | 3J | 56735 | 42 % | −4,6 % | −29,2 % | +30,2 % | 0 % |
+| Aktie spät: −15/−25/−35/−45/−55 % | Rest auf Tagesgeld (2 %) | 5J | 52443 | 41 % | −9,2 % | −48,6 % | +42,7 % | 25 % |
+| Aktie spät: −15/−25/−35/−45/−55 % | Rest nach 12 Monaten anlegen | 5J | 52443 | 42 % | −4,8 % | −29,3 % | +30,5 % | 0 % |
+| Schwankung: 0,5/0,75/1/1,25/1,5 × Volatilität | Rest auf Tagesgeld (2 %) | 3J | 56735 | 39 % | −7,1 % | −42,3 % | +31,3 % | 27 % |
+| Schwankung: 0,5/0,75/1/1,25/1,5 × Volatilität | Rest nach 12 Monaten anlegen | 3J | 56735 | 41 % | −4,8 % | −30,9 % | +28,1 % | 0 % |
+| Schwankung: 0,5/0,75/1/1,25/1,5 × Volatilität | Rest auf Tagesgeld (2 %) | 5J | 52443 | 39 % | −8,0 % | −44,3 % | +30,9 % | 8 % |
+| Schwankung: 0,5/0,75/1/1,25/1,5 × Volatilität | Rest nach 12 Monaten anlegen | 5J | 52443 | 41 % | −4,9 % | −31,1 % | +28,4 % | 0 % |
+| Schwankung tief: 0,75/1/1,5/2/2,5 × Volatilität | Rest auf Tagesgeld (2 %) | 3J | 56735 | 32 % | −15,8 % | −52,6 % | +40,8 % | 72 % |
+| Schwankung tief: 0,75/1/1,5/2/2,5 × Volatilität | Rest nach 12 Monaten anlegen | 3J | 56735 | 37 % | −7,6 % | −34,3 % | +34,1 % | 0 % |
+| Schwankung tief: 0,75/1/1,5/2/2,5 × Volatilität | Rest auf Tagesgeld (2 %) | 5J | 52443 | 29 % | −20,5 % | −59,4 % | +38,1 % | 56 % |
+| Schwankung tief: 0,75/1/1,5/2/2,5 × Volatilität | Rest nach 12 Monaten anlegen | 5J | 52443 | 37 % | −7,7 % | −34,5 % | +34,4 % | 0 % |
+
 ## 2. Hat die Punktzahl etwas vorhergesagt?
 
 218 Werte, Monatsenden 2012-01 bis 2026-11.
@@ -89,7 +143,7 @@ Maßstab MSCI World (EUNL): Ø +13,1 % über 12 Monate.
 ## Grenzen
 
 - Kurse von Yahoo inklusive Dividenden, in Handelswährung, ohne Gebühren und Steuern.
-- Getestet werden Werte, die es heute gibt. Verschwundene Firmen fehlen; das lässt Einzelaktien besser aussehen.
+- Getestet werden Werte, die es heute gibt. Verschwundene Firmen fehlen; das lässt Einzelaktien besser aussehen und Nachkäufe bei Aktien zu gut (eine Aktie, die nach −50 % pleiteging, fehlt im Test).
 - Qualität/Bewertung und Nachrichten fehlen im Test (keine freie Historie).
 - Startpunkte im Monatsabstand überlappen sich stark; sie sind keine unabhängigen Versuche.
 - Vergangene Ergebnisse sagen künftige nicht sicher voraus.
