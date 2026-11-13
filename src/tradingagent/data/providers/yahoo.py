@@ -40,7 +40,12 @@ class YahooProvider(MarketDataProvider):
     def _module(self):
         if self._yf is None:
             try:
+                import logging
+
                 import yfinance  # bewusst erst hier, damit Tests ohne yfinance laufen
+
+                # yfinance meldet geschlossene Börsen als „possibly delisted“; das verwirrt im Protokoll.
+                logging.getLogger("yfinance").setLevel(logging.CRITICAL)
             except ImportError as exc:  # pragma: no cover
                 raise ProviderError("yfinance ist nicht installiert (pip install yfinance)") from exc
             self._yf = yfinance

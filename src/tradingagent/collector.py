@@ -230,6 +230,13 @@ def _run(settings: Settings, storage: Storage, providers: dict[str, MarketDataPr
     result = fetch_with_fallback(inst, interval, start, now, job.chain, providers)
     log.errors = result.errors
     if result.provider is None:
+        # Börse zu und die Quelle hat nur „keine Daten“ gemeldet: kein Fehler, es gibt einfach nichts Neues.
+        session = session_for(inst.market)
+        closed = session.open is not None and not session.is_open(now)
+        if closed and last is not None and interval != "1d" and result.errors and all("keine Daten" in e for e in result.errors):
+            log.errors = []
+            log.skipped = "Börse geschlossen, keine neuen Kerzen"
+            storage.set_meta(f"fetched:{inst.id}:{interval}", now.isoformat())
         return log
     log.provider = result.provider
 
