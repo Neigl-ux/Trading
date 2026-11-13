@@ -63,7 +63,7 @@ jobs:
           cp -r app _site
 
       - name: Kurse sammeln, prüfen, exportieren
-        run: python -m tradingagent collect
+        run: python -m tradingagent ${{ github.event_name == 'push' && 'export' || 'collect' }}
 
       - name: Kursdatenbank im Cache sichern
         if: always()
