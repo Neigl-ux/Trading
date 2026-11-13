@@ -1,7 +1,7 @@
-# Wiederholt einen fehlgeschlagenen Lauf von „Daten sammeln“ automatisch (höchstens zweimal).
-# Hintergrund: GitHub Pages meldet gelegentlich kurz nach dem Hochladen „No artifacts named github-pages“,
-# obwohl das Hochladen geklappt hat. Ein zweiter Versuch eine Minute später läuft dann durch.
-# Das Sammeln selbst ist wiederholbar: Kerzen werden per Upsert gespeichert, es entstehen keine Doppelten.
+# Startet nach einem fehlgeschlagenen Lauf von „Daten sammeln“ einen NEUEN Lauf (statt den alten zu
+# wiederholen: ein wiederholter Lauf lädt ein zweites „github-pages“-Paket hoch und scheitert dann an
+# „Multiple artifacts named github-pages“). Höchstens drei Fehlversuche pro Stunde, dann Pause.
+# Das Sammeln ist wiederholbar: Kerzen werden per Upsert gespeichert, es entstehen keine Doppelten.
 
 name: Lauf wiederholen
 
@@ -15,13 +15,21 @@ permissions:
 
 jobs:
   rerun:
-    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt < 3
+    if: github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
     steps:
-      - name: Eine Minute warten und erneut starten
+      - name: Eine Minute warten und neu starten
         env:
           GH_TOKEN: ${{ github.token }}
+          R: ${{ github.repository }}
         run: |
-          echo "Lauf ${{ github.event.workflow_run.id }} (Versuch ${{ github.event.workflow_run.run_attempt }}) ist fehlgeschlagen."
+          echo "Lauf ${{ github.event.workflow_run.id }} ist fehlgeschlagen."
           sleep 60
-          gh run rerun ${{ github.event.workflow_run.id }} --failed -R ${{ github.repository }}
+          since=$(date -u -d '-60 min' +%Y-%m-%dT%H:%M:%SZ)
+          fails=$(gh run list -R "$R" -w collect.yml -L 20 --json conclusion,createdAt \
+                  -q "[.[] | select(.conclusion==\"failure\" and .createdAt > \"$since\")] | length")
+          busy=$(gh run list -R "$R" -w collect.yml -L 5 --json status -q '[.[] | select(.status!="completed")] | length')
+          echo "Fehlschläge in der letzten Stunde: $fails, laufend: $busy"
+          if [ "$fails" -ge 3 ]; then echo "Zu viele Fehlschläge – nächster regulärer Lauf übernimmt."; exit 0; fi
+          if [ "$busy" -gt 0 ]; then echo "Es läuft bereits ein Lauf."; exit 0; fi
+          gh workflow run collect.yml -R "$R" --ref main
