@@ -1,0 +1,11 @@
+[Unit]
+Description=Trading-Agent: Sammel-Lauf auf GitHub starten
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=trading
+EnvironmentFile=/etc/trading-agent.env
+Environment=PYTHONPATH=/opt/trading-agent/src
+ExecStart=/opt/trading-agent/.venv/bin/python -m tradingagent.trigger

@@ -1,0 +1,17 @@
+[Unit]
+Description=Trading-Agent: Liveradar mit Push-Benachrichtigung
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=trading
+EnvironmentFile=/etc/trading-agent.env
+Environment=PYTHONPATH=/opt/trading-agent/src
+Environment=TA_RADAR_STATE=/var/lib/trading-agent/radar_state.json
+WorkingDirectory=/opt/trading-agent
+ExecStart=/opt/trading-agent/.venv/bin/python -m tradingagent.radar
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

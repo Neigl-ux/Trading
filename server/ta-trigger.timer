@@ -1,0 +1,10 @@
+[Unit]
+Description=Trading-Agent: alle 15 Minuten Daten sammeln lassen
+
+[Timer]
+OnCalendar=*:00/15
+Persistent=true
+RandomizedDelaySec=30
+
+[Install]
+WantedBy=timers.target

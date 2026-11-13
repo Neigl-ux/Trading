@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=22">
+  <link rel="stylesheet" href="style.css?v=23">
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
-  <script type="module" src="app.js?v=22"></script>
+  <script type="module" src="app.js?v=23"></script>
 </head>
 <body>
   <!-- Entsperren -->
@@ -377,6 +377,10 @@
       </form>
       <p id="fh-state" class="small fh-state"></p>
       <button id="fh-remove" type="button" class="secondary fh-remove" hidden>Schlüssel entfernen</button>
+      <h3>Liveradar auf dem Server</h3>
+      <p class="small">Der Server beobachtet alle Kernwerte und meldet starke Bewegungen per Push, auch wenn die App zu ist. Willst du zusätzlich deine Watchlist und Portfolio-Werte beobachten lassen, kopiere die Kennungen und trage sie auf dem Server bei RADAR_EXTRA ein (nur Kennungen, keine Stückzahlen oder Beträge).</p>
+      <button id="radar-copy" type="button" class="secondary">Kennungen für das Radar kopieren</button>
+      <p id="radar-copy-state" class="small"></p>
       <button id="logout" type="button" class="secondary">Auf diesem Gerät abmelden</button>
     </section>
 

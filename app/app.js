@@ -525,7 +525,7 @@ const asset = {
 let perfQueued = false;
 
 const isCrypto = (e) => Boolean(e && e.live && e.live.binance);
-const krakenPair = (e) => (e.id || "").replace("-", "/");
+const krakenPair = (e) => (e.kind === "devisen" && /^[A-Z]{6}$/.test(e.id || "") ? `${e.id.slice(0, 3)}/${e.id.slice(3)}` : (e.id || "").replace("-", "/"));
 
 function closeAsset() {
   asset.gen += 1;
@@ -1405,7 +1405,8 @@ function ensureAllLive() {
   const all = state.index.instruments;
   const binance = all.filter(isCrypto);
   if (binance.length) openCryptoStream(binance, run);
-  const kraken = all.filter((e) => e.kind === "krypto" && !isCrypto(e));
+  // Kraken: Kryptos ohne Binance-Euro-Paar und die Devisenpaare (EUR/USD, GBP/USD … live statt 15 Min verzögert)
+  const kraken = all.filter((e) => (e.kind === "krypto" && !isCrypto(e)) || e.kind === "devisen");
   if (kraken.length) openKrakenStream(kraken, run);
 }
 
@@ -3968,4 +3969,14 @@ $("chat-key-remove").addEventListener("click", () => {
   try { localStorage.removeItem(CHAT_KEY_STORE); } catch {}
   chat.key = null;
   renderChat();
+});
+
+$("radar-copy").addEventListener("click", async () => {
+  await loadPortfolio();
+  const ids = [...new Set([...favs, ...((pf.data.positions || []).map((p) => p.id).filter(Boolean))])];
+  const text = ids.join(",");
+  const st = $("radar-copy-state");
+  if (!ids.length) { st.textContent = "Watchlist und Portfolio sind leer."; return; }
+  try { await navigator.clipboard.writeText(text); st.textContent = `${ids.length} Kennungen kopiert: ${text}`; }
+  catch { st.textContent = `Bitte selbst kopieren: ${text}`; }
 });
