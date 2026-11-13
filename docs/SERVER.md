@@ -15,14 +15,14 @@ Er braucht keine offenen Ports, nur ausgehende Verbindungen. Dein Portfolio komm
 
 **So bleibt es garantiert kostenlos:**
 - Das Konto **nicht** auf „Pay As You Go“ umstellen. Ohne Umstellung kann Oracle nach der 30-tägigen Testphase nichts berechnen, kostenpflichtige Bausteine werden einfach abgeschaltet.
-- Nur Bausteine mit dem Hinweis „Always Free eligible“ wählen: VM.Standard.A1.Flex mit höchstens 2 OCPU / 12 GB insgesamt (wir nehmen 1 OCPU / 6 GB) oder VM.Standard.E2.1.Micro, Speicher höchstens 200 GB (die Standard-Bootplatte hat 50 GB).
+- Nur Bausteine mit dem Hinweis „Always Free eligible“ wählen: VM.Standard.A1.Flex mit höchstens 2 OCPU / 12 GB insgesamt (wir nehmen 1 OCPU / 2 GB) oder VM.Standard.E2.1.Micro, Speicher höchstens 200 GB (die Standard-Bootplatte hat 50 GB).
 - Keine zusätzlichen Dienste (Datenbanken, Load Balancer usw.) anlegen.
 
 ## 2. Server anlegen
 
 1. Im Menü **Compute → Instances → Create instance**.
 2. **Image:** Canonical Ubuntu 24.04.
-3. **Shape:** „Ampere“ → **VM.Standard.A1.Flex** mit **1 OCPU und 6 GB**. Das liegt sicher im kostenlosen Rahmen (derzeit 2 OCPU / 12 GB insgesamt). Meldet Oracle „Out of capacity“, später erneut versuchen oder **VM.Standard.E2.1.Micro** (AMD, ebenfalls kostenlos) nehmen.
+3. **Shape:** „Ampere“ → **VM.Standard.A1.Flex** mit **1 OCPU und 2 GB**. Das liegt sicher im kostenlosen Rahmen (derzeit 2 OCPU / 12 GB insgesamt). Bewusst klein: Oracle stoppt kostenlose Server, die eine Woche lang bei Prozessor, Netz **und** Arbeitsspeicher unter 20 % liegen; mit 2 GB nutzt das Radar genug Speicher, um nicht als „unbenutzt“ zu gelten. Meldet Oracle „Out of capacity“, später erneut versuchen oder **VM.Standard.E2.1.Micro** (AMD, ebenfalls kostenlos) nehmen.
 4. **SSH-Schlüssel:** „Generate a key pair for me“ → **Save private key** (Datei gut aufbewahren).
 5. **Create**. Nach etwa einer Minute steht die **Public IP address** auf der Seite.
 
