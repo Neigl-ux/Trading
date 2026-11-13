@@ -61,27 +61,41 @@ def fetch_published(export_dir: Path, passphrase: str, session=None, base: str |
     http = session or requests.Session()
     base = base or f"{APP_URL}data/"
 
+    problems: list[str] = []
+
     def get(rel: str) -> bytes | None:
-        try:
-            r = http.get(base + rel, timeout=30)
-            return r.content if r.status_code == 200 and r.content.startswith(b"{") else None
-        except Exception:  # noqa: BLE001
-            return None
+        import time as _t
+
+        for attempt in range(4):
+            try:
+                r = http.get(base + rel, timeout=30)
+                if r.status_code == 200 and r.content[:1] == b"{":
+                    return r.content
+                why = f"HTTP {r.status_code}"
+            except Exception as err:  # noqa: BLE001
+                why = type(err).__name__
+            if attempt < 3:
+                _t.sleep(1.5 * (attempt + 1))
+        problems.append(f"{rel}: {why}")
+        return None
 
     raw = get("index.json")
     if raw is None:
+        print(f"Index nicht abrufbar: {problems}", flush=True)
         return 0
     doc = json.loads(raw)
     try:
         idx = open_sealed(passphrase, doc["kdf"], doc) if doc.get("enc") else doc.get("data", doc)
-    except Exception:  # noqa: BLE001 – anderes Passwort oder Salz: neu exportieren
+    except Exception as err:  # noqa: BLE001 – anderes Passwort oder Salz: neu exportieren
+        print(f"Index nicht lesbar: {type(err).__name__}", flush=True)
         return 0
     files = [e["file"] for e in idx.get("instruments", []) if e.get("file")]
     if idx.get("advisor"):
         files.append(idx["advisor"])
-    with ThreadPoolExecutor(16) as pool:
+    with ThreadPoolExecutor(8) as pool:
         blobs = list(pool.map(get, files))
     if any(b is None for b in blobs):
+        print(f"{len(problems)} von {len(files)} Dateien fehlen, z. B. {problems[:3]}", flush=True)
         return 0
     tmp = export_dir.with_name(export_dir.name + ".republish")
     shutil.rmtree(tmp, ignore_errors=True)
