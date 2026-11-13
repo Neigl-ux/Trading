@@ -1,19 +1,19 @@
 # Phase 5 – Strategien im Rückblick
 
-Stand: 2026-11-13. 218 Werte (Aktien und ETFs aus Deutschland. Europa und den USA). Prüfjahre 2015–2026. Jede Strategie lernt 3 Jahre (beste Einstellung) und wird im Folgejahr unberührt geprüft. Startkapital 5.000 € je Prüfjahr, alle Kosten und Risikoregeln aus Phase 4.
+Stand: 2026-11-13. 218 Werte (Aktien und ETFs aus Deutschland, Europa und den USA), Prüfjahre 2015–2026. Jede Strategie lernt 3 Jahre (beste Einstellung) und wird im Folgejahr unberührt geprüft. Startkapital 5.000 € je Prüfjahr, alle Kosten und Risikoregeln aus Phase 4. „Ohne Kosten“ zeigt dieselben Regeln ohne Gebühr, Spread und Schlupf.
 
-| Strategie | pro Jahr | größter Rückgang | Sharpe | Trades | Treffer | Jahre besser als MSCI World | besser als Zufall |
-|---|---|---|---|---|---|---|---|
-| Mehrheit aus allen sechs | -11,5 % | -78,9 % | -1,12 | 542 | 26,8 % | 2 von 12 | 95 % |
-| Ichimoku | -12,2 % | -80,9 % | -1,52 | 415 | 23,9 % | 0 von 12 | 95 % |
-| RSI | -12,9 % | -82,1 % | -1,59 | 409 | 21,5 % | 0 von 12 | 80 % |
-| MACD | -13,2 % | -83,1 % | -1,71 | 566 | 21,0 % | 0 von 12 | 80 % |
-| Gleitende Durchschnitte | -13,4 % | -84,4 % | -1,54 | 503 | 24,1 % | 0 von 12 | 80 % |
-| On-Balance-Volumen | -14,4 % | -86,7 % | -2,21 | 549 | 15,3 % | 0 von 12 | 10 % |
-| Bollinger-Bänder | -15,0 % | -86,6 % | -2,00 | 527 | 36,4 % | 0 von 12 | 0 % |
-| **MSCI World kaufen und halten** | +11,2 % | -33,6 % | 0,76 | 1 je Jahr | – | – | – |
+| Strategie | pro Jahr | ohne Kosten | größter Rückgang | Trades | Treffer | Gebühren gesamt | Jahre besser als MSCI World | besser als Zufall |
+|---|---|---|---|---|---|---|---|---|
+| Mehrheit aus allen sechs | -11,5 % | +9,9 % | -79,0 % | 547 | 26,7 % | 8.752 € | 2 von 12 | 95 % |
+| Ichimoku | -12,2 % | +9,5 % | -80,9 % | 413 | 23,7 % | 6.608 € | 0 von 12 | 95 % |
+| RSI | -12,9 % | -0,8 % | -82,1 % | 409 | 21,5 % | 6.576 € | 0 von 12 | 80 % |
+| MACD | -13,2 % | +10,6 % | -83,1 % | 566 | 21,0 % | 9.056 € | 0 von 12 | 80 % |
+| Gleitende Durchschnitte | -13,4 % | +7,5 % | -84,4 % | 503 | 24,1 % | 8.048 € | 0 von 12 | 80 % |
+| On-Balance-Volumen | -14,4 % | +6,6 % | -86,7 % | 549 | 15,3 % | 8.784 € | 0 von 12 | 10 % |
+| Bollinger-Bänder | -15,0 % | +9,2 % | -86,6 % | 527 | 36,4 % | 8.432 € | 0 von 12 | 0 % |
+| **MSCI World kaufen und halten** | +11,2 % | – | -33,6 % | 1 je Jahr | – | – | – | – |
 
-Zufällige Käufe mit denselben Regeln (20 Läufe): Median -13,9 % pro Jahr, die besten 10 % ab -12,7 %; größter Rückgang im Median -85,1 %.
+Zufällige Käufe mit denselben Regeln (20 Läufe): Median -13,9 % pro Jahr, die besten 10 % ab -12,7 %; größter Rückgang im Median -85,1 %; ohne Kosten im Median +6,3 %.
 „Besser als Zufall“ = Anteil der Zufallsläufe, die die Strategie übertrifft.
 
 ## Je Prüfjahr
@@ -23,10 +23,10 @@ Zufällige Käufe mit denselben Regeln (20 Läufe): Median -13,9 % pro Jahr, die
 | 2015 | -6,0 % | -12,7 % | -11,7 % | -13,6 % | -4,8 % | -10,2 % | -10,1 % | +9,9 % |
 | 2016 | -16,1 % | -15,1 % | -15,9 % | -16,1 % | -15,5 % | -15,7 % | -15,8 % | +13,2 % |
 | 2017 | -16,1 % | -16,2 % | -15,7 % | -15,2 % | -15,7 % | -15,9 % | -14,9 % | +7,7 % |
-| 2018 | -16,0 % | -12,9 % | -12,7 % | -13,7 % | -14,1 % | -10,4 % | -3,8 % | -6,8 % |
+| 2018 | -16,0 % | -12,9 % | -12,7 % | -13,7 % | -14,1 % | -10,8 % | -3,8 % | -6,8 % |
 | 2019 | -16,4 % | +3,0 % | -12,7 % | -14,3 % | -16,6 % | -11,5 % | -14,3 % | +32,6 % |
 | 2020 | -8,9 % | -13,5 % | -13,7 % | -14,9 % | -14,6 % | -13,7 % | -12,5 % | +5,2 % |
-| 2021 | -15,6 % | -17,1 % | -13,4 % | -15,1 % | -16,5 % | -14,8 % | -10,8 % | +31,0 % |
+| 2021 | -15,7 % | -17,1 % | -13,4 % | -15,1 % | -16,5 % | -14,8 % | -11,3 % | +31,0 % |
 | 2022 | -15,4 % | -15,7 % | -13,8 % | -16,4 % | -15,3 % | -16,0 % | -7,7 % | -13,7 % |
 | 2023 | -8,4 % | -14,2 % | -13,9 % | -15,8 % | -14,2 % | -8,9 % | -10,5 % | +18,5 % |
 | 2024 | -15,8 % | -15,9 % | -11,7 % | -15,9 % | -16,0 % | +1,3 % | -13,1 % | +25,1 % |
