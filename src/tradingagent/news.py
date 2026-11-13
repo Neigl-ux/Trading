@@ -192,7 +192,14 @@ def world_summary(state: dict[str, Any]) -> dict[str, Any]:
     tense = [t for t in topics if (t["state"] or {}).get("level") == "angespannt"]
     known = [t for t in topics if t["state"]]
     level = None if not known else "angespannt" if len(tense) >= 2 else "teilweise angespannt" if tense else "ruhig"
-    return {"level": level, "topics": topics}
+    from . import news_archive
+
+    archive = news_archive.current_state()
+    if archive and archive.get("level"):
+        # Langfristiger Verlauf (Archiv seit 2013) zählt mit; der schlechtere Befund gewinnt.
+        order = ["ruhig", "etwas angespannt", "teilweise angespannt", "angespannt"]
+        level = archive["level"] if level is None else max(level, archive["level"], key=order.index)
+    return {"level": level, "topics": topics, "archive": archive}
 
 
 def flagged(entry: dict[str, Any] | None) -> bool:

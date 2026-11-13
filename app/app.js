@@ -3494,22 +3494,49 @@ function toneSpark(series) {
   return svg;
 }
 
+function zWord(z) {
+  if (z == null) return "–";
+  return z >= 1.5 ? "deutlich schlechter als üblich" : z >= 0.5 ? "schlechter als üblich" : z <= -0.5 ? "besser als üblich" : "wie üblich";
+}
+
 function renderAdvWorld(d) {
   const w = d.world || {};
   const box = $("adv-world");
-  const ul = mk("ul", "adv-world-list");
-  for (const t of w.topics || []) {
-    const li = mk("li");
-    const lvl = t.state ? t.state.level : null;
-    li.append(mk("span", "adv-topic", t.label), toneSpark(t.series),
-      mk("span", `adv-lvl ${lvl === "angespannt" ? "down" : lvl === "ruhig" ? "up" : lvl ? "warn" : "flat"}`, lvl || "noch kein Verlauf"));
-    ul.append(li);
+  const parts = [mk("p", "adv-world-level", w.level ? `Gesamt: ${w.level}` : "Gesamt: noch keine Einschätzung")];
+  const a = w.archive;
+  if (a && a.z) {
+    const ul = mk("ul", "adv-world-list");
+    const li0 = mk("li");
+    li0.append(mk("span", "adv-topic", "Tonfall weltweit, 4 Monate"), toneSpark(a.series), mk("span", "adv-lvl flat", ""));
+    ul.append(li0);
+    for (const [k, z] of Object.entries(a.z)) {
+      const li = mk("li");
+      li.append(mk("span", "adv-topic", a.names[k] || k), mk("span", "small", z == null ? "" : `z = ${String(z).replace(".", ",")}`),
+        mk("span", `adv-lvl ${z >= 1 ? "down" : z >= 0.5 ? "warn" : "up"}`, zWord(z)));
+      ul.append(li);
+    }
+    parts.push(ul, mk("p", "small", `Letzte 20 Tage im Vergleich zum Jahr davor, aus dem Nachrichten-Archiv seit 2013 (GDELT, Stand ${advDate(a.date)}).`));
   }
-  box.replaceChildren(
-    mk("p", "adv-world-level", w.level ? `Gesamt: ${w.level}` : "Gesamt: noch keine Einschätzung"),
-    ul,
-    mk("p", "small", "Tonfall weltweiter Nachrichten (GDELT, 65 Sprachen) der letzten 30 Tage; die Linie unter null heißt: überwiegend negativ berichtet. Die Weltlage fließt nicht in die Punktzahl ein, bis der Rückblick-Test zeigt, dass sie hilft. Dafür sammelt der Ratgeber ab jetzt mit."),
-  );
+  const live = (w.topics || []).filter((t) => t.state || (t.series && t.series.length));
+  if (live.length) {
+    const ul = mk("ul", "adv-world-list");
+    for (const t of live) {
+      const li = mk("li");
+      const lvl = t.state ? t.state.level : null;
+      li.append(mk("span", "adv-topic", t.label), toneSpark(t.series),
+        mk("span", `adv-lvl ${lvl === "angespannt" ? "down" : lvl === "ruhig" ? "up" : lvl ? "warn" : "flat"}`, lvl || "sammelt noch"));
+      ul.append(li);
+    }
+    parts.push(mk("p", "adv-sub", "Themen der letzten 30 Tage"), ul);
+  }
+  const nt = d.news_test;
+  if (nt && nt.rows && nt.rows.length) {
+    const r = nt.rows.find((x) => /MSCI/.test(x.label)) || nt.rows[0];
+    parts.push(mk("p", "small adv-honest", `Rückblick ${nt.from ? nt.from.slice(0, 4) : ""}–${nt.to ? nt.to.slice(0, 4) : ""}: Nach den 20 % der Monate mit dem schlechtesten Tonfall fiel der ${r.label} in den 3 Monaten danach im Schnitt um ${advPct(-r.dd3_bad, 1)} (nach den besten: ${advPct(-r.dd3_good, 1)}) und stieg nur ${advPct(r.ret3_bad, 1)} statt ${advPct(r.ret3_good, 1)}. Der Zusammenhang ist schwach und kann zum Teil daran liegen, dass schlechte Nachrichten und fallende Kurse gleichzeitig auftreten. Deshalb fließt er noch nicht in die Punktzahl ein.`));
+  } else {
+    parts.push(mk("p", "small", "Die Weltlage fließt nicht in die Punktzahl ein, bis der Rückblick-Test zeigt, dass sie hilft."));
+  }
+  box.replaceChildren(...parts);
 }
 
 function renderAdvTest(d) {

@@ -122,6 +122,24 @@ def amounts(plan: dict[str, Any]) -> list[dict[str, Any]]:
     return [{"id": plan["core"], "role": "Kern", "eur": CORE_EUR}] + [{"id": s, "role": "Satellit", "eur": each} for s in sats]
 
 
+def _news_test() -> dict[str, Any] | None:
+    """Kurzfassung des Nachrichten-Rückblicks (status/news_study.json) für die App."""
+    try:
+        st = json.loads((ROOT / "status" / "news_study.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    out = {"from": st.get("from"), "to": st.get("to"), "rows": []}
+    for sym, t in (st.get("targets") or {}).items():
+        sig = (t.get("signals") or {}).get("tone")
+        if not sig:
+            continue
+        b = sig["by_quintile"]
+        out["rows"].append({"label": t["label"], "ret3_good": b["3M"].get("Q1"), "ret3_bad": b["3M"].get("Q5"),
+                            "dd3_good": b["dd3M"].get("Q1"), "dd3_bad": b["dd3M"].get("Q5"), "ret3_all": t["all"].get("3M"),
+                            "dd3_all": t["all"].get("dd3M")})
+    return out
+
+
 def verdict(bt: dict[str, Any] | None) -> dict[str, Any] | None:
     """Was der Rückblick-Test über Punktzahl und Staffel sagt (siehe docs/RUECKBLICK.md)."""
     if not bt or "score" not in bt or "error" in bt["score"]:
@@ -299,4 +317,5 @@ def build(storage, now: pd.Timestamp, items: list[tuple[Any, Any, dict[str, Any]
         "news_errors": news_state.get("errors", []),
         "report": report,
         "backtest": backtest,
+        "news_test": _news_test(),
     }

@@ -153,6 +153,29 @@ def signal_frame(hist: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def current_state(hist: pd.DataFrame | None = None) -> dict[str, Any] | None:
+    """Aktuelle Nachrichtenlage aus dem Archiv: z-Werte der Signale (> 0 = schlechter als im Jahr davor)."""
+    try:
+        if hist is None:
+            hist = pd.read_csv(OUT, parse_dates=["date"]).set_index("date")
+    except (OSError, ValueError):
+        return None
+    if len(hist) < 300:
+        return None
+    hist = hist.sort_index()
+    sig = signal_frame(hist).dropna(how="all")
+    if sig.empty:
+        return None
+    last = sig.iloc[-1]
+    z = {k: (None if pd.isna(last[k]) else round(float(last[k]), 2)) for k in SIGNALS}
+    worst = max(v for v in (z["tone"], z["conflict"]) if v is not None) if any(z[k] is not None for k in ("tone", "conflict")) else None
+    level = None if worst is None else "angespannt" if worst >= 1.0 else "etwas angespannt" if worst >= 0.5 else "ruhig"
+    tail = hist["tone"].tail(120).rolling(7, min_periods=3).mean().dropna()
+    return {"date": str(sig.index[-1].date()), "z": z, "level": level,
+            "names": {k: v[0] for k, v in SIGNALS.items()},
+            "series": [[str(d.date()), round(float(v), 3)] for d, v in tail.items()]}
+
+
 def study(prices: dict[str, pd.DataFrame], hist: pd.DataFrame | None = None) -> dict[str, Any]:
     if hist is None:
         hist = pd.read_csv(OUT, parse_dates=["date"]).set_index("date")
@@ -176,12 +199,16 @@ def study(prices: dict[str, pd.DataFrame], hist: pd.DataFrame | None = None) -> 
             dd.append(float(1 - seg.min() / seg[0]) if len(seg) == 64 else np.nan)
         fwd["dd3M"] = pd.Series(dd, index=c.index)
         t: dict[str, Any] = {"label": label, "signals": {}}
-        s_all = sig.reindex(c.index, method="ffill", limit=3)
+        s_all = sig.reindex(c.index, method="ffill", limit=3).copy()
+        # Gegenprobe: Kursverlauf der letzten 20 Tage, genauso als z-Wert (> 0 = schlechter als im Jahr davor)
+        r20 = c.pct_change(20)
+        base_r = r20.rolling(260, min_periods=200)
+        s_all["price"] = -((r20 - base_r.mean().shift(20)) / base_r.std().shift(20))
         base = {k: float(v.mean()) for k, v in fwd.items()}
         t["all"] = {k: round(v, 4) for k, v in base.items()}
         # Monatsenden als Stichproben (weniger Überlappung als Tage)
         me = c.groupby([c.index.year, c.index.month]).tail(1).index
-        for col, (name, _) in SIGNALS.items():
+        for col, (name, _) in [*SIGNALS.items(), ("price", ("Gegenprobe: Kursverlauf 20 Tage", 1))]:
             z = s_all[col].reindex(me)
             ok = z.notna()
             if ok.sum() < 36:
@@ -197,6 +224,18 @@ def study(prices: dict[str, pd.DataFrame], hist: pd.DataFrame | None = None) -> 
             worst = zz[q == q.max()]
             t["signals"][col] = {"name": name, "months": int(ok.sum()), "by_quintile": rows,
                                  "worst_quintile_months": int(len(worst))}
+        zt, zp = s_all["tone"].reindex(me), s_all["price"].reindex(me)
+        ok = zt.notna() & zp.notna()
+        if ok.sum() >= 36:
+            qt = pd.qcut(zt[ok], 5, labels=False, duplicates="drop")
+            qp = pd.qcut(zp[ok], 5, labels=False, duplicates="drop")
+            calm_price = qp < 3  # Kurs im Monat davor nicht unter den schlechtesten 40 %
+            sel_bad, sel_good = (qt == qt.max()) & calm_price, (qt == qt.min()) & calm_price
+            dd3 = fwd["dd3M"].reindex(zt[ok].index)
+            r3 = fwd["3M"].reindex(zt[ok].index)
+            t["tone_without_price"] = {"n_bad": int(sel_bad.sum()), "n_good": int(sel_good.sum()),
+                                       "dd3_bad": round(float(dd3[sel_bad].mean()), 4), "dd3_good": round(float(dd3[sel_good].mean()), 4),
+                                       "ret3_bad": round(float(r3[sel_bad].mean()), 4), "ret3_good": round(float(r3[sel_good].mean()), 4)}
         res["targets"][sym] = t
     return res
 
@@ -209,13 +248,18 @@ def report(res: dict[str, Any]) -> str:
              "„Korrelation“ > 0 hieße: schlechtere Lage → höhere Rendite danach.", ""]
     for sym, t in res["targets"].items():
         lines += [f"## {t['label']}", "", f"Alle Monate: Ø 1 Monat {pct(t['all']['1M'])}, 3 Monate {pct(t['all']['3M'])}, "
-                  f"12 Monate {pct(t['all']['12M'])}, Ø größter Rückgang in 3 Monaten −{t['all']['dd3M'] * 100:.1f} %.", "",
+                  f"12 Monate {pct(t['all']['12M'])}, Ø größter Rückgang in 3 Monaten −{t['all']['dd3M'] * 100:.1f} %".replace(".", ",") + ".", "",
                   "| Signal | Monate | 3 M nach Q1 (beste Lage) | 3 M nach Q5 (schlechteste) | 12 M nach Q1 | 12 M nach Q5 | Rückgang 3 M Q1 | Rückgang 3 M Q5 | Korrelation 3 M |",
                   "|---|---|---|---|---|---|---|---|---|"]
         for col, s in t["signals"].items():
             b = s["by_quintile"]
             lines.append(f"| {s['name']} | {s['months']} | {pct(b['3M'].get('Q1'))} | {pct(b['3M'].get('Q5'))} | {pct(b['12M'].get('Q1'))} | "
-                         f"{pct(b['12M'].get('Q5'))} | −{(b['dd3M'].get('Q1') or 0) * 100:.1f} % | −{(b['dd3M'].get('Q5') or 0) * 100:.1f} % | {b['3M'].get('corr')} |")
+                         f"{pct(b['12M'].get('Q5'))} | −{(b['dd3M'].get('Q1') or 0) * 100:.1f} % | −{(b['dd3M'].get('Q5') or 0) * 100:.1f} % | {b['3M'].get('corr')} |".replace(".", ","))
+        tw = t.get("tone_without_price")
+        if tw:
+            lines += ["", f"Nur Monate, in denen der Kurs vorher NICHT stark gefallen war: nach schlechtem Tonfall ({tw['n_bad']} Monate) "
+                      f"3 Monate {pct(tw['ret3_bad'])}, Rückgang −{tw['dd3_bad'] * 100:.1f} %; nach gutem Tonfall ({tw['n_good']} Monate) "
+                      f"{pct(tw['ret3_good'])}, Rückgang −{tw['dd3_good'] * 100:.1f} %.".replace("−0.", "−0,").replace(".", ",").rstrip(",") + ""]
         lines.append("")
     lines += ["## Grenzen", "",
               "- Fünf Signale × drei Indizes × mehrere Zeiträume: Einzelne „Treffer“ können Zufall sein.",

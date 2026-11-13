@@ -667,3 +667,4 @@ main { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
 .chat-form button { width: auto; min-height: 48px; padding: 0 18px; }
 .chat-foot { margin: 0; }
 .linklike { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; width: auto; min-height: 0; text-decoration: underline; }
+.adv-sub { margin: 10px 0 6px; font-size: .82rem; color: var(--mute); }
