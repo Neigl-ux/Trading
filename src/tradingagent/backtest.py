@@ -315,6 +315,142 @@ def run_ladders(prices: dict[str, pd.DataFrame], meta: dict[str, dict[str, str]]
 
 
 # ----------------------------------------------------------------------------
+# 1c. Dein ganzes Vorgehen: Sparplan 120 €/Monat + einmalige Reserve 1.000 €
+# ----------------------------------------------------------------------------
+# Euro-ETFs an Xetra (Kurse inkl. Dividenden), damit kein Wechselkurs nachgerechnet werden muss.
+PLAN_ASSETS = {"EUNL.DE": "MSCI World", "SXR8.DE": "S&P 500", "EXXT.DE": "Nasdaq 100"}
+MIXES = {
+    "welt": ("100 % Welt", {"EUNL.DE": 1.0}),
+    "welt_sp": ("70 % Welt, 30 % S&P 500", {"EUNL.DE": 0.7, "SXR8.DE": 0.3}),
+    "welt_ndx": ("70 % Welt, 30 % Nasdaq 100", {"EUNL.DE": 0.7, "EXXT.DE": 0.3}),
+    "sp": ("100 % S&P 500", {"SXR8.DE": 1.0}),
+    "ndx": ("100 % Nasdaq 100", {"EXXT.DE": 1.0}),
+}
+# Reserve 1.000 €, nur einmal vorhanden; was nicht angelegt ist, liegt auf Tagesgeld (2 %).
+RESERVE_RULES = {
+    "sofort": ("Reserve sofort anlegen", 1.0, [], []),
+    "deine": ("Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 €", 0.0,
+              [0.10, 0.15, 0.20, 0.25, 0.30], [100, 150, 200, 250, 300]),
+    "zehn_50": ("−10 % → 500 €, −15 % → 250 €, −20 % → 250 €", 0.0, [0.10, 0.15, 0.20], [500, 250, 250]),
+    "haelfte": ("500 € sofort, Rest bei −5/−10/−15/−20 % je 125 €", 0.5, [0.05, 0.10, 0.15, 0.20], [125] * 4),
+    "nie": ("Reserve nie anlegen (bleibt auf Tagesgeld)", 0.0, [], []),
+}
+PLAN_EUR_M, RESERVE = 120.0, 1000.0
+
+
+def plan_sim(px: pd.DataFrame, weights: dict[str, float], rule: tuple, start: int, end: int,
+             high: np.ndarray, cash_rate: float = 0.02) -> dict[str, float]:
+    """Ein Durchlauf von Tag ``start`` bis ``end``. Rückgänge gemessen am 12-Monats-Hoch des Hauptwerts
+    (größter Anteil der Aufteilung); Käufe der Reserve werden wie der Sparplan aufgeteilt."""
+    _, upfront, thr, eur = rule
+    syms = list(weights)
+    P = px[syms].to_numpy(float)
+    main = max(weights, key=weights.get)
+    m = px[main].to_numpy(float)
+    w = np.array([weights[s] for s in syms])
+    units = np.zeros(len(syms))
+    cash = RESERVE
+    daily = (1 + cash_rate) ** (1 / 252)
+    idx = px.index
+    month_first = np.r_[True, idx.month[1:] != idx.month[:-1]]
+
+    def buy(i, amount):
+        nonlocal units
+        units = units + amount * w / P[i]
+
+    invested = 0.0
+    first_buy = None
+    if upfront:
+        buy(start, RESERVE * upfront); cash -= RESERVE * upfront
+        first_buy = 0
+    hit = [False] * len(thr)
+    peak, max_dd = 0.0, 0.0
+    for i in range(start, end + 1):
+        cash *= daily
+        if month_first[i] or i == start:
+            buy(i, PLAN_EUR_M); invested += PLAN_EUR_M
+        dd = 1 - m[i] / high[i]
+        for k, t in enumerate(thr):
+            if not hit[k] and dd >= t - 1e-9 and cash > 1e-6:
+                amt = min(eur[k], cash)
+                buy(i, amt); cash -= amt; hit[k] = True
+                first_buy = first_buy if first_buy is not None else i - start
+        val = float(units @ P[i])
+        total = val + cash  # Vermögen (Depot + Reserve); Einzahlungen dämpfen den Rückgang
+        if i == start:
+            peak = total
+        else:
+            peak = max(peak, total)
+            max_dd = max(max_dd, 1 - total / peak)
+    final = float(units @ P[end]) + cash
+    return {"final": final, "paid": invested + RESERVE, "cash_left": cash, "max_dd": max_dd,
+            "first_buy": -1 if first_buy is None else first_buy}
+
+
+def index_stats(px: pd.DataFrame, weights: dict[str, float]) -> dict[str, float]:
+    """Kennzahlen der Aufteilung selbst (monatlich auf die Zielgewichte zurückgesetzt)."""
+    r = px[list(weights)].pct_change().fillna(0)
+    w = pd.Series(weights)
+    mix = (1 + (r * w).sum(axis=1)).cumprod()
+    years = len(mix) / 252
+    dd = 1 - mix / mix.cummax()
+    y12 = mix.pct_change(252).dropna()
+    return {"cagr": round(float(mix.iloc[-1] ** (1 / years) - 1), 4), "max_dd": round(float(dd.max()), 4),
+            "days_over30": round(float((dd > 0.30).mean()), 3), "worst_12m": round(float(y12.min()), 4),
+            "best_12m": round(float(y12.max()), 4), "vol": round(float((r * w).sum(axis=1).std() * math.sqrt(252)), 4)}
+
+
+def run_plans(prices: dict[str, pd.DataFrame]) -> dict[str, Any]:
+    cols = {}
+    for sym in PLAN_ASSETS:
+        df = prices.get(sym)
+        if df is None or df.empty:
+            return {"error": f"keine Daten für {sym}"}
+        s = df["close"].dropna()
+        cols[sym] = s[~s.index.normalize().duplicated(keep="last")].set_axis(s.index.normalize()[~s.index.normalize().duplicated(keep="last")])
+    px = pd.DataFrame(cols).dropna()
+    px = px[px.index >= px.index[0]]
+    out: dict[str, Any] = {"from": str(px.index[0].date()), "to": str(px.index[-1].date()),
+                           "years": round(len(px) / 252, 1), "mixes": {}, "rules": {}}
+    idx = px.index
+    month_starts = np.nonzero(np.r_[True, idx.month[1:] != idx.month[:-1]])[0]
+    for key, (label, weights) in MIXES.items():
+        main = max(weights, key=weights.get)
+        high = rolling_high(px[main].to_numpy(float))
+        entry: dict[str, Any] = {"label": label, "index": index_stats(px, weights)}
+        rules = RESERVE_RULES if key == "welt" else {k: RESERVE_RULES[k] for k in ("sofort", "deine")}
+        for years in (5, 10):
+            h = 252 * years
+            starts = [int(i) for i in month_starts if i >= 252 and i + h < len(px)]
+            res = {}
+            for rk, rule in rules.items():
+                runs = [plan_sim(px, weights, rule, st, st + h, high) for st in starts]
+                if not runs:
+                    continue
+                fin = np.array([r["final"] for r in runs])
+                paid = runs[0]["paid"]
+                mdd = np.array([r["max_dd"] for r in runs])
+                res[rk] = {"label": rule[0], "windows": len(runs), "paid": round(paid),
+                           "median": round(float(np.median(fin))), "p10": round(float(np.quantile(fin, 0.10))),
+                           "worst": round(float(fin.min())), "best": round(float(fin.max())),
+                           "loss_share": round(float(np.mean(fin < paid)), 3),
+                           "dd_median": round(float(np.median(mdd)), 3), "dd_over30": round(float(np.mean(mdd > 0.30)), 3),
+                           "cash_left": round(float(np.mean([r["cash_left"] for r in runs]))),
+                           "never_used": round(float(np.mean([r["first_buy"] < 0 for r in runs])), 3)}
+            # gleiche Startpunkte: wie oft war die Regel besser als „sofort“?
+            if "sofort" in res:
+                base = np.array([plan_sim(px, weights, rules["sofort"], st, st + h, high)["final"] for st in starts])
+                for rk, rule in rules.items():
+                    if rk != "sofort" and rk in res:
+                        f = np.array([plan_sim(px, weights, rule, st, st + h, high)["final"] for st in starts])
+                        res[rk]["vs_sofort_win"] = round(float(np.mean(f >= base)), 3)
+                        res[rk]["vs_sofort_median_eur"] = round(float(np.median(f - base)))
+            entry[f"{years}J"] = res
+        out["mixes"][key] = entry
+    return out
+
+
+# ----------------------------------------------------------------------------
 # 2. Punktzahl
 # ----------------------------------------------------------------------------
 
@@ -429,12 +565,13 @@ def universe_meta() -> dict[str, dict[str, str]]:
 
 def run(loader: Callable[[list[str]], dict[str, pd.DataFrame]] = load_yahoo) -> dict[str, Any]:
     meta = universe_meta()
-    symbols = sorted(set(meta) | {s for _, s, _ in PYRAMID_SERIES})
+    symbols = sorted(set(meta) | {s for _, s, _ in PYRAMID_SERIES} | set(PLAN_ASSETS))
     prices = loader(symbols)
     result = {
         "created": datetime.now(timezone.utc).isoformat(timespec="minutes"),
         "pyramid": run_pyramid(prices),
         "ladders": run_ladders(prices, meta),
+        "plans": run_plans(prices),
         "score": score_study({k: v for k, v in prices.items() if k in meta}, meta,
                              prices.get("EUNL.DE", pd.DataFrame()).get("close")),
         "limits": [
@@ -504,6 +641,30 @@ def report_markdown(r: dict[str, Any]) -> str:
                             continue
                         lines.append(f"| {row['label']} | {m['label']} | {years}J | {x['windows']} | {x['win_share'] * 100:.0f} % | "
                                      f"{_p(x['median_diff'])} | {_p(x['p10_diff'])} | {_p(x['p90_diff'])} | {x['avg_cash_left'] * 100:.0f} % |")
+            lines.append("")
+    pl = r.get("plans") or {}
+    if pl and "error" not in pl:
+        e0 = lambda x: f"{x:,.0f} €".replace(",", ".")
+        lines += ["## 1c. Sparplan 120 €/Monat plus einmalige Reserve 1.000 €", "",
+                  f"Euro-ETFs an Xetra inkl. Dividenden, {pl['from']} bis {pl['to']} ({pl['years']} Jahre). Jeder Monatsanfang ab dem zweiten Jahr ist ein Startpunkt. "
+                  "Nicht angelegte Reserve liegt auf Tagesgeld (2 %). Rückgänge gemessen am 12-Monats-Hoch des Hauptwerts.", "",
+                  "### Die Aufteilungen selbst", "",
+                  "| Aufteilung | Rendite pro Jahr | Schwankung | größter Rückgang | Tage über −30 % | schlechteste 12 Monate | beste 12 Monate |",
+                  "|---|---|---|---|---|---|---|"]
+        for key, m in pl["mixes"].items():
+            x = m["index"]
+            lines.append(f"| {m['label']} | {_p(x['cagr'])} | {x['vol'] * 100:.0f} % | −{x['max_dd'] * 100:.0f} % | {x['days_over30'] * 100:.0f} % | {_p(x['worst_12m'])} | {_p(x['best_12m'])} |")
+        lines.append("")
+        for years in ("5J", "10J"):
+            lines += [f"### Nach {years[:-1]} Jahren", "",
+                      "| Aufteilung | Reserve | Starts | eingezahlt | Endwert Median | schlechte 10 % | schlechtester | bester | im Minus | Depot-Rückgang über 30 % | besser als „sofort“ | Median ggü. „sofort“ | Reserve nie gebraucht |",
+                      "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+            for key, m in pl["mixes"].items():
+                for rk, x in (m.get(years) or {}).items():
+                    vs = f"{x['vs_sofort_win'] * 100:.0f} %" if "vs_sofort_win" in x else "–"
+                    vm = (("+" if x["vs_sofort_median_eur"] >= 0 else "−") + e0(abs(x["vs_sofort_median_eur"]))) if "vs_sofort_median_eur" in x else "–"
+                    lines.append(f"| {m['label']} | {x['label']} | {x['windows']} | {e0(x['paid'])} | {e0(x['median'])} | {e0(x['p10'])} | {e0(x['worst'])} | {e0(x['best'])} | "
+                                 f"{x['loss_share'] * 100:.0f} % | {x['dd_over30'] * 100:.0f} % | {vs} | {vm} | {x['never_used'] * 100:.0f} % |")
             lines.append("")
     sc = r["score"]
     lines += ["## 2. Hat die Punktzahl etwas vorhergesagt?", ""]

@@ -3647,6 +3647,7 @@ function fillAdvDetail(box, id, v, e, d) {
     if (v.n.t) news.append(mk("p", "small", `Geprüft ${new Date(v.n.t * 1000).toLocaleString("de-DE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} (GDELT).`));
     parts.push(news);
   }
+  if (e && e.kind === "aktie" && fhSymbol(e)) parts.push(finnhubNewsBox(fhSymbol(e)));
   if (e) {
     const b = mk("button", "secondary adv-chart-btn", "Chart öffnen");
     b.type = "button";
@@ -3693,3 +3694,41 @@ function renderAdvList(d) {
 
 $("adv-q").addEventListener("input", (ev) => { adv.q = ev.target.value; adv.page = 0; if (adv.data) renderAdvList(adv.data); });
 $("adv-sort").addEventListener("change", (ev) => { adv.sort = ev.target.value; adv.page = 0; if (adv.data) renderAdvList(adv.data); });
+
+// Unternehmensnachrichten von Finnhub (nur US-Aktien, mit deinem Schlüssel, direkt vom Handy abgerufen)
+const FH_NEWS = new Map();
+const NEG_WORDS = /lawsuit|sues|sued|profit warning|cuts? (its )?(guidance|forecast|outlook)|fraud|bankrupt|insolvenc|recall|sanction|downgrad|investigation|probe|subpoena|plunge|layoffs?/i;
+function finnhubNewsBox(sym) {
+  const box = mk("div", "adv-news adv-fh");
+  if (!fh.token) {
+    box.append(mk("p", "small", "Unternehmensnachrichten: Trage in den Einstellungen deinen Finnhub-Schlüssel ein, dann erscheinen hier die Meldungen der letzten 7 Tage."));
+    return box;
+  }
+  box.append(mk("p", "small", "Unternehmensnachrichten werden geladen …"));
+  const to = new Date(), from = new Date(Date.now() - 7 * 86400000);
+  const d = (x) => x.toISOString().slice(0, 10);
+  if (!FH_NEWS.has(sym)) {
+    FH_NEWS.set(sym, fetch(`https://finnhub.io/api/v1/company-news?symbol=${encodeURIComponent(sym)}&from=${d(from)}&to=${d(to)}&token=${encodeURIComponent(fh.token)}`)
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .catch((err) => { FH_NEWS.delete(sym); throw err; }));
+  }
+  FH_NEWS.get(sym).then((items) => {
+    const list = (Array.isArray(items) ? items : []).sort((a, b) => b.datetime - a.datetime);
+    const neg = list.filter((a) => NEG_WORDS.test(`${a.headline} ${a.summary || ""}`));
+    const show = [...neg, ...list.filter((a) => !neg.includes(a))].slice(0, 5);
+    const parts = [mk("p", "adv-news-title", neg.length ? `Finnhub: ${neg.length} von ${list.length} Meldungen der letzten 7 Tage klingen negativ (bitte selbst lesen):` : `Finnhub: ${list.length} Meldungen der letzten 7 Tage, keine mit Warnbegriffen.`)];
+    if (show.length) {
+      const ul = mk("ul", "adv-news-list");
+      for (const a of show) {
+        const li = mk("li");
+        const link = mk("a", NEG_WORDS.test(`${a.headline} ${a.summary || ""}`) ? "neg" : null, a.headline);
+        link.href = a.url; link.target = "_blank"; link.rel = "noopener noreferrer";
+        li.append(link, mk("span", "adv-src", ` ${a.source}, ${new Date(a.datetime * 1000).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}`));
+        ul.append(li);
+      }
+      parts.push(ul);
+    }
+    box.replaceChildren(...parts);
+  }).catch((err) => box.replaceChildren(mk("p", "small", `Finnhub-Nachrichten nicht abrufbar (${err.message}).`)));
+  return box;
+}

@@ -640,3 +640,5 @@ main { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
   .adv-plan-list .adv-role { grid-column: 1 / -1; }
 }
 .adv-report .card-head h3, .adv-plan .card-head h3 { white-space: normal; }
+.adv-news-list a.neg { color: var(--warn); }
+.adv-fh { border-left-color: var(--accent); }
