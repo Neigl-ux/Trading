@@ -69,8 +69,13 @@ const shift = (sec) => sec + berlinOffset(sec);
 // fällt er aus, automatisch GitHub (alle 15–60 Minuten). Beide sind gleich verschlüsselt.
 const SERVER_STORE = "ta.server";
 let dataBase = "data/";
+// Ohne eigene Einstellung nutzt jedes Gerät (Handy wie PC) den eigenen Server; „aus“ = bewusst nur GitHub.
+const DEFAULT_SERVER = "https://92-5-110-28.sslip.io";
 function serverUrl() {
-  try { return (localStorage.getItem(SERVER_STORE) || "").trim().replace(/\/+$/, "") || null; } catch { return null; }
+  let v = null;
+  try { v = localStorage.getItem(SERVER_STORE); } catch {}
+  if (v === "off") return null;
+  return (v || DEFAULT_SERVER).trim().replace(/\/+$/, "") || null;
 }
 async function fetchRaw(url, ms = 20000) {
   const ctl = new AbortController();
@@ -1280,6 +1285,25 @@ function rowAtTime(t) {
   return i === undefined ? null : state.rows[i];
 }
 
+/** Index der Kerze, die zeitlich am nächsten an der Fingerposition liegt (auch über leeren Zeitpunkten des Tagesrahmens). */
+function rowAtX(chart, x, rows, timeOf = (r) => shift(r[0])) {
+  if (!rows.length) return -1;
+  const ts = chart.timeScale();
+  let t = ts.coordinateToTime(x);
+  if (t === null) {
+    const logical = ts.coordinateToLogical(x);
+    if (logical === null) return -1;
+    return logical < 0 ? 0 : rows.length - 1;
+  }
+  let lo = 0, hi = rows.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (timeOf(rows[mid]) < t) lo = mid + 1; else hi = mid;
+  }
+  if (lo > 0 && Math.abs(timeOf(rows[lo - 1]) - t) <= Math.abs(timeOf(rows[lo]) - t)) lo -= 1;
+  return lo;
+}
+
 // ---------- Werte unter dem Finger ----------
 // Ein Finger wischt nach links oder rechts: Fadenkreuz und Infozeile folgen
 // dem Finger. Loslassen zeigt wieder die neueste Kerze. Zwei Finger zoomen.
@@ -1289,9 +1313,8 @@ function attachTouch(el) {
     if (ev.touches.length !== 1 || !state.rows.length) return;
     const rect = el.getBoundingClientRect();
     const x = ev.touches[0].clientX - rect.left;
-    const logical = state.chart.timeScale().coordinateToLogical(x);
-    if (logical === null) return;
-    const i = Math.max(0, Math.min(state.rows.length - 1, Math.round(logical)));
+    const i = rowAtX(state.chart, x, state.rows);
+    if (i < 0) return;
     const row = state.rows[i];
     touching = true;
     state.hovering = true;
@@ -3307,9 +3330,8 @@ function attachScrub(el, chart, getRows, getSeries, onShow, timeOf = (r) => shif
     const rows = getRows();
     if (ev.touches.length !== 1 || !rows.length) return;
     const x = ev.touches[0].clientX - el.getBoundingClientRect().left;
-    const logical = chart.timeScale().coordinateToLogical(x);
-    if (logical === null) return;
-    const i = Math.max(0, Math.min(rows.length - 1, Math.round(logical)));
+    const i = rowAtX(chart, x, rows, timeOf);
+    if (i < 0) return;
     touching = true;
     try { chart.setCrosshairPosition(valueOf(rows[i]), timeOf(rows[i]), getSeries()); } catch {}
     onShow(i);
@@ -4079,8 +4101,8 @@ function startServerLive() {
     let url = inp.value.trim().replace(/\/+$/, "");
     if (url && !/^https:\/\//.test(url)) url = `https://${url}`;
     if (!url) {
-      try { localStorage.removeItem(SERVER_STORE); } catch {}
-      msg.textContent = "Server entfernt. Die App nutzt wieder nur GitHub.";
+      try { localStorage.setItem(SERVER_STORE, "off"); } catch {}
+      msg.textContent = "Server ausgeschaltet. Die App nutzt nur GitHub.";
       startServerLive();
       return refreshIndex();
     }
