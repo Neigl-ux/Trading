@@ -88,7 +88,7 @@ async function fetchJSON(path) {
     const srv = serverUrl();
     if (srv) {
       try {
-        const j = await fetchRaw(`${srv}/data/index.json`, 6000);
+        const j = await fetchRaw(`${srv}/data/index.json`, 20000);
         dataBase = `${srv}/data/`;
         state.dataSource = "server";
         return j;
@@ -195,7 +195,7 @@ function showMain() {
 function updateFreshness() {
   const age = Date.now() / 1000 - state.index.updated;
   const fresh = $("freshness");
-  fresh.textContent = `Daten von ${fmtTime(state.index.updated, age > 20 * 3600)} Uhr${state.dataSource === "server" ? " · Server" : ""}`;
+  fresh.textContent = `Daten von ${fmtTime(state.index.updated, age > 20 * 3600)} Uhr${state.dataSource === "server" ? " · Server" : serverUrl() ? " · GitHub (Server nicht erreicht)" : ""}`;
   fresh.style.color = age > 45 * 60 ? "var(--warn)" : "";
   fresh.title = age > 45 * 60 ? "Der letzte Sammel-Lauf liegt länger zurück. Prüfe den Status." : "";
 }
