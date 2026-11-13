@@ -68,7 +68,7 @@ const shift = (sec) => sec + berlinOffset(sec);
 // Datenquelle: zuerst dein Server (alle 5 Minuten frisch, Einstellungen → Server-Adresse),
 // fällt er aus, automatisch GitHub (alle 15–60 Minuten). Beide sind gleich verschlüsselt.
 // ---------- App-Version: zeigt an, wenn eine neuere Fassung veröffentlicht ist ----------
-const APP_VERSION = 32;
+const APP_VERSION = 33;
 let versionSeen = null;
 async function checkVersion() {
   try {
