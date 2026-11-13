@@ -48,3 +48,22 @@ def test_live_file_opens_like_export(tmp_path, monkeypatch):
     q = json.loads((tmp_path / "quotes.json").read_text())
     assert q["SAP"]["last"] == 240.5
     assert base64.b64encode(salt)  # gleiche Salz-Kodierung wie im Export-Kopf
+
+
+def test_us_quotes_recorded_in_dollar_before_us_open():
+    from tradingagent.config import load_settings
+
+    st = SQLiteStorage(":memory:")
+    idx = pd.DatetimeIndex([pd.Timestamp("2026-11-13T07:00Z")])
+    st.upsert_bars("EURUSD", "5m", pd.DataFrame({"open": [1.1], "high": [1.1], "low": [1.1], "close": [1.1], "volume": [0.0]}, index=idx), source="t")
+    nvda = next(i for i in load_settings().instruments if i.id == "NVDA")
+    rec = live.Recorder(st)
+    t = pd.Timestamp("2026-11-13T08:00Z")  # 9:00 Berlin, US-Börse zu
+    rec.add_quote(nvda, t, 100.0)
+    rec.flush_old(t + pd.Timedelta(minutes=6))
+    bars = st.load_bars("NVDA", "5m")
+    assert len(bars) == 1 and abs(bars["close"].iloc[0] - 110.0) < 1e-9
+    t2 = pd.Timestamp("2026-11-13T16:00Z")  # 17:00 Berlin = 11:00 New York, US-Börse offen
+    rec.add_quote(nvda, t2, 100.0)
+    rec.flush_old(t2 + pd.Timedelta(minutes=6))
+    assert len(st.load_bars("NVDA", "5m")) == 1

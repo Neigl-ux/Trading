@@ -38,10 +38,26 @@ def xetra_hours(ts: pd.Timestamp) -> bool:
     return loc.weekday() < 5 and 9 * 60 <= m < 17 * 60 + 30
 
 
-def recordable(inst: Instrument) -> bool:
-    """Nur Werte, deren gespeicherte Kurse in Euro von Xetra stammen (Yahoo-Kürzel .DE)."""
+def us_hours(ts: pd.Timestamp) -> bool:
+    loc = ts.tz_convert("America/New_York")
+    m = loc.hour * 60 + loc.minute
+    return loc.weekday() < 5 and 9 * 60 + 30 <= m < 16 * 60
+
+
+def record_kind(inst: Instrument) -> str | None:
+    """'de': Kurse in Euro von Xetra (Yahoo-Kürzel .DE); 'us': US-Werte in Dollar (Tradegate-Kurs wird umgerechnet)."""
+    if not inst.isin:
+        return None
     y = inst.symbol_for("yahoo") or ""
-    return bool(inst.isin) and y.endswith(".DE")
+    if y.endswith(".DE"):
+        return "de"
+    if inst.market == "us" and inst.kind in ("aktie", "etf"):
+        return "us"
+    return None
+
+
+def recordable(inst: Instrument) -> bool:
+    return record_kind(inst) is not None
 
 
 class Recorder:
@@ -50,6 +66,31 @@ class Recorder:
     def __init__(self, storage):
         self.storage = storage
         self.open: dict[str, dict[str, Any]] = {}
+        self.kind: dict[str, str] = {}
+        self._fx: tuple[float, float] | None = None  # (Zeit, EUR→USD)
+
+    def eurusd(self) -> float | None:
+        if self._fx and time.time() - self._fx[0] < 600:
+            return self._fx[1]
+        try:
+            bars = self.storage.load_bars("EURUSD", "5m")
+            rate = float(bars["close"].iloc[-1]) if len(bars) else None
+        except Exception:  # noqa: BLE001
+            rate = None
+        if rate:
+            self._fx = (time.time(), rate)
+        return rate
+
+    def add_quote(self, inst: Instrument, ts: pd.Timestamp, price_eur: float) -> None:
+        kind = record_kind(inst)
+        if kind == "de":
+            self.kind[inst.id] = kind
+            self.add(inst.id, ts, price_eur)
+        elif kind == "us":
+            fx = self.eurusd()
+            if fx:
+                self.kind[inst.id] = kind
+                self.add(inst.id, ts, price_eur * fx)
 
     def add(self, vid: str, ts: pd.Timestamp, price: float) -> None:
         bucket = ts.floor("5min")
@@ -69,8 +110,9 @@ class Recorder:
                 del self.open[vid]
 
     def _flush(self, vid: str, cur: dict[str, Any]) -> None:
-        if xetra_hours(cur["t"]):
-            return  # während der Xetra-Zeit gelten die Xetra-Kerzen
+        # Während der Hauptbörsenzeit gelten deren Kerzen (Xetra bzw. US-Börse); mitgeschrieben wird nur davor und danach.
+        if (us_hours(cur["t"]) if self.kind.get(vid) == "us" else xetra_hours(cur["t"])):
+            return
         df = pd.DataFrame({"open": [cur["o"]], "high": [cur["h"]], "low": [cur["l"]], "close": [cur["c"]], "volume": [0.0]},
                           index=pd.DatetimeIndex([cur["t"]]))
         try:
@@ -86,6 +128,7 @@ class Live:
         self.http.headers["User-Agent"] = "Mozilla/5.0 (trading-agent live)"
         self.items = [i for i in self.settings.instruments
                       if i.isin and self.settings.markets[i.market].enabled and i.market != "crypto"]
+        self.by_id = {i.id: i for i in self.items}
         self.radar = Radar(session=self.http)
         self.box = None
         pw = os.environ.get("APP_PASSPHRASE")
@@ -149,10 +192,9 @@ class Live:
             self.write(now, quotes)
             if self.recorder:
                 for vid, (price, _) in quotes.items():
-                    inst = self.radar.watch.get(vid)
-                    inst = inst.inst if inst else next((i for i in self.items if i.id == vid), None)
-                    if inst is not None and recordable(inst):
-                        self.recorder.add(vid, now, price)
+                    inst = self.by_id.get(vid)
+                    if inst is not None:
+                        self.recorder.add_quote(inst, now, price)
         if self.recorder:
             self.recorder.flush_old(now)
         # Radar: dieselben Kurse, dazu Krypto und Indizes

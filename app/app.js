@@ -695,6 +695,23 @@ function tickCandles(ticks, step) {
 }
 
 /** Beginn und Ende des Zeitraums einer Ansicht, bezogen auf den aktuellen Kurszeitpunkt. */
+// Tageschart einheitlich 7:30–22:30 Uhr deutscher Zeit für alles, was an einer Börse hängt
+// (nicht Krypto, Devisen, Terminkontrakte: die handeln fast rund um die Uhr).
+const DAY_FROM = [7, 30], DAY_TO = [22, 30];
+function dayFrame(entry, view, start) {
+  if (!entry || view.key !== "1D" || ["crypto", "fx", "futures"].includes(entry.market)) return null;
+  const p = berlinParts(start + 3600);
+  return { from: berlinToUtc(p.y, p.mo, p.d, ...DAY_FROM), to: berlinToUtc(p.y, p.mo, p.d, ...DAY_TO) };
+}
+/** Leere Zeitpunkte ergänzen, damit die Zeitachse den ganzen Handelstag zeigt, auch ohne Kurse. */
+function frameData(items, step, frame) {
+  if (!frame || !(step > 0)) return items;
+  const have = new Set(items.map((x) => x.time));
+  const blank = [];
+  for (let t = frame.from; t <= frame.to; t += step) if (!have.has(shift(t))) blank.push({ time: shift(t) });
+  return blank.length ? [...items, ...blank].sort((a, b) => a.time - b.time) : items;
+}
+
 function viewRange(view, rows) {
   const lastRow = rows[rows.length - 1];
   const lastEnd = lastRow ? lastRow[0] + (STEP[state.interval] || 60) : null;
@@ -945,15 +962,19 @@ function showRows(view = VIEW_BY_KEY[viewKey]) {
   const intraday = STEP[state.interval] < 86400;
   state.chart.applyOptions({ timeScale: { timeVisible: intraday, secondsVisible: STEP[state.interval] < 60 } });
   state.timeIndex = new Map(rows.map((r, i) => [shift(r[0]), i]));
-  state.candles.setData(rows.map(toCandle));
-  state.line.setData(rows.map(toLine));
+  const range = rows.length ? viewRange(view, rows) : null;
+  const frame = range ? dayFrame(state.entry, view, range.start) : null;
+  const step = STEP[state.interval];
+  state.candles.setData(frameData(rows.map(toCandle), step, frame));
+  state.line.setData(frameData(rows.map(toLine), step, frame));
   state.volume.setData(rows.map(toVolume));
   if (rows.length) {
-    // genau der eingestellte Zeitraum: 1m = letzte Minute, 1D = heute, 1W = diese Woche …
-    const { start, end } = viewRange(view, rows);
-    const from = Math.max(rows[0][0], start);
+    // genau der eingestellte Zeitraum: 1m = letzte Minute, 1D = heute (Börsenwerte 7:30–22:30 Uhr), 1W = diese Woche …
+    const { start, end } = range;
+    let from = Math.max(rows[0][0], start);
     const lastStart = rows[rows.length - 1][0];
-    const to = Math.max(from, Math.min(lastStart, end));
+    let to = Math.max(from, Math.min(lastStart, end));
+    if (frame) { from = frame.from; to = frame.to; }
     try { state.chart.timeScale().setVisibleRange({ from: shift(from), to: shift(to) }); }
     catch { state.chart.timeScale().fitContent(); }
   }
@@ -2552,7 +2573,10 @@ function drawDash(fit = false) {
   if (!dash.candles) return;
   const css = getComputedStyle(document.documentElement);
   const up = css.getPropertyValue("--up-a").trim(), down = css.getPropertyValue("--down-a").trim();
-  dash.candles.setData(dash.rows.map((r) => ({ time: shift(r[0]), open: r[1], high: r[2], low: r[3], close: r[4] })));
+  const dEntry = byId(dash.id);
+  const dView = VIEW_BY_KEY[dash.iv];
+  const dFrame = dash.rows.length && dView ? dayFrame(dEntry, dView, periodStart(dView.perf, dash.rows[dash.rows.length - 1][0] + dash.step)) : null;
+  dash.candles.setData(frameData(dash.rows.map((r) => ({ time: shift(r[0]), open: r[1], high: r[2], low: r[3], close: r[4] })), dash.step, dFrame));
   dash.vol.setData(dash.rows.map((r) => ({ time: shift(r[0]), value: r[5], color: r[4] >= r[1] ? up : down })));
   paintDashInfo(null);
   if (fit && dash.rows.length) {
@@ -2561,8 +2585,9 @@ function drawDash(fit = false) {
     const perf = VIEW_BY_KEY[dash.iv].perf;
     let end = rows[rows.length - 1][0] + dash.step;
     let start = periodStart(perf, end);
-    const from = Math.max(rows[0][0], start);
-    try { dash.chart.timeScale().setVisibleRange({ from: shift(from), to: shift(rows[rows.length - 1][0]) }); }
+    const from = dFrame ? dFrame.from : Math.max(rows[0][0], start);
+    const to = dFrame ? dFrame.to : rows[rows.length - 1][0];
+    try { dash.chart.timeScale().setVisibleRange({ from: shift(from), to: shift(to) }); }
     catch { dash.chart.timeScale().fitContent(); }
   }
 }
