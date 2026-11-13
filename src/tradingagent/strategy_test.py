@@ -174,6 +174,49 @@ def _score(s: dict[str, Any]) -> float:
     return s["cagr"] / max(0.05, -s["max_rueckgang"])
 
 
+def cost_free(cfg: RiskConfig) -> RiskConfig:
+    """Zum Vergleich: dieselben Regeln ohne Gebühr, Spread und Schlupf – zeigt, wie viel die Kosten ausmachen."""
+    from dataclasses import replace
+
+    return replace(cfg, fee_stock=0.0, fee_crypto_pct=0.0, spread_pct=0.0, spread_crypto_pct=0.0,
+                   slip_pct=0.0, slip_stop_pct=0.0, max_fee_pct=100.0)
+
+
+def walk_forward(panel: Panel, strat, test_years: list[int], rm: RiskManager, bench_years: dict[int, float]) -> dict[str, Any]:
+    cap = rm.cfg.start_capital
+    sig = {i: signal_arrays(panel, strat.key, p) for i, p in enumerate(strat.params)}
+    years, curve, all_trades, fees, kills, exposure = [], [], [], 0.0, [], []
+    for y in test_years:
+        ts, _ = year_bounds(panel, y - TRAIN_YEARS)
+        te, _ = year_bounds(panel, y)
+        best, best_score = 0, -1e9
+        if len(strat.params) > 1:
+            for i in sig:
+                sc = _score(stats(simulate(panel, *sig[i], ts, te, rm=rm)["equity"], cap))
+                if sc > best_score:
+                    best, best_score = i, sc
+        s, e = year_bounds(panel, y)
+        r = simulate(panel, *sig[best], s, e, rm=rm)
+        st = stats(r["equity"], cap, r["trades"])
+        years.append({"jahr": y, "rendite": st["rendite"], "max_rueckgang": st["max_rueckgang"], "trades": st["trades"],
+                      "einstellung": strat.params[best], "msci_world": bench_years.get(y), "gestoppt": r["kills"]})
+        curve.append(r["equity"] / cap)
+        all_trades += r["trades"]
+        fees += r["fees"]
+        kills += [f"{y}: {k}" for k in r["kills"]]
+        exposure.append(r["exposure"])
+    chained = _chain(curve) * cap
+    st = stats(chained, cap, all_trades)
+    wins = [x for x in all_trades if x > 0]
+    losses = [x for x in all_trades if x <= 0]
+    return {"key": strat.key, "name": strat.name, "idee": strat.idea, **st,
+            "gebuehren": round(fees, 2), "investiert": float(np.mean(exposure)),
+            "gewinn_je_trade": float(np.mean(all_trades)) if all_trades else None,
+            "mittel_gewinner": float(np.mean(wins)) if wins else None, "mittel_verlierer": float(np.mean(losses)) if losses else None,
+            "jahre_besser_als_msci": sum(1 for x in years if x["msci_world"] is not None and x["rendite"] > x["msci_world"]),
+            "jahre": years, "kill_switch": kills, "verlauf": _weekly(panel, test_years, chained / cap)}
+
+
 def year_bounds(panel: Panel, year: int) -> tuple[int, int]:
     y = panel.dates.year
     sel = np.flatnonzero(y == year)
@@ -219,37 +262,15 @@ def run(frames: dict[str, pd.DataFrame], meta: dict[str, dict[str, str]], *, rm:
             bench_years[y] = stats(buy_and_hold(panel, BENCH, s, e, rm), cap)["rendite"]
 
     results = []
+    rm_free = RiskManager(cost_free(rm.cfg))
     for strat in STRATEGIES:
-        sig = {i: signal_arrays(panel, strat.key, p) for i, p in enumerate(strat.params)}
-        years, curve, all_trades, fees, kills, chosen, exposure = [], [], [], 0.0, [], [], []
-        for y in test_years:
-            ts, _ = year_bounds(panel, y - TRAIN_YEARS)
-            te, _ = year_bounds(panel, y)
-            best, best_score = 0, -1e9
-            if len(strat.params) > 1:
-                for i in sig:
-                    st = stats(simulate(panel, *sig[i], ts, te, rm=rm)["equity"], cap)
-                    sc = _score(st)
-                    if sc > best_score:
-                        best, best_score = i, sc
-            s, e = year_bounds(panel, y)
-            r = simulate(panel, *sig[best], s, e, rm=rm)
-            st = stats(r["equity"], cap, r["trades"])
-            years.append({"jahr": y, "rendite": st["rendite"], "max_rueckgang": st["max_rueckgang"], "trades": st["trades"],
-                          "einstellung": strat.params[best], "msci_world": bench_years.get(y), "gestoppt": r["kills"]})
-            curve.append(r["equity"] / cap)
-            all_trades += r["trades"]
-            fees += r["fees"]
-            kills += [f"{y}: {k}" for k in r["kills"]]
-            chosen.append(best)
-            exposure.append(r["exposure"])
-        chained = _chain(curve) * cap
-        st = stats(chained, cap, all_trades)
-        results.append({"key": strat.key, "name": strat.name, "idee": strat.idea, **st,
-                        "gebuehren": round(fees, 2), "investiert": float(np.mean(exposure)),
-                        "jahre_besser_als_msci": sum(1 for x in years if x["msci_world"] is not None and x["rendite"] > x["msci_world"]),
-                        "jahre": years, "kill_switch": kills, "verlauf": _weekly(panel, test_years, chained / cap)})
-        progress(f"  {strat.name}: {st['cagr']:+.1%} pro Jahr, Rückgang {st['max_rueckgang']:.1%}, {st['trades']} Trades")
+        res = walk_forward(panel, strat, test_years, rm, bench_years)
+        free = walk_forward(panel, strat, test_years, rm_free, bench_years)
+        res["cagr_ohne_kosten"], res["max_rueckgang_ohne_kosten"] = free["cagr"], free["max_rueckgang"]
+        res["trefferquote_ohne_kosten"] = free["trefferquote"]
+        results.append(res)
+        progress(f"  {strat.name}: {res['cagr']:+.1%} pro Jahr (ohne Kosten {free['cagr']:+.1%}), "
+                 f"Rückgang {res['max_rueckgang']:.1%}, {res['trades']} Trades")
 
     # Vergleich 1: MSCI World halten (jedes Prüfjahr neu gekauft, wie die Strategie-Konten)
     bench = None
@@ -264,19 +285,21 @@ def run(frames: dict[str, pd.DataFrame], meta: dict[str, dict[str, str]], *, rm:
                  "verlauf": _weekly(panel, test_years, chained / cap)}
     # Vergleich 2: Zufallskäufe mit denselben Regeln (Glück oder Können?)
     rng = np.random.default_rng(42)
-    rand_cagr, rand_dd = [], []
+    rand_cagr, rand_dd, rand_free = [], [], []
     for k in range(RANDOM_SEEDS):
         en, ex = random_signals(panel, rng, p_entry=0.01, hold=20)
-        curve = []
-        for y in test_years:
-            s, e = year_bounds(panel, y)
-            curve.append(simulate(panel, en, ex, s, e, rm=rm)["equity"] / cap)
-        st = stats(_chain(curve) * cap, cap)
-        rand_cagr.append(st["cagr"])
-        rand_dd.append(st["max_rueckgang"])
+        for target, manager in ((rand_cagr, rm), (rand_free, rm_free)):
+            curve = []
+            for y in test_years:
+                s, e = year_bounds(panel, y)
+                curve.append(simulate(panel, en, ex, s, e, rm=manager)["equity"] / cap)
+            st = stats(_chain(curve) * cap, cap)
+            target.append(st["cagr"])
+            if manager is rm:
+                rand_dd.append(st["max_rueckgang"])
     random = {"name": "Zufällige Käufe, gleiche Regeln", "laeufe": RANDOM_SEEDS,
               "cagr_median": float(np.median(rand_cagr)), "cagr_p90": float(np.percentile(rand_cagr, 90)),
-              "max_rueckgang_median": float(np.median(rand_dd))}
+              "max_rueckgang_median": float(np.median(rand_dd)), "cagr_median_ohne_kosten": float(np.median(rand_free))}
     for r in results:
         r["besser_als_zufall_prozent"] = float(np.mean([r["cagr"] > x for x in rand_cagr]) * 100)
     progress(f"  Zufall: Median {random['cagr_median']:+.1%} pro Jahr")
@@ -361,6 +384,10 @@ def _p(x: float | None, sign: bool = True) -> str:
     return f"{x * 100:+.1f} %".replace(".", ",") if sign else f"{x * 100:.1f} %".replace(".", ",")
 
 
+def _eur(x: float) -> str:
+    return f"{x:,.0f} €".replace(",", ".")
+
+
 def _n(x: float) -> str:
     return f"{x:.2f}".replace(".", ",")
 
@@ -372,21 +399,23 @@ def report_markdown(r: dict[str, Any]) -> str:
         "",
         f"Stand: {r['erstellt'][:10]}. {r['werte']} Werte (Aktien und ETFs aus Deutschland, Europa und den USA), "
         f"Prüfjahre {y0}–{y1}. Jede Strategie lernt {r['lernjahre']} Jahre (beste Einstellung) und wird im Folgejahr unberührt geprüft. "
-        f"Startkapital {r['startkapital']:,.0f} € je Prüfjahr".replace(",", ".") + ", alle Kosten und Risikoregeln aus Phase 4.",
+        f"Startkapital {_eur(r['startkapital'])} je Prüfjahr, alle Kosten und Risikoregeln aus Phase 4. "
+        "„Ohne Kosten“ zeigt dieselben Regeln ohne Gebühr, Spread und Schlupf.",
         "",
-        "| Strategie | pro Jahr | größter Rückgang | Sharpe | Trades | Treffer | Jahre besser als MSCI World | besser als Zufall |",
-        "|---|---|---|---|---|---|---|---|",
+        "| Strategie | pro Jahr | ohne Kosten | größter Rückgang | Trades | Treffer | Gebühren gesamt | Jahre besser als MSCI World | besser als Zufall |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     n_years = y1 - y0 + 1
     for s in sorted(r["strategien"], key=lambda s: -s["cagr"]):
-        lines.append(f"| {s['name']} | {_p(s['cagr'])} | {_p(s['max_rueckgang'])} | {_n(s['sharpe'])} | {s['trades']} | "
-                     f"{_p(s['trefferquote'], False)} | {s['jahre_besser_als_msci']} von {n_years} | {s['besser_als_zufall_prozent']:.0f} % |")
+        lines.append(f"| {s['name']} | {_p(s['cagr'])} | {_p(s['cagr_ohne_kosten'])} | {_p(s['max_rueckgang'])} | {s['trades']} | "
+                     f"{_p(s['trefferquote'], False)} | {_eur(s['gebuehren'])} | {s['jahre_besser_als_msci']} von {n_years} | {s['besser_als_zufall_prozent']:.0f} % |")
     b = r.get("msci_world")
     if b:
-        lines.append(f"| **{b['name']}** | {_p(b['cagr'])} | {_p(b['max_rueckgang'])} | {_n(b['sharpe'])} | 1 je Jahr | – | – | – |")
+        lines.append(f"| **{b['name']}** | {_p(b['cagr'])} | – | {_p(b['max_rueckgang'])} | 1 je Jahr | – | – | – | – |")
     z = r["zufall"]
     lines += ["", f"Zufällige Käufe mit denselben Regeln ({z['laeufe']} Läufe): Median {_p(z['cagr_median'])} pro Jahr, "
-              f"die besten 10 % ab {_p(z['cagr_p90'])}; größter Rückgang im Median {_p(z['max_rueckgang_median'])}.",
+              f"die besten 10 % ab {_p(z['cagr_p90'])}; größter Rückgang im Median {_p(z['max_rueckgang_median'])}; "
+              f"ohne Kosten im Median {_p(z['cagr_median_ohne_kosten'])}.",
               "„Besser als Zufall“ = Anteil der Zufallsläufe, die die Strategie übertrifft.", ""]
     lines += ["## Je Prüfjahr", "", "| Jahr | " + " | ".join(s["name"] for s in r["strategien"]) + " | MSCI World |",
               "|---|" + "---|" * (len(r["strategien"]) + 1)]
