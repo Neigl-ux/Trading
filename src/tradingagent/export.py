@@ -222,6 +222,22 @@ class _SkipAdvisor(Exception):
     pass
 
 
+def _previous_advisor(dest: Path) -> bool:
+    """Ratgeber-Datei der aktuell veröffentlichten App holen (gleiche Verschlüsselung). False, wenn nicht möglich."""
+    try:
+        import requests
+
+        from .notify import APP_URL
+
+        r = requests.get(f"{APP_URL}data/advisor.json", params={"t": int(time.time())}, timeout=20)
+        if r.status_code != 200 or not r.content.startswith(b"{"):
+            return False
+        dest.write_bytes(r.content)
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, status: dict[str, Any],
                passphrase: str | None, quotes: dict | None = None) -> Path:
     """Schreibt alle Dateien für die App. Gibt den Export-Ordner zurück."""
@@ -299,10 +315,15 @@ def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, statu
     min_iv = int(os.environ.get("ADVISOR_MIN_INTERVAL", "0") or 0)
     prev_adv = out_dir / "advisor.json"
     reuse = bool(min_iv) and prev_adv.exists() and (time.time() - prev_adv.stat().st_mtime) < min_iv
-    if reuse:
+    if not reuse and os.environ.get("GITHUB_EVENT_NAME") == "push" and _previous_advisor(tmp_dir / "advisor.json"):
+        # GitHub, Code-Änderung: nur die App wird neu veröffentlicht, der Ratgeber der letzten Veröffentlichung bleibt
+        reuse = True
+        print("Ratgeber: Fassung der letzten Veröffentlichung übernommen (Code-Änderung)")
+    elif reuse:
         shutil.copy2(prev_adv, tmp_dir / "advisor.json")
-        advisor_file = "advisor.json"
         print("Ratgeber: letzte Fassung übernommen")
+    if reuse:
+        advisor_file = "advisor.json"
     try:
         if reuse:
             raise _SkipAdvisor
