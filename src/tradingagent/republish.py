@@ -27,10 +27,31 @@ def only_app_changed(event_path: str | None = None) -> bool:
     except (OSError, ValueError):
         return False
     commits = ev.get("commits") or []
-    if not commits or len(commits) >= 20:  # GitHub kürzt lange Listen: dann lieber vollständig exportieren
-        return False
     files = [f for c in commits for k in ("added", "modified", "removed") for f in c.get(k, [])]
-    return bool(files) and not any(f.startswith(DATA_PREFIXES) for f in files)
+    if not files:  # Actions liefert die Dateilisten nicht immer mit: über die GitHub-API vergleichen
+        files = _compare_files(ev)
+    changed_data = [f for f in files if f.startswith(DATA_PREFIXES)]
+    print(f"Geänderte Dateien: {len(files)}, davon Daten/Code: {len(changed_data)}", flush=True)
+    return bool(files) and not changed_data
+
+
+def _compare_files(ev: dict) -> list[str]:
+    before, after = ev.get("before"), ev.get("after")
+    repo = os.environ.get("GITHUB_REPOSITORY") or (ev.get("repository") or {}).get("full_name")
+    if not (before and after and repo) or set(before) == {"0"}:
+        return []
+    try:
+        import requests
+
+        r = requests.get(f"https://api.github.com/repos/{repo}/compare/{before}...{after}", timeout=20,
+                         headers={"Accept": "application/vnd.github+json"})
+        data = r.json() if r.status_code == 200 else {}
+    except Exception:  # noqa: BLE001
+        return []
+    files = data.get("files") or []
+    if len(files) >= 300:  # Liste gekürzt
+        return []
+    return [f["filename"] for f in files] + [f["previous_filename"] for f in files if f.get("previous_filename")]
 
 
 def fetch_published(export_dir: Path, passphrase: str, session=None, base: str | None = None) -> int:
