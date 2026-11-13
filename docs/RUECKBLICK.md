@@ -1,6 +1,6 @@
 # Rückblick-Test des Ratgebers
 
-Erstellt: 2026-11-13T00:55+00:00 (UTC)
+Erstellt: 2026-11-13T01:11+00:00 (UTC)
 
 ## 1. Nachkauf-Stufen gegen sofortiges Anlegen
 
@@ -68,13 +68,13 @@ Typische Schwankung (Median): 17 % pro Jahr. Anteil der Tage mindestens x % unte
 
 | Staffel | Rest | Zeitraum | Fälle | Staffel besser | Vorteil Median | schlechte 10 % | gute 10 % | Rest unangelegt (Ø) |
 |---|---|---|---|---|---|---|---|---|
-| Bisher: −10/−15/−20/−25/−30 % | Rest auf Tagesgeld (2 %) | 3J | 3487 | 38 % | −6,9 % | −26,7 % | +17,1 % | 34 % |
-| Bisher: −10/−15/−20/−25/−30 % | Rest nach 12 Monaten anlegen | 3J | 3487 | 40 % | −4,2 % | −18,4 % | +16,4 % | 0 % |
+| Bisher: −10/−15/−20/−25/−30 % | Rest auf Tagesgeld (2 %) | 3J | 3487 | 38 % | −6,9 % | −26,7 % | +17,0 % | 34 % |
+| Bisher: −10/−15/−20/−25/−30 % | Rest nach 12 Monaten anlegen | 3J | 3487 | 40 % | −4,2 % | −18,4 % | +16,3 % | 0 % |
 | Bisher: −10/−15/−20/−25/−30 % | Rest auf Tagesgeld (2 %) | 5J | 2913 | 43 % | −3,9 % | −29,7 % | +18,4 % | 14 % |
 | Bisher: −10/−15/−20/−25/−30 % | Rest nach 12 Monaten anlegen | 5J | 2913 | 40 % | −4,1 % | −18,6 % | +17,2 % | 0 % |
 | ETF früh: −5/−10/−15/−20/−25 %, je 20 % | Rest auf Tagesgeld (2 %) | 3J | 3487 | 42 % | −1,8 % | −12,8 % | +8,4 % | 1 % |
-| ETF früh: −5/−10/−15/−20/−25 %, je 20 % | Rest nach 12 Monaten anlegen | 3J | 3487 | 44 % | −1,3 % | −12,2 % | +8,9 % | 0 % |
-| ETF früh: −5/−10/−15/−20/−25 %, je 20 % | Rest auf Tagesgeld (2 %) | 5J | 2913 | 43 % | −1,5 % | −13,0 % | +8,7 % | 0 % |
+| ETF früh: −5/−10/−15/−20/−25 %, je 20 % | Rest nach 12 Monaten anlegen | 3J | 3487 | 44 % | −1,3 % | −12,2 % | +8,8 % | 0 % |
+| ETF früh: −5/−10/−15/−20/−25 %, je 20 % | Rest auf Tagesgeld (2 %) | 5J | 2913 | 43 % | −1,5 % | −13,0 % | +8,6 % | 0 % |
 | ETF früh: −5/−10/−15/−20/−25 %, je 20 % | Rest nach 12 Monaten anlegen | 5J | 2913 | 44 % | −1,4 % | −12,3 % | +8,9 % | 0 % |
 | ETF: −10 % = 50 %, −15 % = 25 %, −20 % = 25 % | Rest auf Tagesgeld (2 %) | 3J | 3487 | 49 % | −0,3 % | −18,0 % | +9,4 % | 6 % |
 | ETF: −10 % = 50 %, −15 % = 25 %, −20 % = 25 % | Rest nach 12 Monaten anlegen | 3J | 3487 | 51 % | +0,0 % | −15,5 % | +9,7 % | 0 % |
@@ -111,6 +111,56 @@ Typische Schwankung (Median): 29 % pro Jahr. Anteil der Tage mindestens x % unte
 | Schwankung tief: 0,75/1/1,5/2/2,5 × Volatilität | Rest nach 12 Monaten anlegen | 3J | 56735 | 37 % | −7,6 % | −34,3 % | +34,1 % | 0 % |
 | Schwankung tief: 0,75/1/1,5/2/2,5 × Volatilität | Rest auf Tagesgeld (2 %) | 5J | 52443 | 29 % | −20,5 % | −59,4 % | +38,1 % | 56 % |
 | Schwankung tief: 0,75/1/1,5/2/2,5 × Volatilität | Rest nach 12 Monaten anlegen | 5J | 52443 | 37 % | −7,7 % | −34,5 % | +34,4 % | 0 % |
+
+## 1c. Sparplan 120 €/Monat plus einmalige Reserve 1.000 €
+
+Euro-ETFs an Xetra inkl. Dividenden, 2010-05-19 bis 2026-11-11 (16.6 Jahre). Jeder Monatsanfang ab dem zweiten Jahr ist ein Startpunkt. Nicht angelegte Reserve liegt auf Tagesgeld (2 %). Rückgänge gemessen am 12-Monats-Hoch des Hauptwerts.
+
+### Die Aufteilungen selbst
+
+| Aufteilung | Rendite pro Jahr | Schwankung | größter Rückgang | Tage über −30 % | schlechteste 12 Monate | beste 12 Monate |
+|---|---|---|---|---|---|---|
+| 100 % Welt | +12,1 % | 15 % | −34 % | 0 % | −18,5 % | +60,3 % |
+| 70 % Welt, 30 % S&P 500 | +12,6 % | 15 % | −34 % | 0 % | −17,6 % | +60,6 % |
+| 70 % Welt, 30 % Nasdaq 100 | +14,2 % | 16 % | −32 % | 0 % | −18,5 % | +63,9 % |
+| 100 % S&P 500 | +13,3 % | 17 % | −34 % | 0 % | −26,7 % | +61,4 % |
+| 100 % Nasdaq 100 | +18,9 % | 19 % | −31 % | 0 % | −29,1 % | +71,4 % |
+
+### Nach 5 Jahren
+
+| Aufteilung | Reserve | Starts | eingezahlt | Endwert Median | schlechte 10 % | schlechtester | bester | im Minus | Depot-Rückgang über 30 % | besser als „sofort“ | Median ggü. „sofort“ | Reserve nie gebraucht |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 100 % Welt | Reserve sofort anlegen | 126 | 8.200 € | 11.504 € | 10.379 € | 8.146 € | 13.202 € | 1 % | 40 % | – | – | 0 % |
+| 100 % Welt | Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 € | 126 | 8.200 € | 11.193 € | 10.315 € | 8.254 € | 13.339 € | 0 % | 10 % | 36 % | −258 € | 0 % |
+| 100 % Welt | −10 % → 500 €, −15 % → 250 €, −20 % → 250 € | 126 | 8.200 € | 11.353 € | 10.419 € | 8.310 € | 13.085 € | 0 % | 32 % | 38 % | −83 € | 0 % |
+| 100 % Welt | 500 € sofort, Rest bei −5/−10/−15/−20 % je 125 € | 126 | 8.200 € | 11.432 € | 10.397 € | 8.216 € | 13.153 € | 0 % | 36 % | 40 % | −25 € | 0 % |
+| 100 % Welt | Reserve nie anlegen (bleibt auf Tagesgeld) | 126 | 8.200 € | 10.801 € | 9.978 € | 8.167 € | 12.361 € | 1 % | 0 % | 1 % | −665 € | 100 % |
+| 70 % Welt, 30 % S&P 500 | Reserve sofort anlegen | 126 | 8.200 € | 11.758 € | 10.608 € | 8.392 € | 13.575 € | 0 % | 40 % | – | – | 0 % |
+| 70 % Welt, 30 % S&P 500 | Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 € | 126 | 8.200 € | 11.333 € | 10.549 € | 8.466 € | 13.626 € | 0 % | 11 % | 32 % | −308 € | 0 % |
+| 70 % Welt, 30 % Nasdaq 100 | Reserve sofort anlegen | 126 | 8.200 € | 12.249 € | 11.216 € | 9.119 € | 14.942 € | 0 % | 29 % | – | – | 0 % |
+| 70 % Welt, 30 % Nasdaq 100 | Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 € | 126 | 8.200 € | 11.770 € | 10.973 € | 9.123 € | 14.614 € | 0 % | 0 % | 20 % | −393 € | 0 % |
+| 100 % S&P 500 | Reserve sofort anlegen | 126 | 8.200 € | 12.342 € | 11.259 € | 8.965 € | 14.444 € | 0 % | 40 % | – | – | 0 % |
+| 100 % S&P 500 | Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 € | 126 | 8.200 € | 11.714 € | 10.950 € | 8.868 € | 14.295 € | 0 % | 14 % | 19 % | −392 € | 0 % |
+| 100 % Nasdaq 100 | Reserve sofort anlegen | 126 | 8.200 € | 14.110 € | 12.600 € | 10.778 € | 18.999 € | 0 % | 0 % | – | – | 0 % |
+| 100 % Nasdaq 100 | Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 € | 126 | 8.200 € | 13.202 € | 11.991 € | 10.190 € | 17.642 € | 0 % | 0 % | 0 % | −681 € | 0 % |
+
+### Nach 10 Jahren
+
+| Aufteilung | Reserve | Starts | eingezahlt | Endwert Median | schlechte 10 % | schlechtester | bester | im Minus | Depot-Rückgang über 30 % | besser als „sofort“ | Median ggü. „sofort“ | Reserve nie gebraucht |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 100 % Welt | Reserve sofort anlegen | 67 | 15.400 € | 29.711 € | 26.717 € | 26.246 € | 34.052 € | 0 % | 100 % | – | – | 0 % |
+| 100 % Welt | Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 € | 67 | 15.400 € | 29.488 € | 26.154 € | 25.677 € | 32.834 € | 0 % | 88 % | 12 % | −574 € | 0 % |
+| 100 % Welt | −10 % → 500 €, −15 % → 250 €, −20 % → 250 € | 67 | 15.400 € | 29.679 € | 26.413 € | 25.817 € | 33.326 € | 0 % | 100 % | 25 % | −332 € | 0 % |
+| 100 % Welt | 500 € sofort, Rest bei −5/−10/−15/−20 % je 125 € | 67 | 15.400 € | 29.752 € | 26.598 € | 26.108 € | 33.689 € | 0 % | 100 % | 25 % | −135 € | 0 % |
+| 100 % Welt | Reserve nie anlegen (bleibt auf Tagesgeld) | 67 | 15.400 € | 27.961 € | 25.247 € | 24.762 € | 31.375 € | 0 % | 57 % | 0 % | −1.776 € | 100 % |
+| 70 % Welt, 30 % S&P 500 | Reserve sofort anlegen | 67 | 15.400 € | 31.157 € | 28.190 € | 27.404 € | 36.130 € | 0 % | 100 % | – | – | 0 % |
+| 70 % Welt, 30 % S&P 500 | Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 € | 67 | 15.400 € | 30.673 € | 27.425 € | 26.777 € | 34.294 € | 0 % | 91 % | 12 % | −750 € | 0 % |
+| 70 % Welt, 30 % Nasdaq 100 | Reserve sofort anlegen | 67 | 15.400 € | 34.290 € | 31.002 € | 29.749 € | 42.267 € | 0 % | 100 % | – | – | 0 % |
+| 70 % Welt, 30 % Nasdaq 100 | Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 € | 67 | 15.400 € | 33.428 € | 29.768 € | 28.354 € | 39.720 € | 0 % | 49 % | 0 % | −1.178 € | 0 % |
+| 100 % S&P 500 | Reserve sofort anlegen | 67 | 15.400 € | 34.347 € | 31.296 € | 29.605 € | 40.980 € | 0 % | 100 % | – | – | 0 % |
+| 100 % S&P 500 | Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 € | 67 | 15.400 € | 33.263 € | 29.760 € | 28.884 € | 39.303 € | 0 % | 96 % | 4 % | −1.282 € | 0 % |
+| 100 % Nasdaq 100 | Reserve sofort anlegen | 67 | 15.400 € | 44.689 € | 40.341 € | 37.194 € | 61.437 € | 0 % | 0 % | – | – | 0 % |
+| 100 % Nasdaq 100 | Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 € | 67 | 15.400 € | 42.323 € | 37.661 € | 34.234 € | 56.047 € | 0 % | 0 % | 0 % | −2.992 € | 0 % |
 
 ## 2. Hat die Punktzahl etwas vorhergesagt?
 

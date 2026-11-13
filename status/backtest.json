@@ -1,5 +1,5 @@
 {
- "created": "2026-11-13T00:55+00:00",
+ "created": "2026-11-13T01:11+00:00",
  "pyramid": [
   {
    "series": "MSCI World (iShares, in €)",
@@ -430,7 +430,7 @@
      "5": 0.426,
      "10": 0.241,
      "15": 0.142,
-     "20": 0.089,
+     "20": 0.088,
      "30": 0.035,
      "40": 0.018,
      "50": 0.008
@@ -443,44 +443,44 @@
      "3J_tagesgeld": {
       "instruments": 24,
       "windows": 3487,
-      "win_share": 0.384,
-      "median_diff": -0.0687,
-      "mean_diff": -0.0634,
+      "win_share": 0.383,
+      "median_diff": -0.069,
+      "mean_diff": -0.0637,
       "p10_diff": -0.2668,
-      "p90_diff": 0.1708,
+      "p90_diff": 0.1703,
       "inst_median_diff": -0.073,
       "avg_cash_left": 0.345
      },
      "3J_nach_12M": {
       "instruments": 24,
       "windows": 3487,
-      "win_share": 0.401,
-      "median_diff": -0.0415,
-      "mean_diff": -0.0294,
+      "win_share": 0.4,
+      "median_diff": -0.0416,
+      "mean_diff": -0.0295,
       "p10_diff": -0.1842,
-      "p90_diff": 0.1636,
+      "p90_diff": 0.1631,
       "inst_median_diff": -0.0426,
       "avg_cash_left": 0.0
      },
      "5J_tagesgeld": {
       "instruments": 24,
       "windows": 2913,
-      "win_share": 0.433,
-      "median_diff": -0.0387,
-      "mean_diff": -0.0561,
+      "win_share": 0.432,
+      "median_diff": -0.0391,
+      "mean_diff": -0.0566,
       "p10_diff": -0.297,
-      "p90_diff": 0.184,
+      "p90_diff": 0.1836,
       "inst_median_diff": -0.0736,
       "avg_cash_left": 0.137
      },
      "5J_nach_12M": {
       "instruments": 24,
       "windows": 2913,
-      "win_share": 0.404,
-      "median_diff": -0.0411,
-      "mean_diff": -0.0274,
+      "win_share": 0.403,
+      "median_diff": -0.0414,
+      "mean_diff": -0.0276,
       "p10_diff": -0.1857,
-      "p90_diff": 0.1724,
+      "p90_diff": 0.172,
       "inst_median_diff": -0.0356,
       "avg_cash_left": 0.0
      }
@@ -494,7 +494,7 @@
       "median_diff": -0.0178,
       "mean_diff": -0.0237,
       "p10_diff": -0.1282,
-      "p90_diff": 0.0843,
+      "p90_diff": 0.0842,
       "inst_median_diff": -0.0152,
       "avg_cash_left": 0.014
      },
@@ -503,9 +503,9 @@
       "windows": 3487,
       "win_share": 0.444,
       "median_diff": -0.0131,
-      "mean_diff": -0.0181,
+      "mean_diff": -0.0182,
       "p10_diff": -0.122,
-      "p90_diff": 0.0887,
+      "p90_diff": 0.0885,
       "inst_median_diff": -0.0092,
       "avg_cash_left": 0.0
      },
@@ -514,9 +514,9 @@
       "windows": 2913,
       "win_share": 0.43,
       "median_diff": -0.0151,
-      "mean_diff": -0.022,
+      "mean_diff": -0.0221,
       "p10_diff": -0.1304,
-      "p90_diff": 0.0869,
+      "p90_diff": 0.0864,
       "inst_median_diff": -0.0179,
       "avg_cash_left": 0.0
      },
@@ -527,7 +527,7 @@
       "median_diff": -0.014,
       "mean_diff": -0.0186,
       "p10_diff": -0.1228,
-      "p90_diff": 0.0887,
+      "p90_diff": 0.0886,
       "inst_median_diff": -0.0107,
       "avg_cash_left": 0.0
      }
@@ -698,7 +698,7 @@
       "win_share": 0.547,
       "median_diff": 0.0001,
       "mean_diff": -0.0361,
-      "p10_diff": -0.2909,
+      "p10_diff": -0.2908,
       "p90_diff": 0.182,
       "inst_median_diff": 0.0001,
       "avg_cash_left": 0.082
@@ -709,8 +709,8 @@
       "win_share": 0.545,
       "median_diff": 0.0001,
       "mean_diff": -0.0234,
-      "p10_diff": -0.2302,
-      "p90_diff": 0.1678,
+      "p10_diff": -0.2301,
+      "p90_diff": 0.1679,
       "inst_median_diff": 0.0001,
       "avg_cash_left": 0.0
      },
@@ -721,7 +721,7 @@
       "median_diff": 0.0001,
       "mean_diff": -0.0388,
       "p10_diff": -0.2998,
-      "p90_diff": 0.1837,
+      "p90_diff": 0.1836,
       "inst_median_diff": 0.0001,
       "avg_cash_left": 0.019
      },
@@ -731,7 +731,7 @@
       "win_share": 0.538,
       "median_diff": 0.0001,
       "mean_diff": -0.0245,
-      "p10_diff": -0.2332,
+      "p10_diff": -0.2331,
       "p90_diff": 0.1696,
       "inst_median_diff": 0.0001,
       "avg_cash_left": 0.0
@@ -744,9 +744,9 @@
       "windows": 56735,
       "win_share": 0.412,
       "median_diff": -0.083,
-      "mean_diff": -0.0478,
+      "mean_diff": -0.0477,
       "p10_diff": -0.434,
-      "p90_diff": 0.4109,
+      "p90_diff": 0.411,
       "inst_median_diff": -0.0682,
       "avg_cash_left": 0.413
      },
@@ -754,7 +754,7 @@
       "instruments": 185,
       "windows": 56735,
       "win_share": 0.42,
-      "median_diff": -0.0461,
+      "median_diff": -0.046,
       "mean_diff": -0.0224,
       "p10_diff": -0.2918,
       "p90_diff": 0.3018,
@@ -765,10 +765,10 @@
       "instruments": 180,
       "windows": 52443,
       "win_share": 0.413,
-      "median_diff": -0.0917,
-      "mean_diff": -0.0617,
+      "median_diff": -0.0915,
+      "mean_diff": -0.0616,
       "p10_diff": -0.486,
-      "p90_diff": 0.4266,
+      "p90_diff": 0.4268,
       "inst_median_diff": -0.0717,
       "avg_cash_left": 0.252
      },
@@ -777,7 +777,7 @@
       "windows": 52443,
       "win_share": 0.418,
       "median_diff": -0.0481,
-      "mean_diff": -0.0229,
+      "mean_diff": -0.0228,
       "p10_diff": -0.2934,
       "p90_diff": 0.3053,
       "inst_median_diff": -0.0452,
@@ -880,6 +880,485 @@
     }
    }
   }
+ },
+ "plans": {
+  "from": "2010-05-19",
+  "to": "2026-11-11",
+  "years": 16.6,
+  "mixes": {
+   "welt": {
+    "label": "100 % Welt",
+    "index": {
+     "cagr": 0.121,
+     "max_dd": 0.3363,
+     "days_over30": 0.0,
+     "worst_12m": -0.1848,
+     "best_12m": 0.6027,
+     "vol": 0.1535
+    },
+    "5J": {
+     "sofort": {
+      "label": "Reserve sofort anlegen",
+      "windows": 126,
+      "paid": 8200,
+      "median": 11504,
+      "p10": 10379,
+      "worst": 8146,
+      "best": 13202,
+      "loss_share": 0.008,
+      "dd_median": 0.2,
+      "dd_over30": 0.397,
+      "cash_left": 0,
+      "never_used": 0.0
+     },
+     "deine": {
+      "label": "Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 €",
+      "windows": 126,
+      "paid": 8200,
+      "median": 11193,
+      "p10": 10315,
+      "worst": 8254,
+      "best": 13339,
+      "loss_share": 0.0,
+      "dd_median": 0.176,
+      "dd_over30": 0.095,
+      "cash_left": 346,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.365,
+      "vs_sofort_median_eur": -258
+     },
+     "zehn_50": {
+      "label": "−10 % → 500 €, −15 % → 250 €, −20 % → 250 €",
+      "windows": 126,
+      "paid": 8200,
+      "median": 11353,
+      "p10": 10419,
+      "worst": 8310,
+      "best": 13085,
+      "loss_share": 0.0,
+      "dd_median": 0.195,
+      "dd_over30": 0.325,
+      "cash_left": 28,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.381,
+      "vs_sofort_median_eur": -83
+     },
+     "haelfte": {
+      "label": "500 € sofort, Rest bei −5/−10/−15/−20 % je 125 €",
+      "windows": 126,
+      "paid": 8200,
+      "median": 11432,
+      "p10": 10397,
+      "worst": 8216,
+      "best": 13153,
+      "loss_share": 0.0,
+      "dd_median": 0.198,
+      "dd_over30": 0.357,
+      "cash_left": 13,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.397,
+      "vs_sofort_median_eur": -25
+     },
+     "nie": {
+      "label": "Reserve nie anlegen (bleibt auf Tagesgeld)",
+      "windows": 126,
+      "paid": 8200,
+      "median": 10801,
+      "p10": 9978,
+      "worst": 8167,
+      "best": 12361,
+      "loss_share": 0.008,
+      "dd_median": 0.164,
+      "dd_over30": 0.0,
+      "cash_left": 1104,
+      "never_used": 1.0,
+      "vs_sofort_win": 0.008,
+      "vs_sofort_median_eur": -665
+     }
+    },
+    "10J": {
+     "sofort": {
+      "label": "Reserve sofort anlegen",
+      "windows": 67,
+      "paid": 15400,
+      "median": 29711,
+      "p10": 26717,
+      "worst": 26246,
+      "best": 34052,
+      "loss_share": 0.0,
+      "dd_median": 0.33,
+      "dd_over30": 1.0,
+      "cash_left": 0,
+      "never_used": 0.0
+     },
+     "deine": {
+      "label": "Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 €",
+      "windows": 67,
+      "paid": 15400,
+      "median": 29488,
+      "p10": 26154,
+      "worst": 25677,
+      "best": 32834,
+      "loss_share": 0.0,
+      "dd_median": 0.317,
+      "dd_over30": 0.881,
+      "cash_left": 95,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.119,
+      "vs_sofort_median_eur": -574
+     },
+     "zehn_50": {
+      "label": "−10 % → 500 €, −15 % → 250 €, −20 % → 250 €",
+      "windows": 67,
+      "paid": 15400,
+      "median": 29679,
+      "p10": 26413,
+      "worst": 25817,
+      "best": 33326,
+      "loss_share": 0.0,
+      "dd_median": 0.329,
+      "dd_over30": 1.0,
+      "cash_left": 34,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.254,
+      "vs_sofort_median_eur": -332
+     },
+     "haelfte": {
+      "label": "500 € sofort, Rest bei −5/−10/−15/−20 % je 125 €",
+      "windows": 67,
+      "paid": 15400,
+      "median": 29752,
+      "p10": 26598,
+      "worst": 26108,
+      "best": 33689,
+      "loss_share": 0.0,
+      "dd_median": 0.33,
+      "dd_over30": 1.0,
+      "cash_left": 15,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.254,
+      "vs_sofort_median_eur": -135
+     },
+     "nie": {
+      "label": "Reserve nie anlegen (bleibt auf Tagesgeld)",
+      "windows": 67,
+      "paid": 15400,
+      "median": 27961,
+      "p10": 25247,
+      "worst": 24762,
+      "best": 31375,
+      "loss_share": 0.0,
+      "dd_median": 0.303,
+      "dd_over30": 0.567,
+      "cash_left": 1219,
+      "never_used": 1.0,
+      "vs_sofort_win": 0.0,
+      "vs_sofort_median_eur": -1776
+     }
+    }
+   },
+   "welt_sp": {
+    "label": "70 % Welt, 30 % S&P 500",
+    "index": {
+     "cagr": 0.1257,
+     "max_dd": 0.3367,
+     "days_over30": 0.0,
+     "worst_12m": -0.1765,
+     "best_12m": 0.6061,
+     "vol": 0.1534
+    },
+    "5J": {
+     "sofort": {
+      "label": "Reserve sofort anlegen",
+      "windows": 126,
+      "paid": 8200,
+      "median": 11758,
+      "p10": 10608,
+      "worst": 8392,
+      "best": 13575,
+      "loss_share": 0.0,
+      "dd_median": 0.206,
+      "dd_over30": 0.397,
+      "cash_left": 0,
+      "never_used": 0.0
+     },
+     "deine": {
+      "label": "Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 €",
+      "windows": 126,
+      "paid": 8200,
+      "median": 11333,
+      "p10": 10549,
+      "worst": 8466,
+      "best": 13626,
+      "loss_share": 0.0,
+      "dd_median": 0.181,
+      "dd_over30": 0.111,
+      "cash_left": 346,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.317,
+      "vs_sofort_median_eur": -308
+     }
+    },
+    "10J": {
+     "sofort": {
+      "label": "Reserve sofort anlegen",
+      "windows": 67,
+      "paid": 15400,
+      "median": 31157,
+      "p10": 28190,
+      "worst": 27404,
+      "best": 36130,
+      "loss_share": 0.0,
+      "dd_median": 0.331,
+      "dd_over30": 1.0,
+      "cash_left": 0,
+      "never_used": 0.0
+     },
+     "deine": {
+      "label": "Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 €",
+      "windows": 67,
+      "paid": 15400,
+      "median": 30673,
+      "p10": 27425,
+      "worst": 26777,
+      "best": 34294,
+      "loss_share": 0.0,
+      "dd_median": 0.318,
+      "dd_over30": 0.91,
+      "cash_left": 95,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.119,
+      "vs_sofort_median_eur": -750
+     }
+    }
+   },
+   "welt_ndx": {
+    "label": "70 % Welt, 30 % Nasdaq 100",
+    "index": {
+     "cagr": 0.1421,
+     "max_dd": 0.3211,
+     "days_over30": 0.0,
+     "worst_12m": -0.1848,
+     "best_12m": 0.6386,
+     "vol": 0.1603
+    },
+    "5J": {
+     "sofort": {
+      "label": "Reserve sofort anlegen",
+      "windows": 126,
+      "paid": 8200,
+      "median": 12249,
+      "p10": 11216,
+      "worst": 9119,
+      "best": 14942,
+      "loss_share": 0.0,
+      "dd_median": 0.217,
+      "dd_over30": 0.286,
+      "cash_left": 0,
+      "never_used": 0.0
+     },
+     "deine": {
+      "label": "Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 €",
+      "windows": 126,
+      "paid": 8200,
+      "median": 11770,
+      "p10": 10973,
+      "worst": 9123,
+      "best": 14614,
+      "loss_share": 0.0,
+      "dd_median": 0.189,
+      "dd_over30": 0.0,
+      "cash_left": 346,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.198,
+      "vs_sofort_median_eur": -393
+     }
+    },
+    "10J": {
+     "sofort": {
+      "label": "Reserve sofort anlegen",
+      "windows": 67,
+      "paid": 15400,
+      "median": 34290,
+      "p10": 31002,
+      "worst": 29749,
+      "best": 42267,
+      "loss_share": 0.0,
+      "dd_median": 0.311,
+      "dd_over30": 1.0,
+      "cash_left": 0,
+      "never_used": 0.0
+     },
+     "deine": {
+      "label": "Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 €",
+      "windows": 67,
+      "paid": 15400,
+      "median": 33428,
+      "p10": 29768,
+      "worst": 28354,
+      "best": 39720,
+      "loss_share": 0.0,
+      "dd_median": 0.3,
+      "dd_over30": 0.493,
+      "cash_left": 95,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.0,
+      "vs_sofort_median_eur": -1178
+     }
+    }
+   },
+   "sp": {
+    "label": "100 % S&P 500",
+    "index": {
+     "cagr": 0.1332,
+     "max_dd": 0.3378,
+     "days_over30": 0.002,
+     "worst_12m": -0.2665,
+     "best_12m": 0.6135,
+     "vol": 0.1701
+    },
+    "5J": {
+     "sofort": {
+      "label": "Reserve sofort anlegen",
+      "windows": 126,
+      "paid": 8200,
+      "median": 12342,
+      "p10": 11259,
+      "worst": 8965,
+      "best": 14444,
+      "loss_share": 0.0,
+      "dd_median": 0.217,
+      "dd_over30": 0.397,
+      "cash_left": 0,
+      "never_used": 0.0
+     },
+     "deine": {
+      "label": "Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 €",
+      "windows": 126,
+      "paid": 8200,
+      "median": 11714,
+      "p10": 10950,
+      "worst": 8868,
+      "best": 14295,
+      "loss_share": 0.0,
+      "dd_median": 0.192,
+      "dd_over30": 0.135,
+      "cash_left": 398,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.19,
+      "vs_sofort_median_eur": -392
+     }
+    },
+    "10J": {
+     "sofort": {
+      "label": "Reserve sofort anlegen",
+      "windows": 67,
+      "paid": 15400,
+      "median": 34347,
+      "p10": 31296,
+      "worst": 29605,
+      "best": 40980,
+      "loss_share": 0.0,
+      "dd_median": 0.332,
+      "dd_over30": 1.0,
+      "cash_left": 0,
+      "never_used": 0.0
+     },
+     "deine": {
+      "label": "Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 €",
+      "windows": 67,
+      "paid": 15400,
+      "median": 33263,
+      "p10": 29760,
+      "worst": 28884,
+      "best": 39303,
+      "loss_share": 0.0,
+      "dd_median": 0.318,
+      "dd_over30": 0.955,
+      "cash_left": 104,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.045,
+      "vs_sofort_median_eur": -1282
+     }
+    }
+   },
+   "ndx": {
+    "label": "100 % Nasdaq 100",
+    "index": {
+     "cagr": 0.189,
+     "max_dd": 0.3142,
+     "days_over30": 0.002,
+     "worst_12m": -0.2911,
+     "best_12m": 0.7142,
+     "vol": 0.1933
+    },
+    "5J": {
+     "sofort": {
+      "label": "Reserve sofort anlegen",
+      "windows": 126,
+      "paid": 8200,
+      "median": 14110,
+      "p10": 12600,
+      "worst": 10778,
+      "best": 18999,
+      "loss_share": 0.0,
+      "dd_median": 0.247,
+      "dd_over30": 0.0,
+      "cash_left": 0,
+      "never_used": 0.0
+     },
+     "deine": {
+      "label": "Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 €",
+      "windows": 126,
+      "paid": 8200,
+      "median": 13202,
+      "p10": 11991,
+      "worst": 10190,
+      "best": 17642,
+      "loss_share": 0.0,
+      "dd_median": 0.207,
+      "dd_over30": 0.0,
+      "cash_left": 454,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.0,
+      "vs_sofort_median_eur": -681
+     }
+    },
+    "10J": {
+     "sofort": {
+      "label": "Reserve sofort anlegen",
+      "windows": 67,
+      "paid": 15400,
+      "median": 44689,
+      "p10": 40341,
+      "worst": 37194,
+      "best": 61437,
+      "loss_share": 0.0,
+      "dd_median": 0.281,
+      "dd_over30": 0.0,
+      "cash_left": 0,
+      "never_used": 0.0
+     },
+     "deine": {
+      "label": "Deine Pyramide: −10/−15/−20/−25/−30 % → 100/150/200/250/300 €",
+      "windows": 67,
+      "paid": 15400,
+      "median": 42323,
+      "p10": 37661,
+      "worst": 34234,
+      "best": 56047,
+      "loss_share": 0.0,
+      "dd_median": 0.274,
+      "dd_over30": 0.0,
+      "cash_left": 420,
+      "never_used": 0.0,
+      "vs_sofort_win": 0.0,
+      "vs_sofort_median_eur": -2992
+     }
+    }
+   }
+  },
+  "rules": {}
  },
  "score": {
   "months": [
