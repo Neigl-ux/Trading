@@ -1,0 +1,50 @@
+# Ratgeber-Nachrichten aufs Handy (ntfy): Nachkauf-Stufen sofort (stündliche Prüfung),
+# Lagebericht alle 2 Tage morgens. Liest nur die Kursdatenbank aus dem Cache, ändert sie nicht.
+name: Ratgeber-Benachrichtigungen
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: advisor-push
+  cancel-in-progress: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Kursdatenbank aus dem Cache holen (nur lesen)
+        uses: actions/cache/restore@v4
+        with:
+          path: data/market.sqlite
+          key: marketdb-none
+          restore-keys: marketdb-
+      - name: Gesendete Nachrichten (Zustand) holen
+        uses: actions/cache/restore@v4
+        with:
+          path: data/push_state.json
+          key: pushstate-${{ github.run_id }}
+          restore-keys: pushstate-
+      - name: Nachrichten prüfen und senden
+        run: python -m tradingagent advisor-push
+      - name: Zustand sichern
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/push_state.json
+          key: pushstate-${{ github.run_id }}

@@ -72,7 +72,7 @@ def simulate_pyramid(close: np.ndarray, start: int, end: int, *, cash_rate: floa
         if dd <= 1e-9:
             hit.clear()  # neues 12-Monats-Hoch: Stufen wieder frei
         for k, (thr, share) in enumerate(STAGES):
-            if k in hit or dd < thr:
+            if k in hit or dd < thr - 1e-9:
                 continue
             if allowed is not None and not allowed[i]:
                 continue

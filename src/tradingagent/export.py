@@ -246,6 +246,7 @@ def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, statu
         return box.seal(payload) if box else {"v": 1, "enc": False, "data": payload}
 
     entries = []
+    adv_items = []
     for inst in settings.instruments:
         if not settings.markets[inst.market].enabled:
             continue
@@ -279,8 +280,21 @@ def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, statu
                         "delay_minutes": market_cfg.delay_minutes,
                         "live": live_symbols(inst),
                         **summary})
+        adv_items.append((inst, loader, entries[-1]))
+
+    advisor_file = None
+    try:
+        from . import advisor as advisor_mod
+        adv = advisor_mod.build(storage, now, adv_items, fetch_news=os.environ.get("ADVISOR_NEWS", "1") != "0")
+        (tmp_dir / "advisor.json").write_text(json.dumps(wrap(adv), separators=(",", ":")), encoding="utf-8")
+        advisor_file = "advisor.json"
+        print(f"Ratgeber: {len(adv['values'])} Werte bewertet, Nachrichten-Abfragen: "
+              f"{len(adv['news_errors'])} Fehler" + (f" ({'; '.join(adv['news_errors'])})" if adv['news_errors'] else ""))
+    except Exception as exc:  # noqa: BLE001 - der Ratgeber darf den Kurs-Export nie verhindern
+        print(f"Ratgeber übersprungen: {type(exc).__name__}: {exc}")
 
     index_payload = {
+        "advisor": advisor_file,
         "updated": int(now.timestamp()),
         "instruments": entries,
         "views": [{"key": v.key, "label": v.label, "interval": v.interval,

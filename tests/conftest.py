@@ -44,3 +44,9 @@ def settings(tmp_path: Path):
         {"id": "SAP", "name": "SAP", "market": "xetra", "fakeb": "SAP.DE"},
     ]}))
     return cfg, tmp_path
+
+
+@pytest.fixture(autouse=True)
+def _no_live_news(monkeypatch):
+    """Tests fragen nie echte Nachrichten ab."""
+    monkeypatch.setenv("ADVISOR_NEWS", "0")
