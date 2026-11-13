@@ -176,6 +176,8 @@ def main(argv: list[str] | None = None) -> int:
         func=lambda args: __import__("tradingagent.push", fromlist=["main"]).main())
     sub.add_parser("backtest", help="Rückblick-Test des Ratgebers").set_defaults(
         func=lambda args: __import__("tradingagent.backtest", fromlist=["main"]).main())
+    sub.add_parser("strategien", help="Phase 5: Strategien im Rückblick testen").set_defaults(
+        func=lambda args: __import__("tradingagent.strategy_test", fromlist=["main"]).main())
     sub.add_parser("verify", help="Asset-Datenbank gegen die Quellen prüfen").set_defaults(
         func=lambda args: __import__("tradingagent.verify", fromlist=["main"]).main())
     sub.add_parser("tradegate-check", help="Tradegate-Echtzeitkurse prüfen").set_defaults(

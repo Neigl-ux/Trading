@@ -1,0 +1,9 @@
+[Unit]
+Description=Trading-Agent: Strategien jeden Sonntag neu testen
+
+[Timer]
+OnCalendar=Sun *-*-* 03:17:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=Trading-Agent: Phase 5 – Strategien im Rückblick testen
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=trading
+EnvironmentFile=/etc/trading-agent.env
+Environment=PYTHONPATH=/opt/trading-agent/src
+Environment=TA_EXPORT_DIR=/var/lib/trading-agent/site/data
+Environment=TA_QUOTES_FILE=/var/lib/trading-agent/quotes.json
+WorkingDirectory=/var/lib/trading-agent
+ExecStart=/opt/trading-agent/.venv/bin/python -m tradingagent strategien
+Nice=10
+TimeoutStartSec=2h

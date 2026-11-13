@@ -94,9 +94,10 @@ fi
 echo "== Dienste =="
 install -m 644 "$DIR/server/ta-trigger.service" "$DIR/server/ta-trigger.timer" \
                "$DIR/server/ta-radar.service" "$DIR/server/ta-update.service" "$DIR/server/ta-update.timer" \
-               "$DIR/server/ta-collect.service" "$DIR/server/ta-collect.timer" /etc/systemd/system/
+               "$DIR/server/ta-collect.service" "$DIR/server/ta-collect.timer" \
+               "$DIR/server/ta-strategien.service" "$DIR/server/ta-strategien.timer" /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now ta-trigger.timer ta-update.timer ta-collect.timer >/dev/null
+systemctl enable --now ta-trigger.timer ta-update.timer ta-collect.timer ta-strategien.timer >/dev/null
 systemctl enable ta-radar.service >/dev/null
 systemctl restart ta-radar.service || true
 
