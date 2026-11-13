@@ -218,3 +218,27 @@ def test_push_once_per_stage_and_report_every_two_days():
     st.set_meta("adv_updated", str(int((now + pd.Timedelta(days=2)).timestamp())))
     push.run(st, now + pd.Timedelta(days=2), state, {}, send)
     assert [t for t, _ in sent] == ["Lagebericht Ratgeber"]
+
+
+def test_ladder_matches_day_by_day_pyramid():
+    """Die schnelle Staffel-Simulation muss mit der Tagesschleife übereinstimmen."""
+    rng = np.random.default_rng(7)
+    c = 100 * np.exp(np.cumsum(rng.normal(0, 0.02, 1800)))
+    ls = backtest.LadderSeries(c)
+    lad = backtest.LADDERS["bisher"]
+    for st in (260, 400, 700):
+        for kw in ({}, {"cash_rate": 0.02}, {"deploy_after": 252}):
+            a = backtest.simulate_pyramid(c, st, st + 1000, **kw)
+            b = backtest.simulate_ladder(ls, lad, st, st + 1000, **kw)
+            assert abs(a["value"] - b["value"]) < 1e-9 * max(1, a["value"])
+            assert abs(a["cash_left"] - b["cash_left"]) < 1e-9
+
+
+def test_ladder_upfront_and_sigma():
+    rng = np.random.default_rng(3)
+    c = 100 * np.exp(np.cumsum(rng.normal(0, 0.015, 1500)))
+    ls = backtest.LadderSeries(c)
+    r = backtest.simulate_ladder(ls, backtest.LADDERS["etf_haelfte"], 300, 300)
+    assert abs(r["value"] - 1.0) < 1e-12 and abs(r["cash_left"] - 0.5) < 1e-12
+    r = backtest.simulate_ladder(ls, backtest.LADDERS["sigma"], 300, 1400)
+    assert 0 <= r["cash_left"] <= 1

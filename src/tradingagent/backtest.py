@@ -163,6 +163,158 @@ def run_pyramid(prices: dict[str, pd.DataFrame]) -> list[dict[str, Any]]:
 
 
 # ----------------------------------------------------------------------------
+# 1b. Eigene Staffeln für ETFs und Aktien
+# ----------------------------------------------------------------------------
+# Jede Staffel: Stufen als Rückgang vom 12-Monats-Hoch, entweder fest ("fix") oder als
+# Vielfaches der Schwankung des Werts ("sigma": Jahres-Volatilität der letzten 12 Monate,
+# z. B. 1,0 × 15 % = −15 %). "upfront" = Anteil, der sofort angelegt wird.
+LADDERS: dict[str, dict[str, Any]] = {
+    "bisher": {"label": "Bisher: −10/−15/−20/−25/−30 %", "fix": [0.10, 0.15, 0.20, 0.25, 0.30],
+               "shares": [0.10, 0.15, 0.20, 0.25, 0.30]},
+    "etf_frueh": {"label": "ETF früh: −5/−10/−15/−20/−25 %, je 20 %", "fix": [0.05, 0.10, 0.15, 0.20, 0.25],
+                  "shares": [0.20] * 5},
+    "etf_10_sofort": {"label": "ETF: −10 % = 50 %, −15 % = 25 %, −20 % = 25 %", "fix": [0.10, 0.15, 0.20],
+                      "shares": [0.50, 0.25, 0.25]},
+    "etf_haelfte": {"label": "ETF: Hälfte sofort, Rest bei −5/−10/−15/−20 %", "upfront": 0.5,
+                    "fix": [0.05, 0.10, 0.15, 0.20], "shares": [0.125] * 4},
+    "aktie_spaet": {"label": "Aktie spät: −15/−25/−35/−45/−55 %", "fix": [0.15, 0.25, 0.35, 0.45, 0.55],
+                    "shares": [0.10, 0.15, 0.20, 0.25, 0.30]},
+    "sigma": {"label": "Schwankung: 0,5/0,75/1/1,25/1,5 × Volatilität", "sigma": [0.5, 0.75, 1.0, 1.25, 1.5],
+              "shares": [0.10, 0.15, 0.20, 0.25, 0.30]},
+    "sigma_tief": {"label": "Schwankung tief: 0,75/1/1,5/2/2,5 × Volatilität", "sigma": [0.75, 1.0, 1.5, 2.0, 2.5],
+                   "shares": [0.10, 0.15, 0.20, 0.25, 0.30]},
+}
+LADDER_SETS = {"etf": ["bisher", "etf_frueh", "etf_10_sofort", "etf_haelfte", "sigma"],
+               "aktie": ["bisher", "aktie_spaet", "sigma", "sigma_tief"]}
+REST_MODES = {"tagesgeld": {"label": "Rest auf Tagesgeld (2 %)", "cash_rate": 0.02, "deploy_after": None},
+              "nach_12M": {"label": "Rest nach 12 Monaten anlegen", "cash_rate": 0.02, "deploy_after": 252}}
+
+
+def trailing_vol(close: np.ndarray) -> np.ndarray:
+    r = pd.Series(np.log(close)).diff()
+    return (r.rolling(252, min_periods=126).std() * math.sqrt(252)).to_numpy()
+
+
+class LadderSeries:
+    """Vorberechnung je Wert: Rückgang, Schwankung, Abschnitte zwischen zwei 12-Monats-Hochs."""
+
+    def __init__(self, close: np.ndarray):
+        self.c = close
+        self.high = rolling_high(close)
+        self.dd = 1 - close / self.high
+        self.vol = trailing_vol(close)
+        self.epoch = np.cumsum(self.dd <= 1e-9)  # neues Hoch = neuer Abschnitt, Stufen wieder frei
+        self._cond: dict[tuple, np.ndarray] = {}
+
+    def trigger_days(self, kind: str, x: float) -> np.ndarray:
+        key = (kind, x)
+        if key not in self._cond:
+            thr = x if kind == "fix" else x * self.vol
+            with np.errstate(invalid="ignore"):
+                cond = self.dd >= np.asarray(thr) - 1e-9
+            self._cond[key] = np.nonzero(cond)[0]
+        return self._cond[key]
+
+
+def simulate_ladder(ls: LadderSeries, ladder: dict[str, Any], start: int, end: int, *, cash_rate: float = 0.0,
+                    deploy_after: int | None = None) -> dict[str, float]:
+    """Wie simulate_pyramid, aber für beliebige Staffeln und schnell (Ereignisse statt Tagesschleife)."""
+    c = ls.c
+    up = ladder.get("upfront", 0.0)
+    units, cash = up / c[start], 1.0 - up
+    kind = "fix" if "fix" in ladder else "sigma"
+    events: list[tuple[int, int, float]] = []
+    for k, (x, share) in enumerate(zip(ladder[kind], ladder["shares"])):
+        d = ls.trigger_days(kind, x)
+        d = d[(d >= start) & (d <= end)]
+        if len(d):
+            e = ls.epoch[d]
+            d = d[np.r_[True, e[1:] != e[:-1]]]  # pro Abschnitt nur einmal
+        events += [(int(i), k, share) for i in d]
+    if deploy_after is not None and start + deploy_after <= end:
+        events.append((start + deploy_after, 99, 1.0))
+    events.sort()
+    daily = (1 + cash_rate) ** (1 / 252)
+    t = start - 1  # Zins ab dem Starttag, wie in simulate_pyramid
+    first = None
+    for i, k, share in events:
+        if cash <= 1e-12:
+            break
+        cash *= daily ** (i - t)
+        t = i
+        amt = cash if k == 99 else min(share, cash)
+        units += amt / c[i]
+        cash -= amt
+        first = first if first is not None else i - start
+    cash *= daily ** (end - t)
+    return {"value": units * c[end] + cash, "cash_left": cash, "first_buy_days": -1 if first is None else first}
+
+
+def ladder_study(series: dict[str, np.ndarray], ladder: dict[str, Any], horizon: int, *, cash_rate: float,
+                 deploy_after: int | None) -> dict[str, Any] | None:
+    """Alle Werte einer Art, alle Monatsanfänge: Staffel gegen Sofortanlage derselben 1.000 €."""
+    rel_all, cash_all, per_inst = [], [], []
+    for (c, idx, ls) in series.values():
+        months = pd.Series(np.arange(len(idx)), index=idx).groupby([idx.year, idx.month]).first().to_numpy()
+        starts = [int(i) for i in months if i >= 252 and i + horizon < len(c) and not np.isnan(ls.vol[i])]
+        rel = []
+        for st in starts:
+            end = st + horizon
+            r = simulate_ladder(ls, ladder, st, end, cash_rate=cash_rate, deploy_after=deploy_after)
+            rel.append(r["value"] / (c[end] / c[st]) - 1)
+            cash_all.append(r["cash_left"])
+        if rel:
+            rel_all += rel
+            per_inst.append(float(np.median(rel)))
+    if not rel_all:
+        return None
+    a = np.array(rel_all)
+    return {"instruments": len(per_inst), "windows": len(a), "win_share": round(float(np.mean(a >= 0)), 3),
+            "median_diff": round(float(np.median(a)), 4), "mean_diff": round(float(np.mean(a)), 4),
+            "p10_diff": round(float(np.quantile(a, 0.10)), 4), "p90_diff": round(float(np.quantile(a, 0.90)), 4),
+            "inst_median_diff": round(float(np.median(per_inst)), 4), "avg_cash_left": round(float(np.mean(cash_all)), 3)}
+
+
+def drop_stats(series: dict[str, np.ndarray]) -> dict[str, Any]:
+    """Wie oft fallen die Werte wie tief? Anteil der Tage mit Rückgang ab x % vom 12-Monats-Hoch."""
+    dd = np.concatenate([ls.dd[252:] for (_, _, ls) in series.values()]) if series else np.array([])
+    vol = np.concatenate([ls.vol[252:] for (_, _, ls) in series.values()]) if series else np.array([])
+    vol = vol[~np.isnan(vol)]
+    if not len(dd):
+        return {}
+    return {"days_below": {f"{int(x * 100)}": round(float(np.mean(dd >= x)), 3) for x in (0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.50)},
+            "vol_median": round(float(np.median(vol)), 3) if len(vol) else None}
+
+
+def run_ladders(prices: dict[str, pd.DataFrame], meta: dict[str, dict[str, str]]) -> dict[str, Any]:
+    groups: dict[str, dict[str, Any]] = {"etf": {}, "aktie": {}}
+    for sym, info in meta.items():
+        df = prices.get(sym)
+        if df is None or df.empty or info["kind"] not in groups:
+            continue
+        if info["kind"] == "etf" and (scoring.is_leveraged(info["name"]) or scoring.is_defensive(info["name"])):
+            continue  # Hebel-, Anleihen-, Geldmarkt- und Rohstoff-ETFs gehören nicht in den Vergleich
+        s = df["close"].dropna()
+        s = s[s > 0]
+        if len(s) < 252 + 252 * 3:
+            continue
+        c = s.to_numpy(float)
+        groups[info["kind"]][sym] = (c, s.index, LadderSeries(c))
+    out: dict[str, Any] = {}
+    for kind, series in groups.items():
+        res: dict[str, Any] = {"instruments": len(series), "drops": drop_stats(series), "ladders": {}}
+        for name in LADDER_SETS[kind]:
+            lad = LADDERS[name]
+            res["ladders"][name] = {"label": lad["label"]}
+            for years in (3, 5):
+                for mode, m in REST_MODES.items():
+                    res["ladders"][name][f"{years}J_{mode}"] = ladder_study(
+                        series, lad, 252 * years, cash_rate=m["cash_rate"], deploy_after=m["deploy_after"])
+        out[kind] = res
+    return out
+
+
+# ----------------------------------------------------------------------------
 # 2. Punktzahl
 # ----------------------------------------------------------------------------
 
@@ -282,11 +434,12 @@ def run(loader: Callable[[list[str]], dict[str, pd.DataFrame]] = load_yahoo) -> 
     result = {
         "created": datetime.now(timezone.utc).isoformat(timespec="minutes"),
         "pyramid": run_pyramid(prices),
+        "ladders": run_ladders(prices, meta),
         "score": score_study({k: v for k, v in prices.items() if k in meta}, meta,
                              prices.get("EUNL.DE", pd.DataFrame()).get("close")),
         "limits": [
             "Kurse von Yahoo inklusive Dividenden, in Handelswährung, ohne Gebühren und Steuern.",
-            "Getestet werden Werte, die es heute gibt. Verschwundene Firmen fehlen; das lässt Einzelaktien besser aussehen.",
+            "Getestet werden Werte, die es heute gibt. Verschwundene Firmen fehlen; das lässt Einzelaktien besser aussehen und Nachkäufe bei Aktien zu gut (eine Aktie, die nach −50 % pleiteging, fehlt im Test).",
             "Qualität/Bewertung und Nachrichten fehlen im Test (keine freie Historie).",
             "Startpunkte im Monatsabstand überlappen sich stark; sie sind keine unabhängigen Versuche.",
             "Vergangene Ergebnisse sagen künftige nicht sicher voraus.",
@@ -323,6 +476,35 @@ def report_markdown(r: dict[str, Any]) -> str:
                 lines.append(f"| {label} | {years} | {s['windows']} | {s['win_share'] * 100:.0f} % | {_p(s['median_diff'])} | "
                              f"{_p(s['worst_diff'])} | {_p(s['best_diff'])} | {s['avg_cash_left'] * 100:.0f} % |")
         lines.append("")
+    lad = r.get("ladders") or {}
+    if lad:
+        lines += ["## 1b. Eigene Staffeln für ETFs und Aktien", "",
+                  "Alle ETFs (ohne Hebel, Anleihen, Geldmarkt, Rohstoffe) bzw. alle Aktien der App, jeder Monatsanfang als Start. "
+                  "„Schwankung“ = Stufe als Vielfaches der Jahres-Volatilität des Werts in den 12 Monaten davor. "
+                  "„Vorteil“ = Staffel geteilt durch Sofortanlage, minus 1. Schlechte 10 % = jeder zehnte Fall lag mindestens so weit hinten.", ""]
+        for kind, title in (("etf", "ETFs"), ("aktie", "Aktien")):
+            g = lad.get(kind)
+            if not g:
+                continue
+            dr = g.get("drops") or {}
+            lines.append(f"### {title} ({g['instruments']} Werte)")
+            lines.append("")
+            if dr:
+                db = dr["days_below"]
+                lines.append(f"Typische Schwankung (Median): {dr['vol_median'] * 100:.0f} % pro Jahr. Anteil der Tage mindestens x % unter dem "
+                             f"12-Monats-Hoch: 10 %: {db['10'] * 100:.0f} %, 20 %: {db['20'] * 100:.0f} %, 30 %: {db['30'] * 100:.0f} %, 50 %: {db['50'] * 100:.0f} %.")
+                lines.append("")
+            lines += ["| Staffel | Rest | Zeitraum | Fälle | Staffel besser | Vorteil Median | schlechte 10 % | gute 10 % | Rest unangelegt (Ø) |",
+                      "|---|---|---|---|---|---|---|---|---|"]
+            for name, row in g["ladders"].items():
+                for years in (3, 5):
+                    for mode, m in REST_MODES.items():
+                        x = row.get(f"{years}J_{mode}")
+                        if not x:
+                            continue
+                        lines.append(f"| {row['label']} | {m['label']} | {years}J | {x['windows']} | {x['win_share'] * 100:.0f} % | "
+                                     f"{_p(x['median_diff'])} | {_p(x['p10_diff'])} | {_p(x['p90_diff'])} | {x['avg_cash_left'] * 100:.0f} % |")
+            lines.append("")
     sc = r["score"]
     lines += ["## 2. Hat die Punktzahl etwas vorhergesagt?", ""]
     if "error" in sc:
