@@ -1,0 +1,642 @@
+{
+ "created": "2026-11-13T00:01+00:00",
+ "pyramid": [
+  {
+   "series": "MSCI World (iShares, in €)",
+   "symbol": "EUNL.DE",
+   "years": 17.2,
+   "3J": {
+    "staffel": {
+     "windows": 158,
+     "from": "2010-10-01",
+     "to": "2023-11-01",
+     "win_share": 0.152,
+     "median_diff": -0.1904,
+     "mean_diff": -0.1457,
+     "worst_diff": -0.4136,
+     "best_diff": 0.2633,
+     "avg_cash_left": 0.464,
+     "never_bought_share": 0.0
+    },
+    "staffel_zins2": {
+     "windows": 158,
+     "from": "2010-10-01",
+     "to": "2023-11-01",
+     "win_share": 0.241,
+     "median_diff": -0.1498,
+     "mean_diff": -0.1136,
+     "worst_diff": -0.3817,
+     "best_diff": 0.2651,
+     "avg_cash_left": 0.501,
+     "never_bought_share": 0.0
+    },
+    "staffel_rest_nach_12M": {
+     "windows": 158,
+     "from": "2010-10-01",
+     "to": "2023-11-01",
+     "win_share": 0.291,
+     "median_diff": -0.085,
+     "mean_diff": -0.0635,
+     "worst_diff": -0.2609,
+     "best_diff": 0.2633,
+     "avg_cash_left": 0.0,
+     "never_bought_share": 0.323
+    },
+    "staffel_nur_ab_65": {
+     "windows": 158,
+     "from": "2010-10-01",
+     "to": "2023-11-01",
+     "win_share": 0.139,
+     "median_diff": -0.2337,
+     "mean_diff": -0.1828,
+     "worst_diff": -0.4244,
+     "best_diff": 0.2633,
+     "avg_cash_left": 0.585,
+     "never_bought_share": 0.0
+    }
+   },
+   "5J": {
+    "staffel": {
+     "windows": 134,
+     "from": "2010-10-01",
+     "to": "2021-11-01",
+     "win_share": 0.164,
+     "median_diff": -0.162,
+     "mean_diff": -0.149,
+     "worst_diff": -0.405,
+     "best_diff": 0.2633,
+     "avg_cash_left": 0.171,
+     "never_bought_share": 0.0
+    },
+    "staffel_zins2": {
+     "windows": 134,
+     "from": "2010-10-01",
+     "to": "2021-11-01",
+     "win_share": 0.291,
+     "median_diff": -0.1183,
+     "mean_diff": -0.1114,
+     "worst_diff": -0.3647,
+     "best_diff": 0.2651,
+     "avg_cash_left": 0.209,
+     "never_bought_share": 0.0
+    },
+    "staffel_rest_nach_12M": {
+     "windows": 134,
+     "from": "2010-10-01",
+     "to": "2021-11-01",
+     "win_share": 0.291,
+     "median_diff": -0.0833,
+     "mean_diff": -0.061,
+     "worst_diff": -0.2609,
+     "best_diff": 0.2633,
+     "avg_cash_left": 0.0,
+     "never_bought_share": 0.321
+    },
+    "staffel_nur_ab_65": {
+     "windows": 134,
+     "from": "2010-10-01",
+     "to": "2021-11-01",
+     "win_share": 0.164,
+     "median_diff": -0.2709,
+     "mean_diff": -0.2096,
+     "worst_diff": -0.4944,
+     "best_diff": 0.2633,
+     "avg_cash_left": 0.315,
+     "never_bought_share": 0.0
+    }
+   }
+  },
+  {
+   "series": "S&P 500 inkl. Dividenden",
+   "symbol": "^SP500TR",
+   "years": 36.8,
+   "3J": {
+    "staffel": {
+     "windows": 395,
+     "from": "1991-01-02",
+     "to": "2023-11-01",
+     "win_share": 0.301,
+     "median_diff": -0.2105,
+     "mean_diff": -0.1498,
+     "worst_diff": -0.5607,
+     "best_diff": 0.3271,
+     "avg_cash_left": 0.487,
+     "never_bought_share": 0.185
+    },
+    "staffel_zins2": {
+     "windows": 395,
+     "from": "1991-01-02",
+     "to": "2023-11-01",
+     "win_share": 0.322,
+     "median_diff": -0.1711,
+     "mean_diff": -0.1189,
+     "worst_diff": -0.5349,
+     "best_diff": 0.3454,
+     "avg_cash_left": 0.523,
+     "never_bought_share": 0.185
+    },
+    "staffel_rest_nach_12M": {
+     "windows": 395,
+     "from": "1991-01-02",
+     "to": "2023-11-01",
+     "win_share": 0.271,
+     "median_diff": -0.0931,
+     "mean_diff": -0.0652,
+     "worst_diff": -0.3322,
+     "best_diff": 0.2972,
+     "avg_cash_left": 0.0,
+     "never_bought_share": 0.441
+    },
+    "staffel_nur_ab_65": {
+     "windows": 395,
+     "from": "1991-01-02",
+     "to": "2023-11-01",
+     "win_share": 0.22,
+     "median_diff": -0.2422,
+     "mean_diff": -0.1735,
+     "worst_diff": -0.5607,
+     "best_diff": 0.7402,
+     "avg_cash_left": 0.781,
+     "never_bought_share": 0.362
+    }
+   },
+   "5J": {
+    "staffel": {
+     "windows": 371,
+     "from": "1991-01-02",
+     "to": "2021-11-01",
+     "win_share": 0.323,
+     "median_diff": -0.1996,
+     "mean_diff": -0.1853,
+     "worst_diff": -0.6565,
+     "best_diff": 0.3271,
+     "avg_cash_left": 0.274,
+     "never_bought_share": 0.057
+    },
+    "staffel_zins2": {
+     "windows": 371,
+     "from": "1991-01-02",
+     "to": "2021-11-01",
+     "win_share": 0.372,
+     "median_diff": -0.155,
+     "mean_diff": -0.1478,
+     "worst_diff": -0.6289,
+     "best_diff": 0.342,
+     "avg_cash_left": 0.316,
+     "never_bought_share": 0.057
+    },
+    "staffel_rest_nach_12M": {
+     "windows": 371,
+     "from": "1991-01-02",
+     "to": "2021-11-01",
+     "win_share": 0.272,
+     "median_diff": -0.0935,
+     "mean_diff": -0.0642,
+     "worst_diff": -0.3322,
+     "best_diff": 0.2972,
+     "avg_cash_left": 0.0,
+     "never_bought_share": 0.447
+    },
+    "staffel_nur_ab_65": {
+     "windows": 371,
+     "from": "1991-01-02",
+     "to": "2021-11-01",
+     "win_share": 0.21,
+     "median_diff": -0.2859,
+     "mean_diff": -0.2499,
+     "worst_diff": -0.6565,
+     "best_diff": 0.5023,
+     "avg_cash_left": 0.641,
+     "never_bought_share": 0.224
+    }
+   }
+  },
+  {
+   "series": "DAX",
+   "symbol": "^GDAXI",
+   "years": 37.0,
+   "3J": {
+    "staffel": {
+     "windows": 394,
+     "from": "1991-02-01",
+     "to": "2023-11-01",
+     "win_share": 0.401,
+     "median_diff": -0.0334,
+     "mean_diff": -0.0657,
+     "worst_diff": -0.5986,
+     "best_diff": 0.3378,
+     "avg_cash_left": 0.195,
+     "never_bought_share": 0.0
+    },
+    "staffel_zins2": {
+     "windows": 394,
+     "from": "1991-02-01",
+     "to": "2023-11-01",
+     "win_share": 0.48,
+     "median_diff": -0.01,
+     "mean_diff": -0.0426,
+     "worst_diff": -0.5785,
+     "best_diff": 0.344,
+     "avg_cash_left": 0.215,
+     "never_bought_share": 0.0
+    },
+    "staffel_rest_nach_12M": {
+     "windows": 394,
+     "from": "1991-02-01",
+     "to": "2023-11-01",
+     "win_share": 0.401,
+     "median_diff": -0.0427,
+     "mean_diff": -0.0329,
+     "worst_diff": -0.4211,
+     "best_diff": 0.3378,
+     "avg_cash_left": 0.0,
+     "never_bought_share": 0.124
+    },
+    "staffel_nur_ab_65": {
+     "windows": 394,
+     "from": "1991-02-01",
+     "to": "2023-11-01",
+     "win_share": 0.297,
+     "median_diff": -0.1485,
+     "mean_diff": -0.0915,
+     "worst_diff": -0.6016,
+     "best_diff": 1.6086,
+     "avg_cash_left": 0.552,
+     "never_bought_share": 0.036
+    }
+   },
+   "5J": {
+    "staffel": {
+     "windows": 371,
+     "from": "1991-02-01",
+     "to": "2021-12-01",
+     "win_share": 0.423,
+     "median_diff": -0.0333,
+     "mean_diff": -0.0671,
+     "worst_diff": -0.5381,
+     "best_diff": 0.3378,
+     "avg_cash_left": 0.028,
+     "never_bought_share": 0.0
+    },
+    "staffel_zins2": {
+     "windows": 371,
+     "from": "1991-02-01",
+     "to": "2021-12-01",
+     "win_share": 0.504,
+     "median_diff": 0.0,
+     "mean_diff": -0.0419,
+     "worst_diff": -0.5073,
+     "best_diff": 0.344,
+     "avg_cash_left": 0.036,
+     "never_bought_share": 0.0
+    },
+    "staffel_rest_nach_12M": {
+     "windows": 371,
+     "from": "1991-02-01",
+     "to": "2021-12-01",
+     "win_share": 0.42,
+     "median_diff": -0.0406,
+     "mean_diff": -0.0316,
+     "worst_diff": -0.4211,
+     "best_diff": 0.3378,
+     "avg_cash_left": 0.0,
+     "never_bought_share": 0.129
+    },
+    "staffel_nur_ab_65": {
+     "windows": 371,
+     "from": "1991-02-01",
+     "to": "2021-12-01",
+     "win_share": 0.334,
+     "median_diff": -0.1683,
+     "mean_diff": -0.1448,
+     "worst_diff": -0.6289,
+     "best_diff": 0.6433,
+     "avg_cash_left": 0.296,
+     "never_bought_share": 0.0
+    }
+   }
+  },
+  {
+   "series": "Nasdaq 100",
+   "symbol": "^NDX",
+   "years": 36.8,
+   "3J": {
+    "staffel": {
+     "windows": 395,
+     "from": "1991-01-02",
+     "to": "2023-11-01",
+     "win_share": 0.238,
+     "median_diff": -0.1713,
+     "mean_diff": -0.1439,
+     "worst_diff": -0.5115,
+     "best_diff": 0.3179,
+     "avg_cash_left": 0.205,
+     "never_bought_share": 0.0
+    },
+    "staffel_zins2": {
+     "windows": 395,
+     "from": "1991-01-02",
+     "to": "2023-11-01",
+     "win_share": 0.294,
+     "median_diff": -0.1483,
+     "mean_diff": -0.1248,
+     "worst_diff": -0.4944,
+     "best_diff": 0.3245,
+     "avg_cash_left": 0.225,
+     "never_bought_share": 0.0
+    },
+    "staffel_rest_nach_12M": {
+     "windows": 395,
+     "from": "1991-01-02",
+     "to": "2023-11-01",
+     "win_share": 0.278,
+     "median_diff": -0.0825,
+     "mean_diff": -0.085,
+     "worst_diff": -0.3935,
+     "best_diff": 0.3179,
+     "avg_cash_left": 0.0,
+     "never_bought_share": 0.078
+    },
+    "staffel_nur_ab_65": {
+     "windows": 395,
+     "from": "1991-01-02",
+     "to": "2023-11-01",
+     "win_share": 0.104,
+     "median_diff": -0.2428,
+     "mean_diff": -0.1879,
+     "worst_diff": -0.5292,
+     "best_diff": 2.0769,
+     "avg_cash_left": 0.47,
+     "never_bought_share": 0.025
+    }
+   },
+   "5J": {
+    "staffel": {
+     "windows": 371,
+     "from": "1991-01-02",
+     "to": "2021-11-01",
+     "win_share": 0.226,
+     "median_diff": -0.1847,
+     "mean_diff": -0.1672,
+     "worst_diff": -0.5056,
+     "best_diff": 0.2992,
+     "avg_cash_left": 0.06,
+     "never_bought_share": 0.0
+    },
+    "staffel_zins2": {
+     "windows": 371,
+     "from": "1991-01-02",
+     "to": "2021-11-01",
+     "win_share": 0.272,
+     "median_diff": -0.1599,
+     "mean_diff": -0.1471,
+     "worst_diff": -0.4864,
+     "best_diff": 0.31,
+     "avg_cash_left": 0.073,
+     "never_bought_share": 0.0
+    },
+    "staffel_rest_nach_12M": {
+     "windows": 371,
+     "from": "1991-01-02",
+     "to": "2021-11-01",
+     "win_share": 0.267,
+     "median_diff": -0.0838,
+     "mean_diff": -0.0888,
+     "worst_diff": -0.3935,
+     "best_diff": 0.2992,
+     "avg_cash_left": 0.0,
+     "never_bought_share": 0.084
+    },
+    "staffel_nur_ab_65": {
+     "windows": 371,
+     "from": "1991-01-02",
+     "to": "2021-11-01",
+     "win_share": 0.081,
+     "median_diff": -0.2763,
+     "mean_diff": -0.2276,
+     "worst_diff": -0.5462,
+     "best_diff": 1.5914,
+     "avg_cash_left": 0.226,
+     "never_bought_share": 0.0
+    }
+   }
+  }
+ ],
+ "score": {
+  "months": [
+   "2012-01",
+   "2026-11"
+  ],
+  "instruments": 218,
+  "etf": {
+   "interessant": {
+    "n": 2747,
+    "3M": {
+     "mean": 0.026,
+     "median": 0.0288,
+     "pos_share": 0.692,
+     "n": 2658
+    },
+    "6M": {
+     "mean": 0.0559,
+     "median": 0.0579,
+     "pos_share": 0.735,
+     "n": 2584
+    },
+    "12M": {
+     "mean": 0.1082,
+     "median": 0.0951,
+     "pos_share": 0.767,
+     "n": 2437
+    },
+    "dd12_mean": 0.1547,
+    "dd12_over30": 0.106
+   },
+   "neutral": {
+    "n": 1410,
+    "3M": {
+     "mean": 0.0396,
+     "median": 0.0251,
+     "pos_share": 0.635,
+     "n": 1385
+    },
+    "6M": {
+     "mean": 0.0737,
+     "median": 0.0489,
+     "pos_share": 0.684,
+     "n": 1372
+    },
+    "12M": {
+     "mean": 0.1529,
+     "median": 0.1194,
+     "pos_share": 0.746,
+     "n": 1348
+    },
+    "dd12_mean": 0.1495,
+    "dd12_over30": 0.11
+   },
+   "vorsicht": {
+    "n": 424,
+    "3M": {
+     "mean": -0.0239,
+     "median": -0.0178,
+     "pos_share": 0.471,
+     "n": 418
+    },
+    "6M": {
+     "mean": -0.0409,
+     "median": 0.0002,
+     "pos_share": 0.501,
+     "n": 415
+    },
+    "12M": {
+     "mean": -0.0039,
+     "median": 0.0012,
+     "pos_share": 0.502,
+     "n": 408
+    },
+    "dd12_mean": 0.3717,
+    "dd12_over30": 0.554
+   },
+   "alle": {
+    "n": 4581,
+    "3M": {
+     "mean": 0.0255,
+     "median": 0.0264,
+     "pos_share": 0.654,
+     "n": 4461
+    },
+    "6M": {
+     "mean": 0.0523,
+     "median": 0.0523,
+     "pos_share": 0.697,
+     "n": 4371
+    },
+    "12M": {
+     "mean": 0.1116,
+     "median": 0.0997,
+     "pos_share": 0.735,
+     "n": 4193
+    },
+    "dd12_mean": 0.1741,
+    "dd12_over30": 0.151
+   },
+   "top_vs_all_12M": {
+    "months": 158,
+    "mean": -0.0037,
+    "better_share": 0.69
+   }
+  },
+  "aktie": {
+   "interessant": {
+    "n": 13381,
+    "3M": {
+     "mean": 0.0352,
+     "median": 0.0329,
+     "pos_share": 0.62,
+     "n": 13114
+    },
+    "6M": {
+     "mean": 0.0757,
+     "median": 0.0662,
+     "pos_share": 0.672,
+     "n": 12923
+    },
+    "12M": {
+     "mean": 0.1531,
+     "median": 0.1251,
+     "pos_share": 0.719,
+     "n": 12532
+    },
+    "dd12_mean": 0.2157,
+    "dd12_over30": 0.189
+   },
+   "neutral": {
+    "n": 11019,
+    "3M": {
+     "mean": 0.0498,
+     "median": 0.041,
+     "pos_share": 0.624,
+     "n": 10738
+    },
+    "6M": {
+     "mean": 0.0959,
+     "median": 0.0729,
+     "pos_share": 0.655,
+     "n": 10537
+    },
+    "12M": {
+     "mean": 0.1888,
+     "median": 0.1322,
+     "pos_share": 0.683,
+     "n": 10097
+    },
+    "dd12_mean": 0.253,
+    "dd12_over30": 0.296
+   },
+   "vorsicht": {
+    "n": 6230,
+    "3M": {
+     "mean": 0.044,
+     "median": 0.0303,
+     "pos_share": 0.563,
+     "n": 6026
+    },
+    "6M": {
+     "mean": 0.101,
+     "median": 0.0691,
+     "pos_share": 0.604,
+     "n": 5854
+    },
+    "12M": {
+     "mean": 0.2672,
+     "median": 0.173,
+     "pos_share": 0.678,
+     "n": 5557
+    },
+    "dd12_mean": 0.3062,
+    "dd12_over30": 0.435
+   },
+   "alle": {
+    "n": 30630,
+    "3M": {
+     "mean": 0.0423,
+     "median": 0.0351,
+     "pos_share": 0.61,
+     "n": 29878
+    },
+    "6M": {
+     "mean": 0.088,
+     "median": 0.0689,
+     "pos_share": 0.652,
+     "n": 29314
+    },
+    "12M": {
+     "mean": 0.1884,
+     "median": 0.1339,
+     "pos_share": 0.698,
+     "n": 28186
+    },
+    "dd12_mean": 0.2469,
+    "dd12_over30": 0.276
+   },
+   "top_vs_all_12M": {
+    "months": 166,
+    "mean": -0.0265,
+    "better_share": 0.404
+   }
+  },
+  "benchmark_12M": {
+   "name": "MSCI World (EUNL)",
+   "mean": 0.1314,
+   "median": 0.1261
+  }
+ },
+ "limits": [
+  "Kurse von Yahoo inklusive Dividenden, in Handelswährung, ohne Gebühren und Steuern.",
+  "Getestet werden Werte, die es heute gibt. Verschwundene Firmen fehlen; das lässt Einzelaktien besser aussehen.",
+  "Qualität/Bewertung und Nachrichten fehlen im Test (keine freie Historie).",
+  "Startpunkte im Monatsabstand überlappen sich stark; sie sind keine unabhängigen Versuche.",
+  "Vergangene Ergebnisse sagen künftige nicht sicher voraus."
+ ]
+}
