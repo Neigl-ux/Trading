@@ -1231,7 +1231,7 @@ function ensureChart() {
     crosshair: { mode: 1 },
     // Wischen mit einem Finger zeigt Werte (eigene Steuerung unten), zwei Finger zoomen
     handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: false, vertTouchDrag: false },
-    handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true, axisDoubleClickReset: true },
+    handleScale: { mouseWheel: true, pinch: false, axisPressedMouseMove: true, axisDoubleClickReset: true },
     localization: {
       locale: "de-DE",
       priceFormatter: (p) => numFmt(p * curFactor(unitOf(state.entry))),
@@ -1248,7 +1248,6 @@ function ensureChart() {
   applyChartType();
   state.volume = state.chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "", color: "rgba(133,146,166,.3)", lastValueVisible: false, priceLineVisible: false });
   state.volume.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
-  state.chart.timeScale().subscribeVisibleLogicalRangeChange(syncPan);
   state.chart.subscribeCrosshairMove((param) => {
     if (touching) return; // Fingersteuerung setzt die Infozeile selbst
     const i = param.time !== undefined ? state.timeIndex.get(param.time) : undefined;
@@ -1310,6 +1309,7 @@ function rowAtX(chart, x, rows, timeOf = (r) => shift(r[0])) {
 let touching = false;
 function attachTouch(el) {
   const show = (ev) => {
+    if (ev.touches.length > 1) return end();
     if (ev.touches.length !== 1 || !state.rows.length) return;
     const rect = el.getBoundingClientRect();
     const x = ev.touches[0].clientX - rect.left;
@@ -2273,44 +2273,38 @@ function renderCurrentSub() {
   else renderList();
 }
 
-// ---------- Chart verschieben: Schieberegler unter dem Chart ----------
-// Auf dem Handy ist Wischen mit einem Finger für die Werte-Anzeige reserviert. Der Regler
-// verschiebt den sichtbaren Ausschnitt, ohne den Zoom zu ändern; die Pfeile springen um eine halbe Breite.
-let panBusy = false;
-function panGeometry() {
-  if (!state.chart || !state.rows.length) return null;
-  const r = state.chart.timeScale().getVisibleLogicalRange();
-  if (!r) return null;
-  const width = r.to - r.from;
-  const n = state.rows.length;
-  const min = 0, max = Math.max(0, n - 1 - width + 3); // +3: Abstand rechts wie rightOffset
-  return { r, width, min, max };
+// ---------- Chart verschieben und zoomen mit zwei Fingern ----------
+// Ein Finger zeigt die Werte unter dem Finger. Zwei Finger, die gemeinsam nach links oder rechts
+// gezogen werden, verschieben den Chart; auseinander oder zusammen zoomen sie (Punkt zwischen den Fingern bleibt stehen).
+function attachTwoFinger(el, getChart) {
+  let g = null;
+  const mid = (t) => ({ x: (t[0].clientX + t[1].clientX) / 2, d: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) });
+  el.addEventListener("touchstart", (ev) => {
+    const chart = getChart();
+    if (ev.touches.length !== 2 || !chart) { g = null; return; }
+    const ts = chart.timeScale();
+    const r = ts.getVisibleLogicalRange();
+    const w = ts.width();
+    if (!r || !(w > 0)) return;
+    const m = mid(ev.touches);
+    const left = el.getBoundingClientRect().left;
+    g = { ts, from: r.from, width: r.to - r.from, w, left, x0: m.x, d0: Math.max(20, m.d) };
+    g.anchor = g.from + ((m.x - left) / w) * g.width; // Kerze, die zwischen den Fingern liegt
+  }, { passive: true });
+  el.addEventListener("touchmove", (ev) => {
+    if (!g || ev.touches.length !== 2) return;
+    ev.preventDefault(); // nicht die Seite scrollen oder zoomen
+    const m = mid(ev.touches);
+    const width = Math.max(5, Math.min(5000, g.width * (g.d0 / Math.max(20, m.d))));
+    const from = g.anchor - ((m.x - g.left) / g.w) * width;
+    g.ts.setVisibleLogicalRange({ from, to: from + width });
+  }, { passive: false });
+  const stop = (ev) => { if (ev.touches.length < 2) g = null; };
+  el.addEventListener("touchend", stop, { passive: true });
+  el.addEventListener("touchcancel", stop, { passive: true });
 }
-function syncPan() {
-  if (panBusy) return;
-  const g = panGeometry();
-  const pan = $("pan");
-  if (!g || g.max <= g.min) { pan.disabled = true; pan.value = 1000; return; }
-  pan.disabled = false;
-  pan.value = String(Math.round(Math.min(1, Math.max(0, (g.r.from - g.min) / (g.max - g.min))) * 1000));
-}
-function panTo(fraction) {
-  const g = panGeometry();
-  if (!g) return;
-  const from = g.min + Math.min(1, Math.max(0, fraction)) * (g.max - g.min);
-  panBusy = true;
-  state.chart.timeScale().setVisibleLogicalRange({ from, to: from + g.width });
-  panBusy = false;
-}
-$("pan").addEventListener("input", (ev) => panTo(Number(ev.target.value) / 1000));
-for (const [id, dir] of [["pan-left", -1], ["pan-right", 1]]) {
-  $(id).addEventListener("click", () => {
-    const g = panGeometry();
-    if (!g || g.max <= g.min) return;
-    const from = Math.min(g.max, Math.max(g.min, g.r.from + dir * g.width / 2));
-    state.chart.timeScale().setVisibleLogicalRange({ from, to: from + g.width });
-  });
-}
+attachTwoFinger($("chart"), () => state.chart);
+attachTwoFinger($("dash-chart"), () => dash.chart);
 
 // =====================================================================
 // Startseite (Dashboard): nur Darstellung, alle Daten und Funktionen von oben
@@ -2570,7 +2564,7 @@ async function renderDashChart() {
       timeScale: { borderColor: c("--line"), rightOffset: 3, tickMarkFormatter: (t, type) => tickLabel(t, type) },
       crosshair: { mode: 1 },
       handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: false, vertTouchDrag: false },
-      handleScale: { mouseWheel: true, pinch: true },
+      handleScale: { mouseWheel: true, pinch: false },
       localization: { locale: "de-DE", priceFormatter: (p) => numFmt(p * curFactor(unitOf(dashEntry()))), timeFormatter: (t) => candleLabel(t, dash.ivUsed || "1h") },
     });
     dash.candles = dash.chart.addCandlestickSeries({ upColor: c("--up"), downColor: c("--down"), borderVisible: false, wickUpColor: c("--up"), wickDownColor: c("--down") });
@@ -3328,6 +3322,7 @@ function attachScrub(el, chart, getRows, getSeries, onShow, timeOf = (r) => shif
   });
   const show = (ev) => {
     const rows = getRows();
+    if (ev.touches.length > 1) return end();
     if (ev.touches.length !== 1 || !rows.length) return;
     const x = ev.touches[0].clientX - el.getBoundingClientRect().left;
     const i = rowAtX(chart, x, rows, timeOf);
