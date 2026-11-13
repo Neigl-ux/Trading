@@ -118,8 +118,14 @@ class Job:
     skip: str | None = None
 
 
+# Lücken-Reparatur: Einmal am Tag werden die feinen Kerzen der letzten Tage noch einmal geholt.
+# Fällt ein Lauf aus (z. B. nachts) oder lieferte eine Quelle unvollständig, füllt sich die Lücke
+# so von selbst; doppelte Kerzen entstehen nicht (Speichern per Upsert).
+REPAIR_DAYS = {"5m": 3, "15m": 5, "1h": 10}
+
+
 def _plan(settings: Settings, storage: Storage, inst: Instrument, interval: str, cfg: MarketConfig,
-          now: pd.Timestamp) -> Job:
+          now: pd.Timestamp, repair: bool = False) -> Job:
     chain = cfg.daily_providers if interval == "1d" else cfg.providers
     job = Job(inst, interval, cfg, chain)
     full_refresh = False
@@ -140,6 +146,8 @@ def _plan(settings: Settings, storage: Storage, inst: Instrument, interval: str,
         job.start = now - timedelta(days=backfill.get(interval, 30))
     else:
         job.start = job.last - step * settings.overlap_bars
+        if repair and interval in REPAIR_DAYS:
+            job.start = min(job.start, now - timedelta(days=REPAIR_DAYS[interval]))
     return job
 
 
@@ -166,6 +174,10 @@ def collect(settings: Settings, storage: Storage, providers: dict[str, MarketDat
     summary = RunSummary(started=now)
 
     jobs: list[Job] = []
+    today = now.tz_convert("Europe/Berlin").strftime("%Y-%m-%d")
+    repair = storage.get_meta("intraday_repair_day") != today
+    if repair:
+        summary.notes.append("Lücken-Reparatur: feine Kerzen der letzten Tage werden neu geholt")
     for market_name, cfg in settings.markets.items():
         if not cfg.enabled:
             continue
@@ -173,7 +185,7 @@ def collect(settings: Settings, storage: Storage, providers: dict[str, MarketDat
             tier = settings.tiers.get(inst.tier, {})
             intervals = list(dict.fromkeys([*tier.get("intervals", cfg.intervals), "1d"]))
             for interval in intervals:
-                jobs.append(_plan(settings, storage, inst, interval, cfg, now))
+                jobs.append(_plan(settings, storage, inst, interval, cfg, now, repair))
 
     # Neue Verzeichniswerte nicht alle auf einmal nachladen: höchstens N pro Lauf erstmals füllen,
     # die übrigen kommen in den nächsten Läufen dran (der Lauf bleibt so unter dem Zeitlimit).
@@ -199,6 +211,8 @@ def collect(settings: Settings, storage: Storage, providers: dict[str, MarketDat
     for job in jobs:
         summary.logs.append(_run(settings, storage, providers, job, now))
 
+    if repair:
+        storage.set_meta("intraday_repair_day", today)
     storage.log_run(summary.as_dict())
     return summary
 

@@ -245,3 +245,25 @@ def test_extended_tier_limits_first_backfill(tmp_path):
     assert {log.instrument for log in s.logs if log.skipped is None and log.interval == "1d"} == {f"X{i}" for i in range(5)}
     s2 = collect(settings, store, {"yahoo": Flat()}, now=now + pd.Timedelta(minutes=15))
     assert {"X2", "X3"} <= {log.instrument for log in s2.logs if log.skipped is None}
+
+
+def test_daily_gap_repair_reaches_back(tmp_path):
+    """Erster Lauf des Tages holt die feinen Kerzen der letzten Tage erneut (Lücken füllen)."""
+    import pandas as pd
+    from tradingagent import collector
+    from tradingagent.config import load_settings
+    from tradingagent.storage.sqlite_store import SQLiteStorage
+
+    s = load_settings()
+    st = SQLiteStorage(tmp_path / "db.sqlite")
+    inst = next(i for i in s.instruments if i.tier == "core" and i.market != "krypto")
+    cfg = s.markets[inst.market]
+    now = pd.Timestamp("2026-11-13T17:00Z")
+    idx = pd.date_range(now - pd.Timedelta(hours=2), periods=12, freq="5min")
+    df = pd.DataFrame({"open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "volume": 1.0}, index=idx)
+    st.upsert_bars(inst.id, "5m", df, source="test")
+    normal = collector._plan(s, st, inst, "5m", cfg, now, repair=False)
+    fixed = collector._plan(s, st, inst, "5m", cfg, now, repair=True)
+    if normal.skip:
+        return
+    assert fixed.start <= now - pd.Timedelta(days=3) < normal.start
