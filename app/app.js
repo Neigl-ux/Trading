@@ -417,7 +417,7 @@ function renderStatus() {
 }
 
 // ---------- Tabs ----------
-const TABS = { home: "view-home", markets: "view-markets", portfolio: "view-portfolio", advisor: "view-advisor", sim: "view-sim", status: "view-status" };
+const TABS = { home: "view-home", markets: "view-markets", portfolio: "view-portfolio", advisor: "view-advisor", chat: "view-chat", sim: "view-sim", status: "view-status" };
 // Jeder Wechsel steht im Browserverlauf: Zurück (Handy-Geste oder Pfeil am PC) geht einen Schritt
 // zurück statt die App zu schließen, und Neuladen landet wieder auf derselben Seite.
 const SCROLL_STORE = "ta.scroll";
@@ -469,6 +469,7 @@ function showTab(tab, sub = "list", active = tab) {
   if (tab === "home") renderDash();
   if (tab === "portfolio") renderPortfolio();
   if (tab === "advisor") renderAdvisor();
+  if (tab === "chat") renderChat();
   if (tab === "status") renderSettings();
   if (tab === "markets") {
     renderCatBars();
@@ -1357,7 +1358,7 @@ function showLastInLegend() {
 // - US-Aktien und US-ETFs: Finnhub-Strom (bis zu 50 Werte gleichzeitig, sichtbare zuerst).
 // „Heute“ vergleicht mit demselben Vortageskurs wie die 1D-Anzeige im Chart.
 const LIVE_TICK_MS = 2000;
-const listLive = { timer: null, ws: null, kws: null, run: 0, visible: new Set(), observer: null, rot: 0, busy: false, usd: new Map() };
+const listLive = { timer: null, ws: null, kws: null, run: 0, visible: new Set(), observer: null, rot: 0, busy: false, usd: new Map(), lastPoll: new Map(), turbo: true, wasOpen: false };
 
 // Nur die Beobachtung der gerade gezeichneten Zeilen endet; die Live-Abfragen laufen weiter.
 function stopListLive() {
@@ -1410,28 +1411,37 @@ function ensureAllLive() {
 
 const tgEntries = () => state.index.instruments.filter((e) => rtAvailable(e) && !isCrypto(e));
 
+// Live-Durchlauf über ALLE Tradegate-Werte, ohne dass du scrollen musst:
+// beim Öffnen und zur Börseneröffnung ein schneller Startdurchlauf (≈ 15 Abfragen/s),
+// danach laufend reihum (≈ 5/s), sichtbare Zeilen zuerst. Jeder Wert ist so höchstens
+// ~3 Minuten alt und bleibt „LIVE“. Krypto (Binance/Kraken) und US-Werte (Finnhub) kommen per Stream.
+const LIVE_PAR = 6;
 async function liveTick(run) {
   if (listLive.busy || run !== listLive.run || document.hidden) return;
   listLive.busy = true;
   try {
+    const open = tradegateOpen();
+    if (open && !listLive.wasOpen) { listLive.lastPoll.clear(); listLive.turbo = true; } // Handelsstart: alles neu
+    listLive.wasOpen = open;
     const all = tgEntries();
-    const pri = [];
+    const now = Date.now();
+    const last = (e) => listLive.lastPoll.get(e.id) || 0;
+    const chosen = new Map();
     for (const id of listLive.visible) {
       const r = rowEls.get(id);
-      if (r && rtAvailable(r.entry) && !isCrypto(r.entry) && !fhFresh(r.entry)) pri.push(r.entry);
+      if (r && rtAvailable(r.entry) && !isCrypto(r.entry) && !fhFresh(r.entry) && now - last(r.entry) > 8000) chosen.set(id, r.entry);
+      if (chosen.size >= 8) break;
     }
-    const chosen = new Map(pri.slice(0, 10).map((e) => [e.id, e]));
-    // reihum weitere Werte, auch unsichtbare
-    for (let k = 0; k < all.length && chosen.size < pri.slice(0, 10).length + 4; k++) {
-      const e = all[listLive.rot % all.length];
-      listLive.rot += 1;
-      if (!chosen.has(e.id) && !fhFresh(e)) chosen.set(e.id, e);
-    }
+    const budget = !open ? 3 : listLive.turbo ? 30 : 10;
+    const rest = all.filter((e) => !chosen.has(e.id) && !fhFresh(e)).sort((a, b) => last(a) - last(b));
+    for (const e of rest) { if (chosen.size >= budget) break; chosen.set(e.id, e); }
     const list = [...chosen.values()];
-    for (let i = 0; i < list.length; i += 4) {
+    list.forEach((e) => listLive.lastPoll.set(e.id, now));
+    for (let i = 0; i < list.length; i += LIVE_PAR) {
       if (run !== listLive.run) return;
-      await Promise.all(list.slice(i, i + 4).map((e) => pollOne(e, run)));
+      await Promise.all(list.slice(i, i + LIVE_PAR).map((e) => pollOne(e, run)));
     }
+    if (listLive.turbo && all.every((e) => last(e) > 0 || fhFresh(e))) listLive.turbo = false;
   } finally {
     listLive.busy = false;
   }
@@ -3732,3 +3742,230 @@ function finnhubNewsBox(sym) {
   }).catch((err) => box.replaceChildren(mk("p", "small", `Finnhub-Nachrichten nicht abrufbar (${err.message}).`)));
   return box;
 }
+
+
+// ---------- KI-Chat (Claude API, eigener Schlüssel) ----------
+// Die Anfrage geht direkt vom Gerät an Anthropic. Kein eigener Server liest mit.
+const CHAT_KEY_STORE = "ta.claude.v1";
+const CHAT_LOG_STORE = "ta.chat.v1";
+const CHAT_PRICES = { "claude-haiku-5-5": [0.10, 0.50], "claude-sonnet-5-5": [2.00, 10.00] }; // US-$ je 1 Mio. Tokens (Eingabe, Ausgabe)
+const chat = { key: null, msgs: [], busy: false, ctrl: null, cost: 0, loaded: false };
+const CHAT_SUGGEST = [
+  "Wie funktioniert meine Nachkauf-Pyramide, und wann löst sie aus?",
+  "Was bedeutet es, dass die Punktzahl im Rückblick-Test keine Gewinner findet?",
+  "Wie risikoreich ist mein Portfolio? Was würdest du verbessern?",
+  "Welche Funktion fehlt der App noch für langfristiges Anlegen?",
+];
+
+async function loadChatKey() {
+  try {
+    const box = JSON.parse(localStorage.getItem(CHAT_KEY_STORE) || "null");
+    if (!box) return null;
+    if (box.plain) return box.plain;
+    return state.key ? await openText(state.key, box) : null;
+  } catch { return null; }
+}
+async function saveChatKey(k) {
+  const box = state.key ? await sealText(state.key, k) : { plain: k };
+  localStorage.setItem(CHAT_KEY_STORE, JSON.stringify(box));
+}
+async function loadChatLog() {
+  try {
+    const box = JSON.parse(localStorage.getItem(CHAT_LOG_STORE) || "null");
+    if (!box) return [];
+    const txt = box.plain ? box.plain : state.key ? await openText(state.key, box) : null;
+    const msgs = txt ? JSON.parse(txt) : [];
+    return Array.isArray(msgs) ? msgs : [];
+  } catch { return []; }
+}
+async function saveChatLog() {
+  try {
+    const txt = JSON.stringify(chat.msgs.slice(-40));
+    const box = state.key ? await sealText(state.key, txt) : { plain: txt };
+    localStorage.setItem(CHAT_LOG_STORE, JSON.stringify(box));
+  } catch {}
+}
+
+async function renderChat() {
+  if (!chat.loaded) {
+    chat.key = await loadChatKey();
+    chat.msgs = await loadChatLog();
+    chat.loaded = true;
+  }
+  $("chat-setup").hidden = Boolean(chat.key);
+  $("chat-main").hidden = !chat.key;
+  if (!chat.key) return;
+  $("chat-pf-note").hidden = !$("chat-pf").checked;
+  paintChatLog();
+}
+
+// Kleines, sicheres Markdown: Absätze, Aufzählungen, **fett**, Überschriften. Kein HTML aus der Antwort.
+function mdInline(parent, text) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  for (const part of parts) {
+    if (/^\*\*[^*]+\*\*$/.test(part)) parent.append(mk("strong", null, part.slice(2, -2)));
+    else if (part) parent.append(document.createTextNode(part));
+  }
+}
+function mdRender(text) {
+  const frag = document.createDocumentFragment();
+  let list = null;
+  for (const raw of text.split("\n")) {
+    const line = raw.trimEnd();
+    const bullet = line.match(/^\s*(?:[-*•]|\d+[.)])\s+(.*)$/);
+    if (bullet) {
+      if (!list) { list = mk(/^\s*\d/.test(line) ? "ol" : "ul"); frag.append(list); }
+      const li = mk("li"); mdInline(li, bullet[1]); list.append(li);
+      continue;
+    }
+    list = null;
+    if (!line.trim()) continue;
+    const h = line.match(/^#{1,4}\s+(.*)$/);
+    if (h) { const el = mk("p", "chat-h"); mdInline(el, h[1]); frag.append(el); continue; }
+    if (/^\|/.test(line)) { frag.append(mk("pre", "chat-pre", line)); continue; }
+    const p = mk("p"); mdInline(p, line); frag.append(p);
+  }
+  return frag;
+}
+
+function paintChatLog() {
+  const log = $("chat-log");
+  log.replaceChildren(...chat.msgs.map((m) => {
+    const b = mk("div", `chat-msg ${m.role === "user" ? "me" : "ai"}`);
+    if (m.role === "user") b.textContent = m.content;
+    else b.append(mdRender(m.content || "…"));
+    return b;
+  }));
+  $("chat-suggest").replaceChildren(...(chat.msgs.length ? [] : CHAT_SUGGEST.map((q) => {
+    const c = mk("button", "chip", q); c.type = "button";
+    c.addEventListener("click", () => { $("chat-input").value = q; sendChat(); });
+    return c;
+  })));
+  $("chat-cost").textContent = chat.cost ? `Kosten in diesem Chat: ca. ${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 }).format(chat.cost * 100)} US-Cent.` : "";
+  log.scrollTop = log.scrollHeight;
+}
+
+function chatContext() {
+  const lines = [];
+  const d = adv.data;
+  lines.push("Profil des Nutzers (selbst angegeben): Anlagehorizont 5 bis 10 Jahre; hält einen Rückgang von 30 % aus und sieht Rücksetzer als Kaufgelegenheit; Sparplan 120 € pro Monat; einmalige Reserve von 1.000 € ausschließlich für Nachkäufe bei Kurseinbrüchen von ETFs; kein Krypto im Sparplan; keine Branchenausschlüsse; Depot bei der ING (die App hat keinen Zugriff darauf).");
+  lines.push("Nachkauf-Pyramide des Nutzers: vom 12-Monats-Hoch −10/−15/−20/−25/−30 % → 100/150/200/250/300 € aus der Reserve.");
+  lines.push("Funktionen der App: Märkte-Liste mit über 1.300 Werten (Aktien, ETFs, Krypto, Indizes, Forex, Rohstoffe), Live-Kurse (Tradegate, Binance, Kraken, Finnhub), Charts mit Indikatoren, Top/Flop, Screener, Watchlist, Portfolio (lokal verschlüsselt, CSV-Import), Ratgeber (Punktzahl 0–100 aus Trend 35 %, Risiko 25 %, Qualität 15 %, Handelbarkeit 10 %, Passung 15 %; Sparplan-Vorschlag; Nachkauf-Stufen; Weltlage aus GDELT-Nachrichten; Push über ntfy), Rückblick-Tests. Daten sammelt ein GitHub-Workflow alle 15 Minuten; ein eigener Server ist in Vorbereitung. Geplant: Daytrading-Simulator mit Spielgeld (Phase 7).");
+  if (d) {
+    const v = d.verdict || {};
+    lines.push(`Ratgeber-Stand ${new Date(d.updated * 1000).toLocaleString("de-DE")}: Weltlage ${d.world && d.world.level ? d.world.level : "unbekannt"}.`);
+    if (d.plan && d.plan.items) lines.push("Sparplan-Vorschlag: " + d.plan.items.map((x) => `${advName(x.id)} ${x.eur} € (${x.role})`).join(", ") + (d.plan.mode === "einfach" ? " – einfacher Welt-ETF-Sparplan, weil die Punktzahl im Rückblick-Test den Welt-ETF nicht geschlagen hat." : ""));
+    for (const m of (d.report && d.report.market) || []) lines.push(`${m.label}: ${(m.dd * 100).toFixed(1)} % unter dem 12-Monats-Hoch.`);
+    lines.push(`Rückblick-Test (2012–2026): Punktzahl schlägt Maßstab: ${v.score_beats_benchmark ? "ja" : "nein"}; trennt Risiko: ${v.risk_filter_works ? "ja" : "nein"}. Staffel gegen sofortiges Anlegen (MSCI World, 5 J.): meist leicht schlechter, dämpft aber starke Depot-Rückgänge. Sparplan-Test 2010–2026 (10 J.): 100 % Welt +12,1 %/Jahr, 70 % Welt/30 % Nasdaq 100 +14,2 %/Jahr, 100 % Nasdaq 100 +18,9 %/Jahr (Zeitraum ohne großen Tech-Crash).`);
+  }
+  if ($("chat-pf").checked && pf.data.positions && pf.data.positions.length) {
+    const rows = pf.data.positions.map((p) => ({ p, ...positionValue(p) }));
+    const total = rows.reduce((a, r) => a + (r.value || 0), 0);
+    lines.push("Portfolio des Nutzers (Anteile in %, keine Beträge):");
+    for (const r of rows) {
+      const e = r.e;
+      const v = e && d && d.values ? d.values[e.id] : null;
+      const share = total && r.value ? `${(r.value / total * 100).toFixed(1)} %` : "?";
+      const gain = r.cost && r.value ? `${((r.value / r.cost - 1) * 100).toFixed(1)} % seit Kauf` : "Einstand unbekannt";
+      lines.push(`- ${e ? e.name : r.p.name || r.p.isin} (${e && e.isin ? e.isin : r.p.isin || ""}, ${e ? KIND_LABEL[e.kind] || e.kind : ""}): Anteil ${share}, ${gain}${v ? `, Ratgeber ${Math.round(v.s)} Punkte (${v.g}), Risiko ${v.r}/5, ${(v.dd * 100).toFixed(0)} % unter 12-Monats-Hoch` : ""}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+const CHAT_SYSTEM = `Du bist der KI-Assistent in der privaten Trading-App des Nutzers. Antworte auf Deutsch, klar und knapp, in Alltagssprache; Fachbegriffe kurz erklären.
+Deine Aufgaben: Fragen zu Trading, Börse und langfristigem Anlegen beantworten, das Portfolio und die Strategie des Nutzers einordnen (nur wenn Daten mitgeschickt wurden) und konkrete Verbesserungsvorschläge für die App machen.
+Regeln: Du bist kein Anlageberater und gibst keine persönlichen Kauf- oder Verkaufsaufträge; du erklärst Daten, Abwägungen und Risiken, die Entscheidung trifft der Nutzer. Sei ehrlich, auch wenn die Antwort enttäuscht: keine Gewinnversprechen, keine erfundenen Kurse, Zahlen oder Nachrichten. Aktuelle Kurse und Nachrichten kennst du nur aus dem Kontext unten; sag, wenn dir etwas fehlt. Wenn der Nutzer etwas plant, das über seine Risikogrenze geht (z. B. Hebelprodukte, Konzentration auf eine Aktie, Kredit für Aktien), weise deutlich darauf hin.`;
+
+async function sendChat() {
+  const input = $("chat-input");
+  const text = input.value.trim();
+  if (!text || chat.busy) return;
+  if (!adv.data) { try { await loadAdvisor(); } catch {} }
+  await loadPortfolio();
+  input.value = "";
+  chat.msgs.push({ role: "user", content: text });
+  const answer = { role: "assistant", content: "" };
+  chat.msgs.push(answer);
+  chat.busy = true;
+  $("chat-send").textContent = "Stopp";
+  paintChatLog();
+  const model = $("chat-model").value;
+  chat.ctrl = new AbortController();
+  try {
+    const history = chat.msgs.slice(0, -1).slice(-20).filter((m) => m.content);
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      signal: chat.ctrl.signal,
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": chat.key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({ model, max_tokens: 1500, stream: true,
+        system: `${CHAT_SYSTEM}\n\nKontext aus der App (Stand jetzt):\n${chatContext()}`,
+        messages: history.map((m) => ({ role: m.role, content: m.content })) }),
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { const j = await res.json(); msg = (j.error && j.error.message) || msg; } catch {}
+      throw new Error(res.status === 401 ? "Der API-Schlüssel wurde abgelehnt. Bitte prüfen oder neu eintragen." : res.status === 429 ? "Zu viele Anfragen oder kein Guthaben mehr. Bitte kurz warten bzw. Guthaben bei Anthropic prüfen." : msg);
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "", inTok = 0, outTok = 0, last = 0;
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line.startsWith("data:")) continue;
+        let ev; try { ev = JSON.parse(line.slice(5)); } catch { continue; }
+        if (ev.type === "message_start" && ev.message && ev.message.usage) inTok = ev.message.usage.input_tokens || 0;
+        else if (ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta") answer.content += ev.delta.text;
+        else if (ev.type === "message_delta" && ev.usage) outTok = ev.usage.output_tokens || outTok;
+        else if (ev.type === "error") throw new Error((ev.error && ev.error.message) || "Fehler bei der Antwort");
+      }
+      if (Date.now() - last > 120) { last = Date.now(); paintChatLog(); }
+    }
+    const [pi, po] = CHAT_PRICES[model] || [0, 0];
+    chat.cost += (inTok * pi + outTok * po) / 1e6;
+  } catch (err) {
+    if (err.name !== "AbortError") answer.content += `${answer.content ? "\n\n" : ""}⚠ ${err.message}`;
+  } finally {
+    chat.busy = false;
+    chat.ctrl = null;
+    $("chat-send").textContent = "Senden";
+    if (!answer.content) chat.msgs.pop();
+    paintChatLog();
+    saveChatLog();
+  }
+}
+
+$("chat-form").addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  if (chat.busy && chat.ctrl) chat.ctrl.abort(); else sendChat();
+});
+$("chat-input").addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter" && !ev.shiftKey && window.matchMedia("(pointer: fine)").matches) { ev.preventDefault(); sendChat(); }
+});
+$("chat-pf").addEventListener("change", () => { $("chat-pf-note").hidden = !$("chat-pf").checked; });
+$("chat-new").addEventListener("click", () => { chat.msgs = []; chat.cost = 0; saveChatLog(); paintChatLog(); });
+$("chat-key-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const k = $("chat-key").value.trim();
+  if (!/^sk-ant-/.test(k)) { $("chat-key-state").textContent = "Das sieht nicht wie ein Claude-API-Schlüssel aus (beginnt mit „sk-ant-“)."; return; }
+  await saveChatKey(k);
+  chat.key = k;
+  $("chat-key").value = "";
+  renderChat();
+});
+$("chat-key-remove").addEventListener("click", () => {
+  try { localStorage.removeItem(CHAT_KEY_STORE); } catch {}
+  chat.key = null;
+  renderChat();
+});

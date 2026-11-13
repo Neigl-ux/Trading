@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=21">
+  <link rel="stylesheet" href="style.css?v=22">
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
-  <script type="module" src="app.js?v=21"></script>
+  <script type="module" src="app.js?v=22"></script>
 </head>
 <body>
   <!-- Entsperren -->
@@ -310,6 +310,39 @@
       </div>
     </section>
 
+    <section id="view-chat" class="view" hidden>
+      <div class="page-head"><h2>KI-Chat</h2><span class="page-sub">Fragen zu Trading, Anlegen, deinem Portfolio und Ideen für die App. Antwortet Claude über deinen eigenen Zugang.</span></div>
+      <div id="chat-setup" class="card chat-setup" hidden>
+        <h3>Einmal einrichten</h3>
+        <p class="small">Der Chat nutzt die Claude API von Anthropic mit deinem eigenen API-Schlüssel. Abgerechnet wird pro Nutzung direkt bei Anthropic; eine typische Frage mit dem günstigen Modell kostet deutlich unter einem Cent. Den Schlüssel bekommst du unter console.anthropic.com (Konto anlegen, Guthaben aufladen, „API Keys“). Er bleibt verschlüsselt auf diesem Gerät.</p>
+        <form id="chat-key-form" class="fh-form" autocomplete="off">
+          <label class="visually-hidden" for="chat-key">Claude-API-Schlüssel</label>
+          <input id="chat-key" type="password" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+          <button type="submit">Speichern</button>
+        </form>
+        <p id="chat-key-state" class="small"></p>
+      </div>
+      <div id="chat-main" hidden>
+        <div class="chat-bar">
+          <label class="fld"><span>Modell</span><select id="chat-model">
+            <option value="claude-haiku-5-5">Haiku 5.5 · schnell, sehr günstig</option>
+            <option value="claude-sonnet-5-5">Sonnet 5.5 · gründlicher, teurer</option>
+          </select></label>
+          <label class="chat-pf"><input id="chat-pf" type="checkbox"> Mein Portfolio mitschicken</label>
+          <button id="chat-new" type="button" class="secondary">Neuer Chat</button>
+        </div>
+        <p id="chat-pf-note" class="small" hidden>Mitgeschickt werden Name, ISIN, Anteil in % und Gewinn/Verlust in % je Position, aber keine Stückzahlen und keine Euro-Beträge. Ohne Haken weiß der Chat nichts über dein Depot.</p>
+        <div id="chat-log" class="chat-log" aria-live="polite"></div>
+        <div id="chat-suggest" class="chips chat-suggest"></div>
+        <form id="chat-form" class="chat-form">
+          <label class="visually-hidden" for="chat-input">Deine Frage</label>
+          <textarea id="chat-input" rows="2" placeholder="Frag etwas, z. B. „Was bedeutet ein Rückgang von 20 % für meinen Sparplan?“"></textarea>
+          <button id="chat-send" type="submit">Senden</button>
+        </form>
+        <p class="small chat-foot"><span id="chat-cost"></span> Antworten können falsch sein und sind keine Anlageberatung. Aktuelle Kurse und Nachrichten kennt der Chat nur aus den Ratgeber-Daten der App. <button id="chat-key-remove" type="button" class="linklike">Schlüssel entfernen</button></p>
+      </div>
+    </section>
+
     <!-- Simulator -->
     <section id="view-sim" class="view" hidden>
       <h2>Simulator</h2>
@@ -355,6 +388,7 @@
       <button data-tab="movers" class="desk-only" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l6-6 4 4 6-7M14 8h6v6"/></svg><span>Top Performer</span></button>
       <button data-tab="portfolio" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18v12H3zM8 7V5h8v2M3 12h18"/></svg><span>Portfolio</span></button>
       <button data-tab="advisor" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 1 4 10.5V17H8v-3.5A6 6 0 0 1 12 3zM9 21h6"/></svg><span>Ratgeber</span></button>
+      <button data-tab="chat" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>KI-Chat</span></button>
       <button data-tab="sim" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg><span>Simulator</span></button>
       <button data-tab="status" class="desk-only" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>Einstellungen</span></button>
       <div class="live-box desk-only" aria-live="polite">

@@ -69,7 +69,8 @@ export function venueMarket(e) {
   return e.market;
 }
 
-export const LIVE_MAX_AGE = 90; // Sekunden: älter gilt nicht mehr als live
+export const LIVE_MAX_AGE = 90; // Sekunden: älter gilt nicht mehr als live (Streams)
+export const LIVE_MAX_AGE_POLL = 300; // abgefragte Börsenkurse (Tradegate) werden reihum erneuert
 
 /**
  * Datenstatus eines Instruments:
@@ -80,7 +81,7 @@ export const LIVE_MAX_AGE = 90; // Sekunden: älter gilt nicht mehr als live
  */
 export function dataStatus(e, now = Date.now() / 1000) {
   const q = points.get(e.id);
-  if (q && q.live && now - q.updated <= LIVE_MAX_AGE) return { code: "live", time: q.time, price: q.price, source: q.source };
+  if (q && q.live && now - q.updated <= (q.source === "tradegate" ? LIVE_MAX_AGE_POLL : LIVE_MAX_AGE)) return { code: "live", time: q.time, price: q.price, source: q.source };
   const price = q ? q.price : e.last;
   const time = q ? q.time : e.last_ts;
   if (price == null) return { code: "none", time: null, price: null };

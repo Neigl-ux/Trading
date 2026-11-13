@@ -1,0 +1,43 @@
+# Nachrichten-Archiv: Tageswerte (Tonfall, Konfliktanteil) aus den GDELT-1.0-Tagesdateien seit 2013
+# nachladen und prüfen, ob sie etwas über die Kurse danach sagen.
+# Erster Lauf lädt ~4.900 Tage (etwa 1–2 Stunden), danach täglich nur den neuen Tag.
+name: Nachrichten-Archiv
+
+on:
+  schedule:
+    - cron: "37 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: news-archive
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Tage nachladen und prüfen
+        run: python -m tradingagent.news_archive --study | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Ergebnis speichern
+        if: always()
+        run: |
+          git config user.name "trading-agent-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add status/news_history.csv status/news_study.json docs/NACHRICHTEN_RUECKBLICK.md 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "Nachrichten-Archiv aktualisiert [skip ci]"
+            git pull --rebase
+            git push
+          fi
