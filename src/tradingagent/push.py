@@ -17,6 +17,8 @@ from typing import Any, Callable
 
 import pandas as pd
 
+from urllib.parse import quote
+
 from . import notify
 from .config import ROOT, load_settings
 from .storage import open_storage
@@ -94,7 +96,8 @@ def run(storage, now: pd.Timestamp, state: dict[str, Any], names: dict[str, str]
         if e["key"] in sent:
             continue
         title, msg, tags = stage_message(e)
-        if send(title, msg, tags=tags, priority=4, click=notify.APP_URL + "#advisor"):
+        target = f"#chart/{quote(str(e['id']), safe='')}" if e.get("id") else "#advisor"
+        if send(title, msg, tags=tags, priority=4, click=notify.APP_URL + target):
             sent[e["key"]] = int(now.timestamp())
     berlin = now.tz_convert("Europe/Berlin")
     last = state.get("last_report", 0)

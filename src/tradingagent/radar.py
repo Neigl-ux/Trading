@@ -29,6 +29,8 @@ from zoneinfo import ZoneInfo
 
 import requests
 
+from urllib.parse import quote
+
 from . import notify
 from .config import Instrument, load_settings
 from .quotes import URL as TG_URL, parse_number
@@ -187,7 +189,7 @@ class Radar:
         return out
 
     # ---------- Auswertung ----------
-    def check(self, now: datetime, quotes: dict[str, tuple[float, float | None]]) -> list[tuple[str, str, int, list[str]]]:
+    def check(self, now: datetime, quotes: dict[str, tuple[float, float | None]]) -> list[tuple[str, str, str, int, list[str]]]:
         day = now.astimezone(BERLIN).strftime("%Y-%m-%d")
         if self.state.get("day") != day:
             self.state["day"], self.state["done"] = day, {}
@@ -206,7 +208,7 @@ class Radar:
                 if lv is not None:
                     done[vid] += [x * (1 if move > 0 else -1) for x in DAY_LEVELS[kind] if x <= lv]
                     span = "in 24 Stunden" if kind == "krypto" else "heute"
-                    msgs.append((f"{name} {'+' if move > 0 else '−'}{abs(move) * 100:.1f} % {span}",
+                    msgs.append((vid, f"{name} {'+' if move > 0 else '−'}{abs(move) * 100:.1f} % {span}",
                                  f"{name} steht {span} {'+' if move > 0 else '−'}{abs(move) * 100:.1f} % "
                                  f"({'Anstieg' if move > 0 else 'Rückgang'} über {lv * 100:.0f} %).",
                                  4 if lv >= DAY_LEVELS[kind][2] else 3, ["chart_with_upwards_trend" if move > 0 else "chart_with_downwards_trend"]))
@@ -216,7 +218,7 @@ class Radar:
             key = f"fast{'+' if (fm or 0) > 0 else '-'}"
             if fm is not None and abs(fm) >= FAST[kind] and key not in done.setdefault(vid, []):
                 done[vid].append(key)
-                msgs.append((f"{name}: {'+' if fm > 0 else '−'}{abs(fm) * 100:.1f} % in 15 Minuten",
+                msgs.append((vid, f"{name}: {'+' if fm > 0 else '−'}{abs(fm) * 100:.1f} % in 15 Minuten",
                              f"Schnelle Bewegung bei {name}: {'+' if fm > 0 else '−'}{abs(fm) * 100:.1f} % in etwa 15 Minuten.",
                              4, ["zap"]))
             # 3. Nachkauf-Stufen (nur ETFs)
@@ -229,7 +231,7 @@ class Radar:
                     self.state["stage"][vid] = 0
                 elif st > prev:
                     self.state["stage"][vid] = st
-                    msgs.append((f"Nachkauf-Stufe {st}: {name}",
+                    msgs.append((vid, f"Nachkauf-Stufe {st}: {name}",
                                  f"{name} liegt {dd * 100:.1f} % unter dem 12-Monats-Hoch. Stufe {st} deiner Pyramide ist erreicht. "
                                  "Details und Punktzahl im Ratgeber.", 4, ["moneybag"]))
         return msgs
@@ -254,8 +256,8 @@ class Radar:
                 print(f"Indizes: {err}", flush=True)
             self.last_index = t
         msgs = self.check(now, quotes)
-        for title, text, prio, tags in msgs:
-            ok = self.send(title, text, tags=tags, priority=prio)
+        for vid, title, text, prio, tags in msgs:
+            ok = self.send(title, text, tags=tags, priority=prio, click=f"{notify.APP_URL}#chart/{quote(vid, safe='')}")
             print(f"{now:%H:%M} Push {'gesendet' if ok else 'NICHT gesendet'}: {title}", flush=True)
         self.save_state()
         return len(msgs)

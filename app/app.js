@@ -3361,7 +3361,7 @@ async function renderAdvisor() {
   }
   empty.hidden = true;
   $("adv-body").hidden = false;
-  $("adv-updated").textContent = `berechnet ${new Date(d.updated * 1000).toLocaleString("de-DE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`;
+  $("adv-updated").textContent = `Stand ${new Date(d.updated * 1000).toLocaleString("de-DE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`;
   renderAdvReport(d);
   renderAdvPlan(d);
   renderAdvStages(d);
@@ -3369,13 +3369,15 @@ async function renderAdvisor() {
   renderAdvTest(d);
   await loadPortfolio();
   renderAdvMine(d);
+  renderAdvGlance(d);
   renderAdvFilters(d);
   renderAdvList(d);
 }
 
 function renderAdvReport(d) {
   const r = d.report || {};
-  $("adv-report-title").textContent = r.date ? `Lagebericht vom ${advDate(r.date)}` : "Lagebericht";
+  const rt = $("adv-report-title");
+  (rt.querySelector(".fold-btn") || rt).textContent = r.date ? `Lagebericht vom ${advDate(r.date)}` : "Lagebericht";
   const box = $("adv-report");
   const ul = mk("ul", "adv-lines");
   const add = (text, cls) => ul.append(mk("li", cls, text));
@@ -3393,8 +3395,8 @@ function renderAdvReport(d) {
   for (const c of r.changes || []) add(`Sparplan: ${c.text}`);
   const moves = [...(r.up || []).map(([id, n]) => `${advName(id)} +${n}`), ...(r.down || []).map(([id, n]) => `${advName(id)} ${n}`)];
   if (moves.length) add(`Größte Punktänderungen seit dem letzten Bericht: ${moves.join(", ")}.`);
-  if (!(r.stages || []).length && !(r.changes || []).length) add("Keine Nachkauf-Stufe ausgelöst, Sparplan unverändert. Nichts zu tun.");
-  box.replaceChildren(ul, mk("p", "small", "Neuer Bericht alle 2 Tage. Bei einer ausgelösten Stufe kommt sofort eine Push-Nachricht (ntfy), sobald der Kanal eingerichtet ist."));
+
+  box.replaceChildren(ul);
 }
 
 function planList(items) {
@@ -3422,16 +3424,15 @@ function renderAdvPlan(d) {
   }
   parts.push(planList(p.items));
   if (p.mode === "einfach") {
-    parts.push(mk("p", "small", "Empfehlung: alles in den breiten Welt-ETF. Im Rückblick-Test hat die Punktzahl den schlichten Welt-ETF nicht geschlagen. Deshalb bleibt es laut Konzeption beim einfachen Sparplan."));
+    parts.push(mk("p", "small", "Alles in den breiten Welt-ETF: Im Rückblick-Test war das nicht zu schlagen."));
     if (p.alternative && p.alternative.length > 1) {
       const det = mk("details", "adv-alt");
       det.append(mk("summary", null, "Alternative mit Beimischungen (Kern und Satelliten)"), planList(p.alternative),
-        mk("p", "small", "Nur wenn du bewusst Akzente setzen willst. Satelliten sind Werte ab 65 Punkten, die sich vom Kern unterscheiden (Korrelation unter 0,85)."));
+        mk("p", "small", "Nur wenn du bewusst Akzente setzen willst."));
       parts.push(det);
     }
   }
-  if (p.since) parts.push(mk("p", "small", `Vorschlag unverändert seit ${advDate(p.since)}. Ein Baustein wird erst ersetzt, wenn er drei Monate in Folge unter 40 Punkten liegt.`));
-  parts.push(mk("p", "small", "Ob die ING den Wert als Sparplan anbietet und was er kostet, prüfst du bitte dort."));
+  if (p.since) parts.push(mk("p", "small", `Unverändert seit ${advDate(p.since)}. Verfügbarkeit und Kosten bitte bei der ING prüfen.`));
   box.replaceChildren(...parts);
 }
 
@@ -3467,11 +3468,11 @@ function renderAdvStages(d) {
     for (const e of ev) ul.append(mk("li", "warn", `${advDate(e.date)}: ${e.name} Stufe ${e.stage}${e.check_news ? " (erst Nachricht prüfen)" : e.allowed ? "" : " (unter 65 Punkten, kein Nachkauf)"}`));
     parts.push(ul);
   }
-  parts.push(mk("p", "small", "Gemessen vom höchsten Kurs der letzten 12 Monate. Jede Stufe zählt pro Rückgang einmal und wird erst nach einem neuen 12-Monats-Hoch wieder frei. Was du tatsächlich nachkaufst, trägst du im Portfolio ein."));
+  parts.push(mk("p", "small", "Rückgang vom 12-Monats-Hoch. Jede Stufe einmal pro Rückgang."));
   const pyr = d.verdict && d.verdict.pyramid_world_5y;
   if (pyr && pyr.staffel) {
     const rest = pyr.staffel_rest_nach_12M;
-    parts.push(mk("p", "small adv-honest", `Ehrlich gesagt: Im Rückblick-Test (MSCI World, 5 Jahre) war die Staffel nur in ${advShare(pyr.staffel.win)} der Startpunkte besser als die 1.000 € sofort anzulegen; im Median lag sie ${advPct(pyr.staffel.median)} dahinter, weil das Geld oft lange wartet.${rest ? ` Am wenigsten kostet die Variante „Rest nach 12 Monaten anlegen“ (Median ${advPct(rest.median)}).` : ""}`));
+    parts.push(mk("p", "small adv-honest", `Im Test: etwas weniger Rendite als sofort anlegen, dafür deutlich ruhigerer Depotverlauf.`));
   }
   box.replaceChildren(...parts);
 }
@@ -3516,7 +3517,7 @@ function renderAdvWorld(d) {
         mk("span", `adv-lvl ${z >= 1 ? "down" : z >= 0.5 ? "warn" : "up"}`, zWord(z)));
       ul.append(li);
     }
-    parts.push(ul, mk("p", "small", `Letzte 20 Tage im Vergleich zum Jahr davor, aus dem Nachrichten-Archiv seit 2013 (GDELT, Stand ${advDate(a.date)}).`));
+    parts.push(ul, mk("p", "small", `Letzte 20 Tage gegenüber dem Jahr davor (Stand ${advDate(a.date)}).`));
   }
   const live = (w.topics || []).filter((t) => t.state || (t.series && t.series.length));
   if (live.length) {
@@ -3533,7 +3534,7 @@ function renderAdvWorld(d) {
   const nt = d.news_test;
   if (nt && nt.rows && nt.rows.length) {
     const r = nt.rows.find((x) => /MSCI/.test(x.label)) || nt.rows[0];
-    parts.push(mk("p", "small adv-honest", `Rückblick ${nt.from ? nt.from.slice(0, 4) : ""}–${nt.to ? nt.to.slice(0, 4) : ""}: Nach den 20 % der Monate mit dem schlechtesten Tonfall fiel der ${r.label} in den 3 Monaten danach im Schnitt um ${advPct(-r.dd3_bad, 1)} (nach den besten: ${advPct(-r.dd3_good, 1)}) und stieg nur ${advPct(r.ret3_bad, 1)} statt ${advPct(r.ret3_good, 1)}. Der Zusammenhang ist schwach und kann zum Teil daran liegen, dass schlechte Nachrichten und fallende Kurse gleichzeitig auftreten. Deshalb fließt er noch nicht in die Punktzahl ein.`));
+    parts.push(mk("p", "small adv-honest", `Nach sehr schlechter Nachrichtenlage fiel der ${r.label} in den 3 Monaten danach im Schnitt tiefer (${advPct(-r.dd3_bad, 1)} statt ${advPct(-r.dd3_good, 1)}). Schwacher Zusammenhang, darum nur als Hinweis.`));
   } else {
     parts.push(mk("p", "small", "Die Weltlage fließt nicht in die Punktzahl ein, bis der Rückblick-Test zeigt, dass sie hilft."));
   }
@@ -3597,7 +3598,6 @@ function renderAdvMine(d) {
     kpis.append(kpi("Ø Punktzahl (nach Wert gewichtet)", String(Math.round(wScore))),
       kpi("Anteil „Vorsicht“", advShare(caution), caution > 0.25 ? "über einem Viertel des Depots" : ""),
       kpi("Größte Position", advShare(big.value / total), big.e ? big.e.name : ""));
-    parts.push(kpis);
     if (big.value / total > 0.25 && !(big.v && big.e && big.e.kind === "etf")) parts.push(mk("p", "small warn-text", "Klumpenrisiko: Eine Einzelposition macht mehr als 25 % aus."));
   }
   const list = mk("div", "adv-rows");
@@ -3915,3 +3915,66 @@ $("radar-copy").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(text); st.textContent = `${ids.length} Kennungen kopiert: ${text}`; }
   catch { st.textContent = `Bitte selbst kopieren: ${text}`; }
 });
+
+
+// ---------- Ratgeber: auf einen Blick ----------
+function renderAdvGlance(d) {
+  const set = (id, val, sub, cls) => { $(id).textContent = val; $(id).className = `ag-val ${cls || ""}`; $(`${id}-sub`).textContent = sub || ""; };
+  const w = d.world || {};
+  set("ag-world", w.level ? w.level[0].toUpperCase() + w.level.slice(1) : "–", "aus weltweiten Nachrichten",
+    !w.level ? "" : w.level === "angespannt" ? "down" : w.level !== "ruhig" ? "warn" : "up");
+  const p = d.plan || {};
+  const items = p.items || [];
+  set("ag-plan", items.length === 1 ? advName(items[0].id) : items.length ? `${items.length} Bausteine` : "–",
+    items.length === 1 ? "120 € pro Monat, unverändert lassen" : items.map((x) => `${advName(x.id)} ${x.eur} €`).join(" · "));
+  const ids = [...new Set([...items, ...(p.alternative || [])].map((x) => x.id))].filter((id) => d.values[id]);
+  const hit = ids.filter((id) => d.values[id].st > 0).sort((a, b) => d.values[b].st - d.values[a].st);
+  if (hit.length) {
+    const v = d.values[hit[0]];
+    set("ag-stage", `Stufe ${v.st} erreicht`, `${advName(hit[0])} ${advPct(-v.dd)} vom Hoch`, "warn");
+  } else {
+    const core = ids[0] && d.values[ids[0]];
+    set("ag-stage", "Keine Stufe", core ? `${advName(ids[0])} ${core.dd < 0.005 ? "am Hoch" : `${advPct(-core.dd)} vom Hoch`} · Stufe 1 bei −10 %` : "", "up");
+  }
+  const pos = (pf.data.positions || []).map((x) => ({ ...positionValue(x), id: x.id })).filter((r) => r.value && r.id && d.values[r.id]);
+  if (pos.length) {
+    const tot = pos.reduce((a, r) => a + r.value, 0);
+    const avg = pos.reduce((a, r) => a + d.values[r.id].s * r.value, 0) / tot;
+    const caution = pos.filter((r) => d.values[r.id].g === "vorsicht").reduce((a, r) => a + r.value, 0) / tot;
+    set("ag-depot", `Ø ${Math.round(avg)} Punkte`, caution > 0 ? `${advShare(caution)} auf „Vorsicht“` : "nichts auf „Vorsicht“", caution > 0.25 ? "warn" : "");
+  } else set("ag-depot", "–", "Portfolio eintragen");
+  const todo = [];
+  const recent = (d.events || []).filter((e) => Date.now() / 1000 - (e.ts || 0) < 3 * 86400);
+  for (const e of recent) todo.push(e.check_news ? `${e.name}: Stufe ${e.stage}, aber erst die Nachrichten prüfen.` : e.allowed ? `${e.name}: Nachkauf-Stufe ${e.stage} erreicht.` : `${e.name}: Stufe ${e.stage}, aber unter 65 Punkten (kein Nachkauf).`);
+  for (const c of (d.report && d.report.changes) || []) todo.push(`Sparplan: ${c.text}`);
+  $("adv-todo").textContent = todo.length ? `Zu tun: ${todo.join(" ")}` : "Nichts zu tun. Sparplan einfach weiterlaufen lassen.";
+  $("adv-todo").classList.toggle("has-todo", todo.length > 0);
+}
+
+// ---------- Abschnitte einklappen (Ratgeber, Portfolio) ----------
+const FOLD_STORE = "ta.fold";
+function initFolds() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(FOLD_STORE) || "{}"); } catch {}
+  document.querySelectorAll("article.card[data-fold]").forEach((card) => {
+    const key = card.dataset.fold;
+    const head = card.querySelector(".card-head");
+    const h3 = head && head.querySelector("h3");
+    if (!h3 || head.querySelector(".fold-btn")) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "fold-btn";
+    btn.append(...h3.childNodes);
+    h3.append(btn);
+    const closed = key in saved ? saved[key] : card.dataset.foldDefault === "closed";
+    const apply = (c) => { card.classList.toggle("folded", c); btn.setAttribute("aria-expanded", String(!c)); };
+    apply(closed);
+    btn.addEventListener("click", () => {
+      const c = !card.classList.contains("folded");
+      apply(c);
+      saved[key] = c;
+      try { localStorage.setItem(FOLD_STORE, JSON.stringify(saved)); } catch {}
+    });
+  });
+}
+initFolds();

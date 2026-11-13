@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=25">
+  <link rel="stylesheet" href="style.css?v=26">
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
-  <script type="module" src="app.js?v=25"></script>
+  <script type="module" src="app.js?v=26"></script>
 </head>
 <body>
   <!-- Entsperren -->
@@ -233,10 +233,10 @@
         <div class="card kpi"><span class="kpi-label">Gewinn / Verlust</span><span id="pf-gain" class="kpi-value">–</span><span id="pf-gain-sub" class="kpi-sub"></span></div>
       </div>
       <div class="pf-grid">
-        <article class="card pf-history"><header class="card-head"><h3>Wertentwicklung</h3></header><nav id="pf-tf" class="dc-tf" aria-label="Zeitraum"></nav><p id="pf-info" class="dc-info"></p><div id="pf-chart" class="pf-chart"></div><p id="pf-chart-note" class="small"></p></article>
-        <article class="card pf-alloc"><header class="card-head"><h3>Verteilung</h3></header><div id="pf-donut" class="pf-donut"></div></article>
+        <article class="card pf-history" data-fold="pf-history"><header class="card-head"><h3>Wertentwicklung</h3></header><nav id="pf-tf" class="dc-tf" aria-label="Zeitraum"></nav><p id="pf-info" class="dc-info"></p><div id="pf-chart" class="pf-chart"></div><p id="pf-chart-note" class="small"></p></article>
+        <article class="card pf-alloc" data-fold="pf-alloc"><header class="card-head"><h3>Verteilung</h3></header><div id="pf-donut" class="pf-donut"></div></article>
       </div>
-      <article class="card pf-positions">
+      <article class="card pf-positions" data-fold="pf-positions">
         <header class="card-head"><h3>Positionen</h3><button type="button" id="pf-add-btn" class="card-link">Position hinzufügen</button></header>
         <form id="pf-form" class="pf-form" autocomplete="off" hidden>
           <label class="fld pf-wide"><span>Wert (Name, Kürzel, ISIN oder WKN)</span><input id="pf-asset" list="pf-assets" required></label>
@@ -260,38 +260,23 @@
 
     <!-- Ratgeber -->
     <section id="view-advisor" class="view view-wide" hidden>
-      <div class="page-head"><h2>Ratgeber</h2><span class="page-sub">Einschätzungen für langfristiges Anlegen. Nur Information: kein Zugriff auf dein Depot, keine Aufträge. Entscheiden und umsetzen tust du.</span></div>
+      <div class="page-head"><h2>Ratgeber</h2><span class="page-sub">Das Wichtigste für dein langfristiges Anlegen auf einen Blick.</span></div>
       <p id="adv-empty" class="small" hidden></p>
       <div id="adv-body" hidden>
-        <div class="adv-top">
-          <article class="card adv-report">
-            <header class="card-head"><h3 id="adv-report-title">Lagebericht</h3><span id="adv-updated" class="kpi-sub"></span></header>
-            <div id="adv-report"></div>
-          </article>
-          <article class="card adv-plan">
-            <header class="card-head"><h3>Sparplan 120 € pro Monat</h3></header>
-            <div id="adv-plan"></div>
-          </article>
+        <div class="adv-glance">
+          <div class="card ag"><span class="ag-label">Weltlage</span><strong id="ag-world" class="ag-val">–</strong><span id="ag-world-sub" class="ag-sub"></span></div>
+          <div class="card ag"><span class="ag-label">Sparplan 120 €</span><strong id="ag-plan" class="ag-val">–</strong><span id="ag-plan-sub" class="ag-sub"></span></div>
+          <div class="card ag"><span class="ag-label">Nachkauf-Stufen</span><strong id="ag-stage" class="ag-val">–</strong><span id="ag-stage-sub" class="ag-sub"></span></div>
+          <div class="card ag"><span class="ag-label">Dein Depot</span><strong id="ag-depot" class="ag-val">–</strong><span id="ag-depot-sub" class="ag-sub"></span></div>
         </div>
-        <div class="adv-top">
-          <article class="card adv-stages">
-            <header class="card-head"><h3>Nachkauf-Stufen (Reserve 1.000 €)</h3></header>
-            <div id="adv-stages"></div>
-          </article>
-          <article class="card adv-world">
-            <header class="card-head"><h3>Weltlage aus den Nachrichten</h3></header>
-            <div id="adv-world"></div>
-          </article>
-        </div>
-        <article class="card adv-test">
-          <header class="card-head"><h3>Was der Rückblick-Test zeigt</h3></header>
-          <div id="adv-test"></div>
-        </article>
-        <article class="card adv-mine">
-          <header class="card-head"><h3>Deine Positionen</h3></header>
-          <div id="adv-mine"></div>
-        </article>
-        <article class="card adv-all">
+        <p id="adv-todo" class="adv-todo"></p>
+        <p class="ag-foot"><span id="adv-updated"></span> · Nur Information, keine Anlageberatung.</p>
+        <article class="card" data-fold="adv-report"><header class="card-head"><h3 id="adv-report-title">Lagebericht</h3></header><div id="adv-report"></div></article>
+        <article class="card" data-fold="adv-plan" data-fold-default="closed"><header class="card-head"><h3>Sparplan</h3></header><div id="adv-plan"></div></article>
+        <article class="card" data-fold="adv-stages" data-fold-default="closed"><header class="card-head"><h3>Nachkauf-Stufen</h3></header><div id="adv-stages"></div></article>
+        <article class="card" data-fold="adv-world" data-fold-default="closed"><header class="card-head"><h3>Weltlage</h3></header><div id="adv-world"></div></article>
+        <article class="card" data-fold="adv-mine"><header class="card-head"><h3>Deine Positionen</h3></header><div id="adv-mine"></div></article>
+        <article class="card adv-all" data-fold="adv-all" data-fold-default="closed">
           <header class="card-head"><h3>Alle bewerteten Werte</h3><span id="adv-count" class="kpi-sub"></span></header>
           <div class="adv-tools">
             <input id="adv-q" type="search" placeholder="Name, Kürzel oder ISIN" aria-label="Bewertete Werte durchsuchen" autocomplete="off">
@@ -307,6 +292,7 @@
           <div id="adv-list"></div>
           <div id="adv-pager" class="pager"></div>
         </article>
+        <article class="card" data-fold="adv-test" data-fold-default="closed"><header class="card-head"><h3>Wie verlässlich ist das? (Rückblick-Test)</h3></header><div id="adv-test"></div></article>
       </div>
     </section>
 

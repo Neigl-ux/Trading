@@ -26,8 +26,8 @@ def test_check_sends_once_per_level(tmp_path, monkeypatch):
     etf.prev_close, etf.high12 = 100.0, 110.0
     now = datetime(2026, 11, 13, 10, 0, tzinfo=ZoneInfo("Europe/Berlin"))
     m1 = r.check(now, {etf.inst.id: (96.5, None)})  # −3,5 % heute, −12,3 % vom Hoch
-    assert any("heute" in t for t, *_ in m1) and any("Stufe 1" in t for t, *_ in m1)
+    assert any("heute" in t for _, t, *_ in m1) and any("Stufe 1" in t for _, t, *_ in m1)
     m2 = r.check(now, {etf.inst.id: (96.4, None)})
     assert m2 == []
     m3 = r.check(now, {etf.inst.id: (93.0, None)})  # −7 % → Stufe 5 % und Stufe 2 (−15,5 %)
-    assert any("Stufe 2" in t for t, *_ in m3)
+    assert any("Stufe 2" in t for _, t, *_ in m3)
