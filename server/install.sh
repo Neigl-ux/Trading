@@ -11,7 +11,14 @@ echo "== Pakete =="
 apt-get update -qq
 echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
 echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git python3 python3-venv python3-pip tzdata caddy iptables-persistent >/dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git python3 python3-venv python3-pip tzdata iptables-persistent curl gpg >/dev/null
+if ! DEBIAN_FRONTEND=noninteractive apt-get install -y -qq caddy >/dev/null 2>&1; then
+  # Caddy aus der offiziellen Paketquelle, falls Ubuntu es nicht mitbringt
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' > /etc/apt/sources.list.d/caddy-stable.list
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq caddy >/dev/null
+fi
 timedatectl set-timezone Europe/Berlin || true
 
 # Kleine Server (z. B. VM.Standard.E2.1.Micro mit 1 GB): 2 GB Auslagerungsdatei, damit pip und pandas sicher laufen
