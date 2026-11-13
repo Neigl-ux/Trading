@@ -1,10 +1,7 @@
 [Unit]
-Description=Trading-Agent: Programm aktualisieren
+Description=Trading-Agent: Programm aktualisieren (holt die neueste Version und richtet neue Dienste ein)
 After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/git -c safe.directory=/opt/trading-agent -C /opt/trading-agent pull -q
-ExecStart=/opt/trading-agent/.venv/bin/pip install -q -r /opt/trading-agent/requirements.txt
-ExecStart=/bin/chown -R trading:trading /opt/trading-agent
-ExecStartPost=/bin/systemctl restart ta-radar.service
+ExecStart=/bin/bash -c 'curl -fsSL https://raw.githubusercontent.com/Neigl-ux/Trading/main/server/install.sh | bash'

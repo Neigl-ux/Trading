@@ -9,7 +9,9 @@ ENV=/etc/trading-agent.env
 
 echo "== Pakete =="
 apt-get update -qq
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git python3 python3-venv python3-pip tzdata >/dev/null
+echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
+echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git python3 python3-venv python3-pip tzdata caddy iptables-persistent >/dev/null
 timedatectl set-timezone Europe/Berlin || true
 
 # Kleine Server (z. B. VM.Standard.E2.1.Micro mit 1 GB): 2 GB Auslagerungsdatei, damit pip und pandas sicher laufen
@@ -39,21 +41,66 @@ GH_REPO=Neigl-ux/Trading
 NTFY_TOPIC=
 # Zusätzliche Werte fürs Liveradar (Kennungen aus der App, durch Komma getrennt), z. B. deine Watchlist:
 RADAR_EXTRA=
+# Dein App-Passwort (dasselbe wie das GitHub-Secret APP_PASSPHRASE). Damit verschlüsselt der Server die Daten.
+APP_PASSPHRASE=
 CONF
   chmod 600 "$ENV"
 fi
 
+# Ältere Installationen: fehlende Zeilen ergänzen
+grep -q '^APP_PASSPHRASE=' "$ENV" || printf '\n# Dein App-Passwort (dasselbe wie das GitHub-Secret APP_PASSPHRASE):\nAPP_PASSPHRASE=\n' >> "$ENV"
+
+echo "== Verschlüsselung wie auf GitHub =="
+SALT=$(curl -fsSL "https://neigl-ux.github.io/Trading/data/index.json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["kdf"]["salt"])' || true)
+if [ -n "$SALT" ]; then
+  if grep -q '^TA_EXPORT_SALT_B64=' "$ENV"; then sed -i "s|^TA_EXPORT_SALT_B64=.*|TA_EXPORT_SALT_B64=$SALT|" "$ENV"; else echo "TA_EXPORT_SALT_B64=$SALT" >> "$ENV"; fi
+fi
+
+echo "== Ordner =="
+install -d -o trading -g trading -m 755 /var/lib/trading-agent /var/lib/trading-agent/site /var/lib/trading-agent/site/data
+install -d -o trading -g trading -m 750 /var/lib/trading-agent/data
+
+echo "== Webserver mit HTTPS (Caddy, Zertifikat von Let's Encrypt, kostenlos) =="
+IP=$(curl -fsS https://api.ipify.org || true)
+if [ -n "$IP" ]; then
+  HOST="$(echo "$IP" | tr . -).sslip.io"
+  cat > /etc/caddy/Caddyfile <<CADDY
+$HOST {
+	root * /var/lib/trading-agent/site
+	file_server
+	header {
+		Access-Control-Allow-Origin "https://neigl-ux.github.io"
+		Cache-Control "no-store"
+		-Server
+	}
+}
+CADDY
+  # Ubuntu auf Oracle sperrt eingehende Verbindungen per iptables; Port 80/443 für HTTPS freigeben
+  for port in 80 443; do
+    iptables -C INPUT -p tcp --dport $port -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -m state --state NEW -p tcp --dport $port -j ACCEPT
+  done
+  netfilter-persistent save >/dev/null 2>&1 || true
+  systemctl enable caddy >/dev/null 2>&1 || true
+  systemctl restart caddy || true
+fi
+
 echo "== Dienste =="
 install -m 644 "$DIR/server/ta-trigger.service" "$DIR/server/ta-trigger.timer" \
-               "$DIR/server/ta-radar.service" "$DIR/server/ta-update.service" "$DIR/server/ta-update.timer" /etc/systemd/system/
+               "$DIR/server/ta-radar.service" "$DIR/server/ta-update.service" "$DIR/server/ta-update.timer" \
+               "$DIR/server/ta-collect.service" "$DIR/server/ta-collect.timer" /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now ta-trigger.timer ta-update.timer >/dev/null
+systemctl enable --now ta-trigger.timer ta-update.timer ta-collect.timer >/dev/null
 systemctl enable ta-radar.service >/dev/null
 systemctl restart ta-radar.service || true
 
 echo
-echo "Fertig. Jetzt die Zugangsdaten eintragen:"
+if [ -n "${HOST:-}" ]; then
+  echo "Deine Server-Adresse für die App (Einstellungen → Dein Server):"
+  echo "   https://$HOST"
+fi
+echo
+echo "Fertig. Falls noch nicht geschehen, die Zugangsdaten eintragen:"
 echo "   sudo nano $ENV"
 echo "und danach:"
-echo "   sudo systemctl restart ta-radar && sudo systemctl start ta-trigger"
+echo "   sudo systemctl restart ta-radar && sudo systemctl start ta-collect"
 echo "Prüfen:  systemctl status ta-radar   |   journalctl -u ta-trigger -n 20"

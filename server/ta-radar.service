@@ -1,5 +1,5 @@
 [Unit]
-Description=Trading-Agent: Liveradar mit Push-Benachrichtigung
+Description=Trading-Agent: Live-Kurse, Mitschnitt und Liveradar mit Push
 After=network-online.target
 Wants=network-online.target
 
@@ -8,8 +8,11 @@ User=trading
 EnvironmentFile=/etc/trading-agent.env
 Environment=PYTHONPATH=/opt/trading-agent/src
 Environment=TA_RADAR_STATE=/var/lib/trading-agent/radar_state.json
+Environment=TA_STORAGE_PATH=/var/lib/trading-agent/data/market.sqlite
+Environment=TA_EXPORT_DIR=/var/lib/trading-agent/site/data
+Environment=TA_QUOTES_FILE=/var/lib/trading-agent/quotes.json
 WorkingDirectory=/opt/trading-agent
-ExecStart=/opt/trading-agent/.venv/bin/python -m tradingagent.radar
+ExecStart=/opt/trading-agent/.venv/bin/python -m tradingagent.live
 Restart=always
 RestartSec=30
 

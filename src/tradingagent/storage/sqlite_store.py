@@ -36,7 +36,10 @@ class SQLiteStorage(Storage):
         self.path = Path(path)
         if str(path) != ":memory:":
             self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(str(path))
+        # timeout: Sammler und Live-Dienst schreiben auf dem Server gleichzeitig in dieselbe Datei
+        self.conn = sqlite3.connect(str(path), timeout=60)
+        if str(path) != ":memory:":
+            self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.executescript(_SCHEMA)
 
     def upsert_bars(self, instrument: str, interval: str, df: pd.DataFrame, source: str) -> int:

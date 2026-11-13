@@ -65,10 +65,41 @@ function berlinOffset(sec) {
 const shift = (sec) => sec + berlinOffset(sec);
 
 // ---------- Laden ----------
+// Datenquelle: zuerst dein Server (alle 5 Minuten frisch, Einstellungen → Server-Adresse),
+// fällt er aus, automatisch GitHub (alle 15–60 Minuten). Beide sind gleich verschlüsselt.
+const SERVER_STORE = "ta.server";
+let dataBase = "data/";
+function serverUrl() {
+  try { return (localStorage.getItem(SERVER_STORE) || "").trim().replace(/\/+$/, "") || null; } catch { return null; }
+}
+async function fetchRaw(url, ms = 20000) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  try {
+    const res = await fetch(`${url}?t=${Date.now()}`, { cache: "no-store", signal: ctl.signal });
+    if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
 async function fetchJSON(path) {
-  const res = await fetch(`${path}?t=${Date.now()}`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
-  return res.json();
+  if (path === "data/index.json") {
+    const srv = serverUrl();
+    if (srv) {
+      try {
+        const j = await fetchRaw(`${srv}/data/index.json`, 6000);
+        dataBase = `${srv}/data/`;
+        state.dataSource = "server";
+        return j;
+      } catch {}
+    }
+    dataBase = "data/";
+    state.dataSource = "github";
+    return fetchRaw("data/index.json");
+  }
+  if (path.startsWith("data/")) return fetchRaw(dataBase + path.slice(5));
+  return fetchRaw(path);
 }
 
 async function boot() {
@@ -158,12 +189,13 @@ function showMain() {
     if (y) requestAnimationFrame(() => window.scrollTo(0, y));
   }
   loadFinnhubKey().then(startFinnhub);
+  startServerLive();
 }
 
 function updateFreshness() {
   const age = Date.now() / 1000 - state.index.updated;
   const fresh = $("freshness");
-  fresh.textContent = `Daten von ${fmtTime(state.index.updated, age > 20 * 3600)} Uhr`;
+  fresh.textContent = `Daten von ${fmtTime(state.index.updated, age > 20 * 3600)} Uhr${state.dataSource === "server" ? " · Server" : ""}`;
   fresh.style.color = age > 45 * 60 ? "var(--warn)" : "";
   fresh.title = age > 45 * 60 ? "Der letzte Sammel-Lauf liegt länger zurück. Prüfe den Status." : "";
 }
@@ -1434,7 +1466,8 @@ async function liveTick(run) {
       if (r && rtAvailable(r.entry) && !isCrypto(r.entry) && !fhFresh(r.entry) && now - last(r.entry) > 8000) chosen.set(id, r.entry);
       if (chosen.size >= 8) break;
     }
-    const budget = !open ? 3 : listLive.turbo ? 30 : 10;
+    const viaServer = Date.now() - serverLive.at < 90000; // Server liefert alle Kurse: Handy fragt nur Sichtbares nach
+    const budget = viaServer ? 0 : !open ? 3 : listLive.turbo ? 30 : 10;
     const rest = all.filter((e) => !chosen.has(e.id) && !fhFresh(e)).sort((a, b) => last(a) - last(b));
     for (const e of rest) { if (chosen.size >= budget) break; chosen.set(e.id, e); }
     const list = [...chosen.values()];
@@ -1541,7 +1574,7 @@ function paintRow(id, price, open) {
 
 
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && state.index) { refreshIndex(); startListLive(); }
+  if (!document.hidden && state.index) { refreshIndex(); startListLive(); pollServerLive(); }
   if (document.hidden) { stopAllLive(); pauseAsset(); }
   else if (!$("view-chart").hidden && asset.entry) resumeAsset();
   updateFinnhubWant();
@@ -3978,3 +4011,67 @@ function initFolds() {
   });
 }
 initFolds();
+
+
+// ---------- Live-Kurse vom Server ----------
+// Der Server fragt alle Tradegate-Kurse jede Minute ab und legt sie verschlüsselt in live.json.
+// Ein Abruf hier ersetzt Hunderte Abfragen vom Handy (schont Akku und Datenvolumen).
+const serverLive = { at: 0, timer: null, busy: false };
+async function pollServerLive() {
+  const srv = serverUrl();
+  if (!srv || !state.key || document.hidden || serverLive.busy || !tradegateOpen()) return;
+  serverLive.busy = true;
+  try {
+    const doc = await fetchRaw(`${srv}/live.json`, 8000);
+    const p = await openSealed(state.key, doc);
+    if (!p || !p.q || Date.now() / 1000 - p.updated > 300) return;
+    serverLive.at = Date.now();
+    for (const [id, [price]] of Object.entries(p.q)) {
+      const e = byId(id);
+      if (!e || !rtAvailable(e) || isCrypto(e) || fhFresh(e)) continue;
+      recordTick(id, Date.now() / 1000, price);
+      paintLive(id, price, { source: "tradegate", open: p.open !== false });
+      listLive.lastPoll.set(id, Date.now());
+    }
+  } catch {} finally {
+    serverLive.busy = false;
+  }
+}
+function startServerLive() {
+  clearInterval(serverLive.timer);
+  if (!serverUrl()) return;
+  pollServerLive();
+  serverLive.timer = setInterval(pollServerLive, 20000);
+}
+
+// Einstellung: Server-Adresse
+(() => {
+  const inp = $("set-server");
+  const msg = $("set-server-msg");
+  inp.value = serverUrl() || "";
+  $("set-server-form").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    let url = inp.value.trim().replace(/\/+$/, "");
+    if (url && !/^https:\/\//.test(url)) url = `https://${url}`;
+    if (!url) {
+      try { localStorage.removeItem(SERVER_STORE); } catch {}
+      msg.textContent = "Server entfernt. Die App nutzt wieder nur GitHub.";
+      startServerLive();
+      return refreshIndex();
+    }
+    msg.textContent = "Prüfe den Server …";
+    try {
+      const j = await fetchRaw(`${url}/data/index.json`, 8000);
+      if (state.raw && j.kdf && state.raw.kdf && j.kdf.salt !== state.raw.kdf.salt) throw new Error("andere Verschlüsselung (Passwort oder Salz auf dem Server stimmt nicht)");
+      localStorage.setItem(SERVER_STORE, url);
+      inp.value = url;
+      const idx = j.enc && state.key ? await openSealed(state.key, j) : j.data || j;
+      const age = Math.max(0, Math.round((Date.now() / 1000 - (idx.updated || 0)) / 60));
+      msg.textContent = `Verbunden. Daten des Servers sind ${age} Minuten alt.`;
+      startServerLive();
+      refreshIndex();
+    } catch (err) {
+      msg.textContent = `Server nicht erreichbar: ${err.message}. Adresse prüfen oder später erneut versuchen.`;
+    }
+  });
+})();

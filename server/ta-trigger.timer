@@ -1,8 +1,8 @@
 [Unit]
-Description=Trading-Agent: alle 15 Minuten Daten sammeln lassen
+Description=Trading-Agent: stündlich zusätzlich auf GitHub sammeln (Sicherung)
 
 [Timer]
-OnCalendar=*:00/15
+OnCalendar=hourly
 Persistent=true
 RandomizedDelaySec=30
 

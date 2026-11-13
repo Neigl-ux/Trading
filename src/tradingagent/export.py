@@ -11,10 +11,12 @@ veröffentlicht.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
 import shutil
+import time
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
@@ -216,6 +218,10 @@ def wkn_of(isin: str | None) -> str | None:
     return None
 
 
+class _SkipAdvisor(Exception):
+    pass
+
+
 def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, status: dict[str, Any],
                passphrase: str | None, quotes: dict | None = None) -> Path:
     """Schreibt alle Dateien für die App. Gibt den Export-Ordner zurück."""
@@ -234,6 +240,11 @@ def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, statu
             )
         # Salt bleibt über alle Läufe gleich, damit die App den abgeleiteten
         # Schlüssel merken kann und nicht bei jedem Öffnen neu rechnen muss.
+        # Auf dem Server dieselbe Verschlüsselung wie auf GitHub (gleiches Salz), damit die App
+        # zwischen beiden Quellen wechseln kann, ohne neu zu laden.
+        env_salt = os.environ.get("TA_EXPORT_SALT_B64")
+        if env_salt:
+            storage.set_meta("export_salt", base64.b64decode(env_salt).hex())
         salt_hex_stored = storage.get_meta("export_salt")
         salt = bytes.fromhex(salt_hex_stored) if salt_hex_stored else os.urandom(16)
         if not salt_hex_stored:
@@ -283,13 +294,26 @@ def export_all(settings: Settings, storage: Storage, now: pd.Timestamp, *, statu
         adv_items.append((inst, loader, entries[-1]))
 
     advisor_file = None
+    # Server: Ratgeber nur alle ADVISOR_MIN_INTERVAL Sekunden neu rechnen (er ist der teuerste Teil),
+    # sonst die letzte Fassung übernehmen.
+    min_iv = int(os.environ.get("ADVISOR_MIN_INTERVAL", "0") or 0)
+    prev_adv = out_dir / "advisor.json"
+    reuse = bool(min_iv) and prev_adv.exists() and (time.time() - prev_adv.stat().st_mtime) < min_iv
+    if reuse:
+        shutil.copy2(prev_adv, tmp_dir / "advisor.json")
+        advisor_file = "advisor.json"
+        print("Ratgeber: letzte Fassung übernommen")
     try:
+        if reuse:
+            raise _SkipAdvisor
         from . import advisor as advisor_mod
         adv = advisor_mod.build(storage, now, adv_items, fetch_news=os.environ.get("ADVISOR_NEWS", "1") != "0")
         (tmp_dir / "advisor.json").write_text(json.dumps(wrap(adv), separators=(",", ":")), encoding="utf-8")
         advisor_file = "advisor.json"
         print(f"Ratgeber: {len(adv['values'])} Werte bewertet, Nachrichten-Abfragen: "
               f"{len(adv['news_errors'])} Fehler" + (f" ({'; '.join(adv['news_errors'])})" if adv['news_errors'] else ""))
+    except _SkipAdvisor:
+        pass
     except Exception as exc:  # noqa: BLE001 - der Ratgeber darf den Kurs-Export nie verhindern
         print(f"Ratgeber übersprungen: {type(exc).__name__}: {exc}")
 

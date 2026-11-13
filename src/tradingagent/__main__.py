@@ -42,12 +42,38 @@ def cmd_collect(args) -> int:
     for e in s["errors"]:
         print(f"  FEHLER {e['instrument']} {e['interval']}: {'; '.join(e['errors'])}")
     if not args.no_export:
-        quotes, q_errors = fetch_quotes(settings)
-        print(f"Tradegate: {len(quotes)} aktuelle Kurse" + (f", {len(q_errors)} Fehler" if q_errors else ""))
+        quotes = _server_quotes()
+        if quotes is not None:
+            q_errors = []
+            print(f"Tradegate: {len(quotes)} Kurse vom Live-Dienst des Servers")
+        else:
+            quotes, q_errors = fetch_quotes(settings)
+            print(f"Tradegate: {len(quotes)} aktuelle Kurse" + (f", {len(q_errors)} Fehler" if q_errors else ""))
         export_all(settings, storage, summary.started, status=s, passphrase=_passphrase(), quotes=quotes)
         print(f"Export nach {settings.export_dir}")
     storage.close()
     return 1 if summary.all_failed else 0
+
+
+def _server_quotes():
+    """Auf dem Server fragt der Live-Dienst Tradegate ohnehin laufend ab (TA_QUOTES_FILE).
+    Ist die Datei frisch (unter 10 Minuten), nimmt der Sammler diese Kurse statt 800 eigener Abfragen."""
+    import json as _json
+    import os as _os
+    import time as _time
+
+    from .quotes import Quote
+
+    path = _os.environ.get("TA_QUOTES_FILE")
+    if not path:
+        return None
+    try:
+        if _time.time() - _os.path.getmtime(path) > 600:
+            return None
+        raw = _json.loads(open(path, encoding="utf-8").read())
+    except (OSError, ValueError):
+        return None
+    return {k: Quote(float(v["last"]), pd.Timestamp(v["time"], unit="s", tz="UTC")) for k, v in raw.items()}
 
 
 def cmd_export(args) -> int:

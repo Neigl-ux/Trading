@@ -42,6 +42,8 @@ DAY_LEVELS = {"etf": (0.02, 0.03, 0.05, 0.08), "index": (0.02, 0.03, 0.05, 0.08)
 FAST = {"etf": 0.015, "index": 0.015, "aktie": 0.03, "krypto": 0.04}
 STAGES = (0.10, 0.15, 0.20, 0.25, 0.30)
 FAST_WINDOW = 15 * 60
+# Volatilitätsindizes schwanken von Natur aus stark und sind keine Anlage: keine Meldungen.
+NO_RADAR = {"VIX", "VDAX", "VSTOXX", "V2X", "VXN", "MOVE"}
 
 
 @dataclass
@@ -86,7 +88,7 @@ class Radar:
         extra = {x.strip() for x in os.environ.get("RADAR_EXTRA", "").split(",") if x.strip()}
         self.watch: dict[str, Watch] = {}
         for inst in s.instruments:
-            if inst.kind not in DAY_LEVELS:
+            if inst.kind not in DAY_LEVELS or inst.id in NO_RADAR:
                 continue
             if inst.tier == "core" or inst.id in extra:
                 self.watch[inst.id] = Watch(inst)
@@ -236,7 +238,7 @@ class Radar:
                                  "Details und Punktzahl im Ratgeber.", 4, ["moneybag"]))
         return msgs
 
-    def tick(self, now: datetime | None = None) -> int:
+    def tick(self, now: datetime | None = None, tradegate: dict[str, tuple[float, float | None]] | None = None) -> int:
         now = now or datetime.now(BERLIN)
         t = time.time()
         if t - self.last_daily > 6 * 3600 or (now.astimezone(BERLIN).hour == 7 and t - self.last_daily > 3600):
@@ -247,7 +249,9 @@ class Radar:
                 print(f"Tageskurse: {err}", flush=True)
         quotes: dict[str, tuple[float, float | None]] = {}
         quotes.update(self.poll_binance())
-        if tradegate_open(now):
+        if tradegate is not None:  # Kurse kommen schon vom Live-Dienst
+            quotes.update({k: v for k, v in tradegate.items() if k in self.watch})
+        elif tradegate_open(now):
             quotes.update(self.poll_tradegate())
         if t - self.last_index > 300:
             try:
