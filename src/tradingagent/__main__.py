@@ -66,7 +66,9 @@ def cmd_collect(args) -> int:
 def _collect(settings, args) -> int:
     storage = open_storage(settings.storage_path)
     names = sorted({p for m in settings.markets.values() if m.enabled for p in (*m.providers, *m.daily_providers)})
+    t_collect = time.time()
     summary = collect(settings, storage, build_providers(names))
+    t_collect = time.time() - t_collect
     s = summary.as_dict()
     print(f"Lauf {s['started']}: {s['fetches']} Abrufe, {s['failed']} fehlgeschlagen, {s['new_bars']} neue Kerzen")
     for n in s.get("notes", []):
@@ -83,8 +85,10 @@ def _collect(settings, args) -> int:
         else:
             quotes, q_errors = fetch_quotes(settings)
             print(f"Tradegate: {len(quotes)} aktuelle Kurse" + (f", {len(q_errors)} Fehler" if q_errors else ""))
+        t_export = time.time()
         export_all(settings, storage, summary.started, status=s, passphrase=_passphrase(), quotes=quotes)
         print(f"Export nach {settings.export_dir}")
+        print(f"Dauer: Sammeln {t_collect:.0f} s, Export {time.time() - t_export:.0f} s")
     storage.close()
     return 1 if summary.all_failed else 0
 

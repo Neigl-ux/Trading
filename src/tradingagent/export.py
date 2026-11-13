@@ -33,10 +33,13 @@ from .storage import Storage
 
 
 def _rows(df: pd.DataFrame) -> list[list[float]]:
-    out = []
-    for ts, r in df.iterrows():
-        out.append([int(ts.timestamp()), _r(r.open), _r(r.high), _r(r.low), _r(r.close), round(float(r.volume), 4)])
-    return out
+    # ohne iterrows (das war der langsamste Teil des Exports): Spalten einmal als Listen holen
+    if df.empty:
+        return []
+    ts = (df.index.as_unit("ns").asi8 // 10**9).tolist() if df.index.tz is not None else [int(t.timestamp()) for t in df.index]
+    cols = [df[c].astype("float64").tolist() for c in ("open", "high", "low", "close")]
+    vol = df["volume"].astype("float64").tolist()
+    return [[t, _r(o), _r(h), _r(lo), _r(c), round(v, 4)] for t, o, h, lo, c, v in zip(ts, *cols, vol)]
 
 
 def _r(x: float) -> float:
