@@ -78,6 +78,14 @@ def _server_quotes():
 
 def cmd_export(args) -> int:
     settings = load_settings()
+    from . import republish
+
+    if republish.only_app_changed() and _passphrase():
+        n = republish.fetch_published(settings.export_dir, _passphrase())
+        if n:
+            print(f"Nur die App wurde geändert: {n} veröffentlichte Daten-Dateien übernommen, kein neuer Export nötig.")
+            return 0
+        print("Veröffentlichte Daten nicht vollständig abrufbar – normaler Export.")
     storage = open_storage(settings.storage_path)
     runs = storage.recent_runs(1)
     export_all(settings, storage, pd.Timestamp.now(tz="UTC"), status=runs[0] if runs else {}, passphrase=_passphrase())
