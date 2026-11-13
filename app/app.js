@@ -69,7 +69,7 @@ const shift = (sec) => sec + berlinOffset(sec);
 // Datenquelle: zuerst dein Server (alle 5 Minuten frisch, Einstellungen → Server-Adresse),
 // fällt er aus, automatisch GitHub (alle 15–60 Minuten). Beide sind gleich verschlüsselt.
 // ---------- App-Version: zeigt an, wenn eine neuere Fassung veröffentlicht ist ----------
-const APP_VERSION = 38;
+const APP_VERSION = 39;
 let versionSeen = null;
 async function checkVersion() {
   try {
@@ -552,6 +552,7 @@ function showTab(tab, sub = "list", active = tab) {
   if (tab === "advisor") renderAdvisor();
   if (tab === "chat") renderChat();
   if (tab === "status") renderSettings();
+  if (tab === "sim") renderStrategies();
   if (tab === "markets") {
     renderCatBars();
     if (sub === "movers") renderMovers();
@@ -4261,3 +4262,114 @@ $("pc-price").addEventListener("input", () => {
 $("pc-stop").addEventListener("input", () => { pc.auto.stop = false; renderPositionCalc(); });
 for (const id of ["pc-equity", "pc-risk"]) $(id).addEventListener("input", renderPositionCalc);
 $("pc-form").addEventListener("submit", (ev) => ev.preventDefault());
+
+
+// =====================================================================
+// Phase 5: Strategien im Rückblick (Server-Lauf jeden Sonntag, sonst die Fassung aus der App)
+// =====================================================================
+const st5 = { data: null, chart: null, loading: null };
+const ST_COLORS = ["#3b82f6", "#f59e0b", "#a855f7", "#ec4899", "#14b8a6", "#ef4444", "#84cc16"];
+const nfInt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+const nf1 = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const pctTxt = (x, sign = true) => (x === null || x === undefined ? "–" : `${sign && x > 0 ? "+" : ""}${nf1.format(x * 100)} %`);
+async function loadStrategies() {
+  const srv = serverUrl();
+  const tries = [];
+  if (srv) tries.push(fetchRaw(`${srv}/strategien.json`, 8000).catch(() => null));
+  tries.push(fetchRaw("strategien.json", 15000).catch(() => null));
+  const got = (await Promise.all(tries)).filter(Boolean);
+  // die neuere Fassung gewinnt
+  got.sort((a, b) => String(b.erstellt).localeCompare(String(a.erstellt)));
+  return got[0] || null;
+}
+async function renderStrategies() {
+  if (!st5.data) {
+    st5.loading = st5.loading || loadStrategies();
+    st5.data = await st5.loading;
+    st5.loading = null;
+  }
+  const r = st5.data;
+  const sum = $("st-summary");
+  if (!r) { sum.textContent = "Noch keine Ergebnisse vorhanden."; return; }
+  const strat = [...r.strategien].sort((a, b) => b.cagr - a.cagr);
+  const b = r.msci_world;
+  const best = strat[0];
+  const freeBest = Math.max(...strat.map((x) => x.cagr_ohne_kosten ?? -9));
+  sum.textContent = `${r.werte} Werte, Prüfjahre ${r.pruefjahre[0]}–${r.pruefjahre[1]}, je Jahr ${nfInt.format(r.startkapital)} € Spielgeld mit allen Regeln und Kosten aus Phase 4 (Stand ${r.erstellt.slice(8, 10)}.${r.erstellt.slice(5, 7)}.${r.erstellt.slice(0, 4)}). ` +
+    `Beste Strategie: ${best.name} mit ${pctTxt(best.cagr)} pro Jahr` + (b ? `, MSCI World halten: ${pctTxt(b.cagr)}. ` : ". ") +
+    (best.cagr < 0 && freeBest > 0 ? `Ohne Gebühr, Spread und Schlupf lägen die Strategien bei bis zu ${pctTxt(freeBest)} pro Jahr – die Kosten vieler kleiner Trades fressen den Ertrag auf.` : "");
+  // Tabelle
+  const body = $("st-body");
+  body.textContent = "";
+  const td = (txt, cls) => { const x = document.createElement("td"); x.textContent = txt; if (cls) x.className = cls; return x; };
+  const cls = (x) => (x > 0 ? "up-txt" : x < 0 ? "down-txt" : "");
+  for (const s of strat) {
+    const tr = document.createElement("tr");
+    tr.append(td(s.name), td(pctTxt(s.cagr), cls(s.cagr)), td(pctTxt(s.cagr_ohne_kosten), cls(s.cagr_ohne_kosten)), td(pctTxt(s.max_rueckgang)),
+      td(String(s.trades)), td(`${nfInt.format(s.gebuehren)} €`));
+    body.append(tr);
+  }
+  if (b) {
+    const tr = document.createElement("tr");
+    tr.className = "st-bench";
+    tr.append(td("MSCI World halten"), td(pctTxt(b.cagr), cls(b.cagr)), td("–"), td(pctTxt(b.max_rueckgang)), td("1 je Jahr"), td("–"));
+    body.append(tr);
+  }
+  const z = r.zufall;
+  if (z) {
+    const tr = document.createElement("tr");
+    tr.append(td("Zufällige Käufe (Median)"), td(pctTxt(z.cagr_median), cls(z.cagr_median)), td(pctTxt(z.cagr_median_ohne_kosten), cls(z.cagr_median_ohne_kosten)),
+      td(pctTxt(z.max_rueckgang_median)), td("–"), td("–"));
+    body.append(tr);
+  }
+  // Je Jahr
+  const yh = $("st-yhead"), yb = $("st-ybody");
+  yh.textContent = ""; yb.textContent = "";
+  const hr = document.createElement("tr");
+  for (const h of ["Jahr", ...strat.map((s) => s.name), "MSCI World"]) { const th = document.createElement("th"); th.textContent = h; hr.append(th); }
+  yh.append(hr);
+  strat[0].jahre.forEach((y, k) => {
+    const tr = document.createElement("tr");
+    tr.append(td(String(y.jahr)), ...strat.map((s) => td(pctTxt(s.jahre[k].rendite), cls(s.jahre[k].rendite))),
+      td(pctTxt(b ? b.jahre[k].rendite : null), cls(b ? b.jahre[k].rendite : 0)));
+    yb.append(tr);
+  });
+  // Grenzen
+  const lim = $("st-limits");
+  lim.textContent = "";
+  const p1 = document.createElement("p");
+  p1.textContent = `Jede Strategie lernt ${r.lernjahre} Jahre lang, welche ihrer Einstellungen am besten war, und wird dann im folgenden Jahr unberührt geprüft. Signal am Tagesschluss, Kauf zur Eröffnung des nächsten Tages. „Ohne Kosten“ zeigt dieselben Regeln ohne Gebühr, Spread und Schlupf.`;
+  const ul = document.createElement("ul");
+  for (const g of r.grenzen || []) { const li = document.createElement("li"); li.textContent = g; ul.append(li); }
+  lim.append(p1, ul);
+  drawStrategyChart(strat, b);
+}
+function drawStrategyChart(strat, b) {
+  const el = $("st-chart");
+  el.hidden = false;
+  if (!st5.chart) {
+    const css = getComputedStyle(document.documentElement);
+    const c = (v) => css.getPropertyValue(v).trim();
+    st5.chart = LightweightCharts.createChart(el, {
+      autoSize: true,
+      layout: { background: { color: c("--panel") }, textColor: c("--mute"), fontFamily: "Inter, system-ui, sans-serif" },
+      grid: { vertLines: { visible: false }, horzLines: { color: c("--grid") } },
+      rightPriceScale: { borderColor: c("--line"), mode: 1 },
+      timeScale: { borderColor: c("--line") },
+      handleScroll: false, handleScale: false,
+      localization: { locale: "de-DE", priceFormatter: (p) => `${nfInt.format(p * 5000)} €` },
+    });
+  }
+  if (st5.drawn) return;
+  st5.drawn = true;
+  const legend = $("st-legend");
+  legend.textContent = "";
+  const add = (name, rows, color, width) => {
+    const s = st5.chart.addLineSeries({ color, lineWidth: width, priceLineVisible: false, lastValueVisible: false });
+    s.setData(rows.map(([t, v]) => ({ time: t, value: v })));
+    const sp = document.createElement("span"); sp.textContent = name; sp.style.setProperty("--c", color); legend.append(sp);
+  };
+  if (b) add("MSCI World halten", b.verlauf, "#16c784", 3);
+  strat.forEach((s, k) => add(s.name, s.verlauf, ST_COLORS[k % ST_COLORS.length], 1));
+  st5.chart.timeScale().fitContent();
+}

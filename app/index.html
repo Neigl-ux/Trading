@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=38">
+  <link rel="stylesheet" href="style.css?v=39">
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
-  <script type="module" src="app.js?v=38"></script>
+  <script type="module" src="app.js?v=39"></script>
 </head>
 <body>
   <!-- Entsperren -->
@@ -317,6 +317,15 @@
     <section id="view-sim" class="view" hidden>
       <h2>Simulator</h2>
       <p class="placeholder">Der Simulator handelt ab Phase 7 selbstständig mit Spielgeld. Jede seiner Order muss dann durch die Risikoregeln unten.</p>
+      <article class="card st-card">
+        <header class="card-head"><h3>Strategien im Rückblick (Phase 5)</h3></header>
+        <p id="st-summary" class="small">Lade Ergebnisse …</p>
+        <div id="st-chart" class="st-chart" hidden></div>
+        <div id="st-legend" class="st-legend"></div>
+        <div class="table-wrap"><table class="scr-table st-table"><thead><tr><th>Strategie</th><th>pro Jahr</th><th>ohne Kosten</th><th>größter Rückgang</th><th>Trades</th><th>Gebühren</th></tr></thead><tbody id="st-body"></tbody></table></div>
+        <details class="st-years"><summary>Ergebnis je Jahr</summary><div class="table-wrap"><table class="scr-table"><thead id="st-yhead"></thead><tbody id="st-ybody"></tbody></table></div></details>
+        <details class="st-limits"><summary>So wurde getestet und Grenzen des Tests</summary><div id="st-limits" class="small"></div></details>
+      </article>
       <article class="card pc-card">
         <header class="card-head"><h3>Positionsrechner</h3></header>
         <p class="small">Wie viele Stück darf ein Kauf haben, damit bis zum Stop höchstens 1 % des Kontos verloren geht? Der Rechner rechnet nur, er handelt nicht.</p>
