@@ -26,7 +26,8 @@ class Session:
 
     def expected_index(self, start: pd.Timestamp, end: pd.Timestamp, freq: str) -> pd.DatetimeIndex:
         """Alle Kerzen-Startzeiten, die im Zeitraum zu erwarten sind (ohne Feiertage)."""
-        idx = pd.date_range(start.ceil(freq), end, freq=freq, tz="UTC", inclusive="left")
+        # ab der ersten echten Kerze zählen: US-Stundenkerzen beginnen zur halben Stunde (9:30, 10:30 …)
+        idx = pd.date_range(start, end, freq=freq, tz="UTC", inclusive="left")
         if self.open is None:
             return idx
         local = idx.tz_convert(self.tz)

@@ -267,3 +267,15 @@ def test_daily_gap_repair_reaches_back(tmp_path):
     if normal.skip:
         return
     assert fixed.start <= now - pd.Timedelta(days=3) < normal.start
+
+
+def test_us_hourly_bars_at_half_past_are_not_gaps():
+    import pandas as pd
+    from tradingagent.data.quality import QualityReport, check_gaps
+
+    days = pd.bdate_range("2026-11-09", "2026-11-13")
+    idx = [pd.Timestamp(f"{d.date()} {h}:30", tz="America/New_York").tz_convert("UTC") for d in days for h in range(9, 16)]
+    df = pd.DataFrame({"open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "volume": 0.0}, index=pd.DatetimeIndex(idx))
+    rep = QualityReport("AAPL", "1h")
+    check_gaps(df, "AAPL", "1h", "us", rep)
+    assert not [i for i in rep.issues if i.kind == "luecke"]
