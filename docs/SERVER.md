@@ -79,3 +79,15 @@ journalctl -u ta-radar -f          # Meldungen live mitlesen
 systemctl list-timers 'ta-*'       # wann der nächste Sammel-Lauf startet
 sudo systemctl start ta-update     # sofort aktualisieren
 ```
+
+## Ausbau: Sammeln alle 5 Minuten, Live-Kurse, Mitschnitt (ab 13.11.2026)
+
+Der Server sammelt jetzt selbst alle 5 Minuten, liefert die Daten per HTTPS direkt an die App, fragt jede Minute alle Tradegate-Kurse ab (eine Datei für die App statt Hunderter Abfragen vom Handy) und schreibt die Kurse deutscher Werte auch außerhalb der Xetra-Zeit mit. GitHub sammelt stündlich weiter als Sicherung; fällt der Server aus, nimmt die App automatisch GitHub.
+
+1. **Aufstocken (kostenlos):** Oracle → Compute → Instances → trading-agent → Edit → Shape → 2 OCPU, 12 GB → Save. Der Server startet kurz neu.
+2. **Ports öffnen:** Oracle → Networking → Virtual cloud networks → dein Netz → Subnets → dein Subnetz → Security → die Security List → Add Ingress Rules: Source CIDR `0.0.0.0/0`, IP Protocol TCP, Destination Port Range `80,443` → Add.
+3. **Neu installieren:** mit dem Server verbinden und den Installationsbefehl von oben noch einmal ausführen. Am Ende steht deine Server-Adresse (`https://…sslip.io`).
+4. **App-Passwort eintragen:** `sudo nano /etc/trading-agent.env` → `APP_PASSPHRASE=` (dasselbe Passwort wie in der App) → speichern → `sudo systemctl restart ta-radar && sudo systemctl start ta-collect`.
+5. **App verbinden:** Einstellungen → Dein Server → Adresse einfügen → Speichern. Oben steht dann „· Server“.
+
+Der erste Sammel-Lauf lädt die ganze Historie und dauert 30–60 Minuten (`journalctl -u ta-collect -f` zeigt den Fortschritt), danach wenige Minuten.
