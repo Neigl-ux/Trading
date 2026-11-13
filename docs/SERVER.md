@@ -13,6 +13,11 @@ Er braucht keine offenen Ports, nur ausgehende Verbindungen. Dein Portfolio komm
 1. Auf **cloud.oracle.com** „Kostenlos starten“ wählen. Als Heimatregion **Germany Central (Frankfurt)** nehmen; sie lässt sich später nicht ändern.
 2. Oracle verlangt eine Kreditkarte zur Prüfung. Solange du nur „Always Free“-Bausteine nutzt, wird nichts abgebucht.
 
+**So bleibt es garantiert kostenlos:**
+- Das Konto **nicht** auf „Pay As You Go“ umstellen. Ohne Umstellung kann Oracle nach der 30-tägigen Testphase nichts berechnen, kostenpflichtige Bausteine werden einfach abgeschaltet.
+- Nur Bausteine mit dem Hinweis „Always Free eligible“ wählen: VM.Standard.A1.Flex mit höchstens 2 OCPU / 12 GB insgesamt (wir nehmen 1 OCPU / 6 GB) oder VM.Standard.E2.1.Micro, Speicher höchstens 200 GB (die Standard-Bootplatte hat 50 GB).
+- Keine zusätzlichen Dienste (Datenbanken, Load Balancer usw.) anlegen.
+
 ## 2. Server anlegen
 
 1. Im Menü **Compute → Instances → Create instance**.

@@ -2,6 +2,7 @@ import { deriveKey, exportKey, importKey, openSealed, sealText, openText } from 
 import { FinnhubStream, usMarketOpen } from "./finnhub.js";
 import { CATEGORIES, EMPTY_FILTER, SIGNALS, SORTS, STATUS_LABEL, WINDOWS, dataStatus, dayPerf, onQuote, perfOf, pushQuote, quoteOf, screen, topFlop } from "./engine.js";
 import { candleLabel, tickLabel } from "./format.js";
+import { answer, SUGGESTIONS } from "./assistant.js";
 import { fetchQuote, tradegateOpen } from "./tradegate.js";
 import { VIEWS, STEP, TZ as PERF_TZ, computeAll, formatPct, pctClass, periodStart, berlinParts, berlinToUtc } from "./perf.js";
 import { CryptoFeed, binanceKlines, mergeRows } from "./feeds.js";
@@ -3772,58 +3773,31 @@ function finnhubNewsBox(sym) {
 }
 
 
-// ---------- KI-Chat (Claude API, eigener Schlüssel) ----------
-// Die Anfrage geht direkt vom Gerät an Anthropic. Kein eigener Server liest mit.
-const CHAT_KEY_STORE = "ta.claude.v1";
+// ---------- Assistent (ohne KI, ohne Konto, kostenlos) ----------
+// Antwortet aus den Daten der App und einer eingebauten Wissensbasis (assistant.js). Alles bleibt auf dem Gerät.
 const CHAT_LOG_STORE = "ta.chat.v1";
-const CHAT_PRICES = { "claude-haiku-5-5": [0.10, 0.50], "claude-sonnet-5-5": [2.00, 10.00] }; // US-$ je 1 Mio. Tokens (Eingabe, Ausgabe)
-const chat = { key: null, msgs: [], busy: false, ctrl: null, cost: 0, loaded: false };
-const CHAT_SUGGEST = [
-  "Wie funktioniert meine Nachkauf-Pyramide, und wann löst sie aus?",
-  "Was bedeutet es, dass die Punktzahl im Rückblick-Test keine Gewinner findet?",
-  "Wie risikoreich ist mein Portfolio? Was würdest du verbessern?",
-  "Welche Funktion fehlt der App noch für langfristiges Anlegen?",
-];
+const chat = { msgs: [], loaded: false };
+try { localStorage.removeItem("ta.claude.v1"); } catch {} // alter KI-Schlüssel wird nicht mehr gebraucht
 
-async function loadChatKey() {
-  try {
-    const box = JSON.parse(localStorage.getItem(CHAT_KEY_STORE) || "null");
-    if (!box) return null;
-    if (box.plain) return box.plain;
-    return state.key ? await openText(state.key, box) : null;
-  } catch { return null; }
-}
-async function saveChatKey(k) {
-  const box = state.key ? await sealText(state.key, k) : { plain: k };
-  localStorage.setItem(CHAT_KEY_STORE, JSON.stringify(box));
-}
 async function loadChatLog() {
   try {
     const box = JSON.parse(localStorage.getItem(CHAT_LOG_STORE) || "null");
     if (!box) return [];
     const txt = box.plain ? box.plain : state.key ? await openText(state.key, box) : null;
     const msgs = txt ? JSON.parse(txt) : [];
-    return Array.isArray(msgs) ? msgs : [];
+    return Array.isArray(msgs) ? msgs.filter((m) => m && typeof m.content === "string") : [];
   } catch { return []; }
 }
 async function saveChatLog() {
   try {
-    const txt = JSON.stringify(chat.msgs.slice(-40));
+    const txt = JSON.stringify(chat.msgs.slice(-60));
     const box = state.key ? await sealText(state.key, txt) : { plain: txt };
     localStorage.setItem(CHAT_LOG_STORE, JSON.stringify(box));
   } catch {}
 }
 
 async function renderChat() {
-  if (!chat.loaded) {
-    chat.key = await loadChatKey();
-    chat.msgs = await loadChatLog();
-    chat.loaded = true;
-  }
-  $("chat-setup").hidden = Boolean(chat.key);
-  $("chat-main").hidden = !chat.key;
-  if (!chat.key) return;
-  $("chat-pf-note").hidden = !$("chat-pf").checked;
+  if (!chat.loaded) { chat.msgs = await loadChatLog(); chat.loaded = true; }
   paintChatLog();
 }
 
@@ -3861,142 +3835,76 @@ function paintChatLog() {
   log.replaceChildren(...chat.msgs.map((m) => {
     const b = mk("div", `chat-msg ${m.role === "user" ? "me" : "ai"}`);
     if (m.role === "user") b.textContent = m.content;
-    else b.append(mdRender(m.content || "…"));
+    else {
+      b.append(mdRender(m.content));
+      if (m.actions && m.actions.length) {
+        const row = mk("div", "chat-actions");
+        for (const a of m.actions) {
+          const e = byId(a.id);
+          if (!e) continue;
+          const btn = mk("button", "chip", a.label); btn.type = "button";
+          btn.addEventListener("click", () => openChart(e));
+          row.append(btn);
+        }
+        b.append(row);
+      }
+    }
     return b;
   }));
-  $("chat-suggest").replaceChildren(...(chat.msgs.length ? [] : CHAT_SUGGEST.map((q) => {
+  $("chat-suggest").replaceChildren(...SUGGESTIONS.map((q) => {
     const c = mk("button", "chip", q); c.type = "button";
     c.addEventListener("click", () => { $("chat-input").value = q; sendChat(); });
     return c;
-  })));
-  $("chat-cost").textContent = chat.cost ? `Kosten in diesem Chat: ca. ${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 }).format(chat.cost * 100)} US-Cent.` : "";
-  log.scrollTop = log.scrollHeight;
+  }));
+  requestAnimationFrame(() => { const last = log.lastElementChild; if (last) last.scrollIntoView({ block: "nearest" }); });
 }
 
-function chatContext() {
-  const lines = [];
-  const d = adv.data;
-  lines.push("Profil des Nutzers (selbst angegeben): Anlagehorizont 5 bis 10 Jahre; hält einen Rückgang von 30 % aus und sieht Rücksetzer als Kaufgelegenheit; Sparplan 120 € pro Monat; einmalige Reserve von 1.000 € ausschließlich für Nachkäufe bei Kurseinbrüchen von ETFs; kein Krypto im Sparplan; keine Branchenausschlüsse; Depot bei der ING (die App hat keinen Zugriff darauf).");
-  lines.push("Nachkauf-Pyramide des Nutzers: vom 12-Monats-Hoch −10/−15/−20/−25/−30 % → 100/150/200/250/300 € aus der Reserve.");
-  lines.push("Funktionen der App: Märkte-Liste mit über 1.300 Werten (Aktien, ETFs, Krypto, Indizes, Forex, Rohstoffe), Live-Kurse (Tradegate, Binance, Kraken, Finnhub), Charts mit Indikatoren, Top/Flop, Screener, Watchlist, Portfolio (lokal verschlüsselt, CSV-Import), Ratgeber (Punktzahl 0–100 aus Trend 35 %, Risiko 25 %, Qualität 15 %, Handelbarkeit 10 %, Passung 15 %; Sparplan-Vorschlag; Nachkauf-Stufen; Weltlage aus GDELT-Nachrichten; Push über ntfy), Rückblick-Tests. Daten sammelt ein GitHub-Workflow alle 15 Minuten; ein eigener Server ist in Vorbereitung. Geplant: Daytrading-Simulator mit Spielgeld (Phase 7).");
-  if (d) {
-    const v = d.verdict || {};
-    lines.push(`Ratgeber-Stand ${new Date(d.updated * 1000).toLocaleString("de-DE")}: Weltlage ${d.world && d.world.level ? d.world.level : "unbekannt"}.`);
-    if (d.plan && d.plan.items) lines.push("Sparplan-Vorschlag: " + d.plan.items.map((x) => `${advName(x.id)} ${x.eur} € (${x.role})`).join(", ") + (d.plan.mode === "einfach" ? " – einfacher Welt-ETF-Sparplan, weil die Punktzahl im Rückblick-Test den Welt-ETF nicht geschlagen hat." : ""));
-    for (const m of (d.report && d.report.market) || []) lines.push(`${m.label}: ${(m.dd * 100).toFixed(1)} % unter dem 12-Monats-Hoch.`);
-    lines.push(`Rückblick-Test (2012–2026): Punktzahl schlägt Maßstab: ${v.score_beats_benchmark ? "ja" : "nein"}; trennt Risiko: ${v.risk_filter_works ? "ja" : "nein"}. Staffel gegen sofortiges Anlegen (MSCI World, 5 J.): meist leicht schlechter, dämpft aber starke Depot-Rückgänge. Sparplan-Test 2010–2026 (10 J.): 100 % Welt +12,1 %/Jahr, 70 % Welt/30 % Nasdaq 100 +14,2 %/Jahr, 100 % Nasdaq 100 +18,9 %/Jahr (Zeitraum ohne großen Tech-Crash).`);
-  }
-  if ($("chat-pf").checked && pf.data.positions && pf.data.positions.length) {
-    const rows = pf.data.positions.map((p) => ({ p, ...positionValue(p) }));
-    const total = rows.reduce((a, r) => a + (r.value || 0), 0);
-    lines.push("Portfolio des Nutzers (Anteile in %, keine Beträge):");
-    for (const r of rows) {
-      const e = r.e;
-      const v = e && d && d.values ? d.values[e.id] : null;
-      const share = total && r.value ? `${(r.value / total * 100).toFixed(1)} %` : "?";
-      const gain = r.cost && r.value ? `${((r.value / r.cost - 1) * 100).toFixed(1)} % seit Kauf` : "Einstand unbekannt";
-      lines.push(`- ${e ? e.name : r.p.name || r.p.isin} (${e && e.isin ? e.isin : r.p.isin || ""}, ${e ? KIND_LABEL[e.kind] || e.kind : ""}): Anteil ${share}, ${gain}${v ? `, Ratgeber ${Math.round(v.s)} Punkte (${v.g}), Risiko ${v.r}/5, ${(v.dd * 100).toFixed(0)} % unter 12-Monats-Hoch` : ""}`);
-    }
-  }
-  return lines.join("\n");
+function assistantCtx() {
+  return {
+    instruments: state.index ? state.index.instruments : [],
+    adv: adv.data,
+    price: (e) => curPriceOf(e),
+    day: (e) => { const d = dayPerf(e, livePrice(e)); return d ? d.pct : null; },
+    status: (e) => { const s = dataStatus(e); return STATUS_LABEL[s.code] || ""; },
+    fmtPrice: (e, p) => (e.kind === "index" ? `${numFmt(p)} Punkte` : priceText(e, p)),
+    fmtEur: (x) => fmtPrice(x, "€"),
+    kindLabel: (k) => KIND_LABEL[k] || k,
+    name: (id) => advName(id),
+    portfolio: () => {
+      const rows = (pf.data.positions || []).map((p) => { const r = positionValue(p); return { ...r, name: r.e ? r.e.name : p.name || p.isin || p.id }; });
+      const total = rows.reduce((a, r) => a + (r.value || 0), 0);
+      const dayAbs = rows.some((r) => r.dayAbs != null) ? rows.reduce((a, r) => a + (r.dayAbs || 0), 0) : null;
+      return { rows, total, dayAbs };
+    },
+    movers: () => {
+      const res = topFlop(state.index.instruments, { cats: new Set(["aktie", "etf", "krypto"]), liquidOnly: true, priceOf: livePrice, limit: 6 });
+      return { top: res.top, flop: res.flop };
+    },
+    setup: () => ({ portfolio: Boolean(pf.data.positions && pf.data.positions.length), finnhub: Boolean(fh.token) }),
+  };
 }
-
-const CHAT_SYSTEM = `Du bist der KI-Assistent in der privaten Trading-App des Nutzers. Antworte auf Deutsch, klar und knapp, in Alltagssprache; Fachbegriffe kurz erklären.
-Deine Aufgaben: Fragen zu Trading, Börse und langfristigem Anlegen beantworten, das Portfolio und die Strategie des Nutzers einordnen (nur wenn Daten mitgeschickt wurden) und konkrete Verbesserungsvorschläge für die App machen.
-Regeln: Du bist kein Anlageberater und gibst keine persönlichen Kauf- oder Verkaufsaufträge; du erklärst Daten, Abwägungen und Risiken, die Entscheidung trifft der Nutzer. Sei ehrlich, auch wenn die Antwort enttäuscht: keine Gewinnversprechen, keine erfundenen Kurse, Zahlen oder Nachrichten. Aktuelle Kurse und Nachrichten kennst du nur aus dem Kontext unten; sag, wenn dir etwas fehlt. Wenn der Nutzer etwas plant, das über seine Risikogrenze geht (z. B. Hebelprodukte, Konzentration auf eine Aktie, Kredit für Aktien), weise deutlich darauf hin.`;
 
 async function sendChat() {
   const input = $("chat-input");
   const text = input.value.trim();
-  if (!text || chat.busy) return;
+  if (!text) return;
+  input.value = "";
   if (!adv.data) { try { await loadAdvisor(); } catch {} }
   await loadPortfolio();
-  input.value = "";
   chat.msgs.push({ role: "user", content: text });
-  const answer = { role: "assistant", content: "" };
-  chat.msgs.push(answer);
-  chat.busy = true;
-  $("chat-send").textContent = "Stopp";
+  let res;
+  try { res = answer(text, assistantCtx()); }
+  catch (err) { res = { text: `Da ist etwas schiefgegangen (${err.message}).`, actions: [] }; }
+  chat.msgs.push({ role: "assistant", content: res.text, actions: res.actions });
   paintChatLog();
-  const model = $("chat-model").value;
-  chat.ctrl = new AbortController();
-  try {
-    const history = chat.msgs.slice(0, -1).slice(-20).filter((m) => m.content);
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      signal: chat.ctrl.signal,
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": chat.key,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true",
-      },
-      body: JSON.stringify({ model, max_tokens: 1500, stream: true,
-        system: `${CHAT_SYSTEM}\n\nKontext aus der App (Stand jetzt):\n${chatContext()}`,
-        messages: history.map((m) => ({ role: m.role, content: m.content })) }),
-    });
-    if (!res.ok) {
-      let msg = `HTTP ${res.status}`;
-      try { const j = await res.json(); msg = (j.error && j.error.message) || msg; } catch {}
-      throw new Error(res.status === 401 ? "Der API-Schlüssel wurde abgelehnt. Bitte prüfen oder neu eintragen." : res.status === 429 ? "Zu viele Anfragen oder kein Guthaben mehr. Bitte kurz warten bzw. Guthaben bei Anthropic prüfen." : msg);
-    }
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "", inTok = 0, outTok = 0, last = 0;
-    for (;;) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      let nl;
-      while ((nl = buf.indexOf("\n")) >= 0) {
-        const line = buf.slice(0, nl).trim();
-        buf = buf.slice(nl + 1);
-        if (!line.startsWith("data:")) continue;
-        let ev; try { ev = JSON.parse(line.slice(5)); } catch { continue; }
-        if (ev.type === "message_start" && ev.message && ev.message.usage) inTok = ev.message.usage.input_tokens || 0;
-        else if (ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta") answer.content += ev.delta.text;
-        else if (ev.type === "message_delta" && ev.usage) outTok = ev.usage.output_tokens || outTok;
-        else if (ev.type === "error") throw new Error((ev.error && ev.error.message) || "Fehler bei der Antwort");
-      }
-      if (Date.now() - last > 120) { last = Date.now(); paintChatLog(); }
-    }
-    const [pi, po] = CHAT_PRICES[model] || [0, 0];
-    chat.cost += (inTok * pi + outTok * po) / 1e6;
-  } catch (err) {
-    if (err.name !== "AbortError") answer.content += `${answer.content ? "\n\n" : ""}⚠ ${err.message}`;
-  } finally {
-    chat.busy = false;
-    chat.ctrl = null;
-    $("chat-send").textContent = "Senden";
-    if (!answer.content) chat.msgs.pop();
-    paintChatLog();
-    saveChatLog();
-  }
+  saveChatLog();
 }
 
-$("chat-form").addEventListener("submit", (ev) => {
-  ev.preventDefault();
-  if (chat.busy && chat.ctrl) chat.ctrl.abort(); else sendChat();
-});
+$("chat-form").addEventListener("submit", (ev) => { ev.preventDefault(); sendChat(); });
 $("chat-input").addEventListener("keydown", (ev) => {
   if (ev.key === "Enter" && !ev.shiftKey && window.matchMedia("(pointer: fine)").matches) { ev.preventDefault(); sendChat(); }
 });
-$("chat-pf").addEventListener("change", () => { $("chat-pf-note").hidden = !$("chat-pf").checked; });
-$("chat-new").addEventListener("click", () => { chat.msgs = []; chat.cost = 0; saveChatLog(); paintChatLog(); });
-$("chat-key-form").addEventListener("submit", async (ev) => {
-  ev.preventDefault();
-  const k = $("chat-key").value.trim();
-  if (!/^sk-ant-/.test(k)) { $("chat-key-state").textContent = "Das sieht nicht wie ein Claude-API-Schlüssel aus (beginnt mit „sk-ant-“)."; return; }
-  await saveChatKey(k);
-  chat.key = k;
-  $("chat-key").value = "";
-  renderChat();
-});
-$("chat-key-remove").addEventListener("click", () => {
-  try { localStorage.removeItem(CHAT_KEY_STORE); } catch {}
-  chat.key = null;
-  renderChat();
-});
+$("chat-new").addEventListener("click", () => { chat.msgs = []; saveChatLog(); paintChatLog(); });
 
 $("radar-copy").addEventListener("click", async () => {
   await loadPortfolio();
