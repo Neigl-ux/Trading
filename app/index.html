@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=19">
+  <link rel="stylesheet" href="style.css?v=20">
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
-  <script type="module" src="app.js?v=19"></script>
+  <script type="module" src="app.js?v=20"></script>
 </head>
 <body>
   <!-- Entsperren -->
@@ -259,9 +259,55 @@
     </section>
 
     <!-- Ratgeber -->
-    <section id="view-advisor" class="view" hidden>
-      <h2>Ratgeber</h2>
-      <p class="placeholder">Hier erscheinen ab Phase 3 Einschätzungen zu deinen Werten: Score, Begründung, Risiko und ein Vorschlag, wie du deinen Sparplan aufteilen könntest. Alles nur zur Information, der Ratgeber greift nicht auf dein Depot zu.</p>
+    <section id="view-advisor" class="view view-wide" hidden>
+      <div class="page-head"><h2>Ratgeber</h2><span class="page-sub">Einschätzungen für langfristiges Anlegen. Nur Information: kein Zugriff auf dein Depot, keine Aufträge. Entscheiden und umsetzen tust du.</span></div>
+      <p id="adv-empty" class="small" hidden></p>
+      <div id="adv-body" hidden>
+        <div class="adv-top">
+          <article class="card adv-report">
+            <header class="card-head"><h3 id="adv-report-title">Lagebericht</h3><span id="adv-updated" class="kpi-sub"></span></header>
+            <div id="adv-report"></div>
+          </article>
+          <article class="card adv-plan">
+            <header class="card-head"><h3>Sparplan 120 € pro Monat</h3></header>
+            <div id="adv-plan"></div>
+          </article>
+        </div>
+        <div class="adv-top">
+          <article class="card adv-stages">
+            <header class="card-head"><h3>Nachkauf-Stufen (Reserve 1.000 €)</h3></header>
+            <div id="adv-stages"></div>
+          </article>
+          <article class="card adv-world">
+            <header class="card-head"><h3>Weltlage aus den Nachrichten</h3></header>
+            <div id="adv-world"></div>
+          </article>
+        </div>
+        <article class="card adv-test">
+          <header class="card-head"><h3>Was der Rückblick-Test zeigt</h3></header>
+          <div id="adv-test"></div>
+        </article>
+        <article class="card adv-mine">
+          <header class="card-head"><h3>Deine Positionen</h3></header>
+          <div id="adv-mine"></div>
+        </article>
+        <article class="card adv-all">
+          <header class="card-head"><h3>Alle bewerteten Werte</h3><span id="adv-count" class="kpi-sub"></span></header>
+          <div class="adv-tools">
+            <input id="adv-q" type="search" placeholder="Name, Kürzel oder ISIN" aria-label="Bewertete Werte durchsuchen" autocomplete="off">
+            <div id="adv-kind" class="chips" role="group" aria-label="Art"></div>
+            <div id="adv-grade" class="chips" role="group" aria-label="Einstufung"></div>
+            <label class="fld adv-sort"><span>Sortieren</span><select id="adv-sort">
+              <option value="score">Punktzahl, höchste zuerst</option>
+              <option value="risk">Risiko, niedrigstes zuerst</option>
+              <option value="dd">Abstand zum 12-Monats-Hoch</option>
+              <option value="name">Name</option>
+            </select></label>
+          </div>
+          <div id="adv-list"></div>
+          <div id="adv-pager" class="pager"></div>
+        </article>
+      </div>
     </section>
 
     <!-- Simulator -->

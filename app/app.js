@@ -468,6 +468,7 @@ function showTab(tab, sub = "list", active = tab) {
   for (const [t, id] of Object.entries(TABS)) $(id).hidden = t !== tab;
   if (tab === "home") renderDash();
   if (tab === "portfolio") renderPortfolio();
+  if (tab === "advisor") renderAdvisor();
   if (tab === "status") renderSettings();
   if (tab === "markets") {
     renderCatBars();
@@ -3285,3 +3286,410 @@ function paintDashInfo(i) {
   add("", `Schluss ${f(r[4])}`);
   if (prev && prev[4]) { const c = r[4] / prev[4] - 1; add(trendClass(c), `${pctText(c)} zur Vorkerze`); }
 }
+
+// ---------- Ratgeber (Phase 3) ----------
+// Die Bewertung aller Werte rechnet der Sammler (advisor.json, verschlüsselt wie die Kurse).
+// Alles, was dein Portfolio betrifft, rechnet nur diese Seite auf deinem Gerät.
+const adv = { data: null, forUpdate: null, loading: null, kind: "alle", grade: "alle", q: "", sort: "score", page: 0, open: new Set() };
+const ADV_PAGE = 40;
+const FACTOR_LABEL = ["Trend", "Risiko", "Qualität und Bewertung", "Handelbarkeit", "Passung"];
+const GRADE_LABEL = { interessant: "Interessant", neutral: "Neutral", vorsicht: "Vorsicht" };
+const STAGE_PCT = [10, 15, 20, 25, 30];
+
+function mk(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+const advPct = (x, digits = 0) => (x == null ? "–" : `${x > 0 ? "+" : x < 0 ? "−" : ""}${new Intl.NumberFormat("de-DE", { maximumFractionDigits: digits, minimumFractionDigits: digits }).format(Math.abs(x) * 100)} %`);
+const advShare = (x) => (x == null ? "–" : `${Math.round(x * 100)} %`);
+const advDate = (d) => (d ? new Date(d + "T12:00:00").toLocaleDateString("de-DE", { day: "numeric", month: "long" }) : "");
+const advName = (id) => { const e = byId(id); return e ? e.name : id; };
+
+async function loadAdvisor() {
+  const name = state.index && state.index.advisor;
+  if (!name) return null;
+  if (adv.data && adv.forUpdate === state.index.updated) return adv.data;
+  if (!adv.loading) {
+    adv.loading = (async () => {
+      const sealed = await fetchJSON(`data/${name}`);
+      return sealed.enc ? openSealed(state.key, sealed) : sealed.data;
+    })();
+  }
+  try {
+    adv.data = await adv.loading;
+    adv.forUpdate = state.index.updated;
+  } finally {
+    adv.loading = null;
+  }
+  return adv.data;
+}
+
+function scorePill(v) {
+  const s = mk("span", `adv-score g-${v.g}`, String(Math.round(v.s)));
+  s.title = `${Math.round(v.s)} von 100 Punkten: ${GRADE_LABEL[v.g]}`;
+  return s;
+}
+
+async function renderAdvisor() {
+  const empty = $("adv-empty");
+  let d;
+  try {
+    d = await loadAdvisor();
+  } catch (err) {
+    empty.textContent = `Die Ratgeber-Daten konnten nicht geladen werden (${err.message}). Bitte später erneut versuchen.`;
+    empty.hidden = false; $("adv-body").hidden = true;
+    return;
+  }
+  if (!d) {
+    empty.textContent = "Der Ratgeber wird beim nächsten Sammel-Lauf erstellt (spätestens in 15 Minuten).";
+    empty.hidden = false; $("adv-body").hidden = true;
+    return;
+  }
+  empty.hidden = true;
+  $("adv-body").hidden = false;
+  $("adv-updated").textContent = `berechnet ${new Date(d.updated * 1000).toLocaleString("de-DE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`;
+  renderAdvReport(d);
+  renderAdvPlan(d);
+  renderAdvStages(d);
+  renderAdvWorld(d);
+  renderAdvTest(d);
+  await loadPortfolio();
+  renderAdvMine(d);
+  renderAdvFilters(d);
+  renderAdvList(d);
+}
+
+function renderAdvReport(d) {
+  const r = d.report || {};
+  $("adv-report-title").textContent = r.date ? `Lagebericht vom ${advDate(r.date)}` : "Lagebericht";
+  const box = $("adv-report");
+  const ul = mk("ul", "adv-lines");
+  const add = (text, cls) => ul.append(mk("li", cls, text));
+  const world = d.world && d.world.level;
+  add(world ? `Weltlage: ${world}.` : "Weltlage: noch zu wenig Nachrichtenverlauf für eine Einschätzung.", world === "angespannt" ? "warn" : "");
+  for (const m of r.market || []) {
+    add(m.stage ? `${m.label} liegt ${advPct(-m.dd)} unter dem 12-Monats-Hoch (Stufe ${m.stage}). Ein Rückgang des Gesamtmarkts betrifft alle Werte zugleich.`
+      : `${m.label}: ${m.dd < 0.02 ? "nahe am 12-Monats-Hoch" : `${advPct(-m.dd)} unter dem 12-Monats-Hoch`}.`, m.stage ? "warn" : "");
+  }
+  for (const e of r.stages || []) {
+    add(e.check_news ? `${e.name}: Stufe ${e.stage} erreicht, aber es gibt aktuelle Negativ-Nachrichten. Erst die Nachricht prüfen.`
+      : e.allowed ? `${e.name}: Nachkauf-Stufe ${e.stage} erreicht (${advPct(-e.dd)} vom Hoch).`
+      : `${e.name}: Stufe ${e.stage} erreicht, aber nur ${e.score} Punkte. Unter 65 Punkten gilt ein Rückgang nicht als „Sale“.`, "warn");
+  }
+  for (const c of r.changes || []) add(`Sparplan: ${c.text}`);
+  const moves = [...(r.up || []).map(([id, n]) => `${advName(id)} +${n}`), ...(r.down || []).map(([id, n]) => `${advName(id)} ${n}`)];
+  if (moves.length) add(`Größte Punktänderungen seit dem letzten Bericht: ${moves.join(", ")}.`);
+  if (!(r.stages || []).length && !(r.changes || []).length) add("Keine Nachkauf-Stufe ausgelöst, Sparplan unverändert. Nichts zu tun.");
+  box.replaceChildren(ul, mk("p", "small", "Neuer Bericht alle 2 Tage. Bei einer ausgelösten Stufe kommt sofort eine Push-Nachricht (ntfy), sobald der Kanal eingerichtet ist."));
+}
+
+function planList(items) {
+  const ul = mk("ul", "adv-plan-list");
+  for (const it of items) {
+    const li = mk("li");
+    const e = byId(it.id);
+    const name = mk("button", "adv-link", advName(it.id));
+    name.type = "button";
+    if (e) name.addEventListener("click", () => openChart(e));
+    const v = adv.data.values[it.id];
+    li.append(mk("span", "adv-role", it.role), name, v ? scorePill(v) : mk("span"), mk("strong", "adv-eur", `${it.eur} €`));
+    ul.append(li);
+  }
+  return ul;
+}
+
+function renderAdvPlan(d) {
+  const p = d.plan || {};
+  const box = $("adv-plan");
+  const parts = [];
+  if (!p.items || !p.items.length) {
+    box.replaceChildren(mk("p", "small", "Noch kein Vorschlag: Für die Welt-ETFs fehlen Tageskurse."));
+    return;
+  }
+  parts.push(planList(p.items));
+  if (p.mode === "einfach") {
+    parts.push(mk("p", "small", "Empfehlung: alles in den breiten Welt-ETF. Im Rückblick-Test hat die Punktzahl den schlichten Welt-ETF nicht geschlagen. Deshalb bleibt es laut Konzeption beim einfachen Sparplan."));
+    if (p.alternative && p.alternative.length > 1) {
+      const det = mk("details", "adv-alt");
+      det.append(mk("summary", null, "Alternative mit Beimischungen (Kern und Satelliten)"), planList(p.alternative),
+        mk("p", "small", "Nur wenn du bewusst Akzente setzen willst. Satelliten sind Werte ab 65 Punkten, die sich vom Kern unterscheiden (Korrelation unter 0,85)."));
+      parts.push(det);
+    }
+  }
+  if (p.since) parts.push(mk("p", "small", `Vorschlag unverändert seit ${advDate(p.since)}. Ein Baustein wird erst ersetzt, wenn er drei Monate in Folge unter 40 Punkten liegt.`));
+  parts.push(mk("p", "small", "Ob die ING den Wert als Sparplan anbietet und was er kostet, prüfst du bitte dort."));
+  box.replaceChildren(...parts);
+}
+
+function renderAdvStages(d) {
+  const p = d.plan || {};
+  const box = $("adv-stages");
+  const ids = [...new Set([...(p.items || []), ...(p.alternative || [])].map((x) => x.id))];
+  const tbl = mk("table", "scr-table adv-st-tbl");
+  const head = mk("tr");
+  head.append(mk("th", null, "Wert"), mk("th", null, "vom Hoch"), ...STAGE_PCT.map((x, i) => mk("th", null, `−${x} %`)));
+  const thead = mk("thead"); thead.append(head);
+  const body = mk("tbody");
+  const eurRow = mk("tr", "adv-st-eur");
+  eurRow.append(mk("td", null, "Betrag"), mk("td"), ...(p.stages || []).map((s) => mk("td", null, `${s.eur} €`)));
+  for (const id of ids) {
+    const v = d.values[id];
+    if (!v) continue;
+    const tr = mk("tr");
+    tr.append(mk("td", null, advName(id)), mk("td", trendClass(-v.dd), advPct(-v.dd)));
+    STAGE_PCT.forEach((_, i) => {
+      const td = mk("td", i < v.st ? "adv-st-on" : "adv-st-off", i < v.st ? "erreicht" : "·");
+      tr.append(td);
+    });
+    body.append(tr);
+  }
+  body.append(eurRow);
+  tbl.append(thead, body);
+  const wrap = mk("div", "table-wrap"); wrap.append(tbl);
+  const parts = [wrap];
+  const ev = (d.events || []).slice(-5).reverse();
+  if (ev.length) {
+    const ul = mk("ul", "adv-lines");
+    for (const e of ev) ul.append(mk("li", "warn", `${advDate(e.date)}: ${e.name} Stufe ${e.stage}${e.check_news ? " (erst Nachricht prüfen)" : e.allowed ? "" : " (unter 65 Punkten, kein Nachkauf)"}`));
+    parts.push(ul);
+  }
+  parts.push(mk("p", "small", "Gemessen vom höchsten Kurs der letzten 12 Monate. Jede Stufe zählt pro Rückgang einmal und wird erst nach einem neuen 12-Monats-Hoch wieder frei. Was du tatsächlich nachkaufst, trägst du im Portfolio ein."));
+  const pyr = d.verdict && d.verdict.pyramid_world_5y;
+  if (pyr && pyr.staffel) {
+    const rest = pyr.staffel_rest_nach_12M;
+    parts.push(mk("p", "small adv-honest", `Ehrlich gesagt: Im Rückblick-Test (MSCI World, 5 Jahre) war die Staffel nur in ${advShare(pyr.staffel.win)} der Startpunkte besser als die 1.000 € sofort anzulegen; im Median lag sie ${advPct(pyr.staffel.median)} dahinter, weil das Geld oft lange wartet.${rest ? ` Am wenigsten kostet die Variante „Rest nach 12 Monaten anlegen“ (Median ${advPct(rest.median)}).` : ""}`));
+  }
+  box.replaceChildren(...parts);
+}
+
+function toneSpark(series) {
+  const vals = (series || []).map((x) => x[1]).filter((x) => x != null);
+  if (vals.length < 2) return mk("span");
+  const w = 120, h = 28;
+  const lo = Math.min(...vals, 0), hi = Math.max(...vals, 0);
+  const span = hi - lo || 1;
+  const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * w},${h - ((v - lo) / span) * h}`).join(" ");
+  const zero = h - ((0 - lo) / span) * h;
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`); svg.setAttribute("class", "adv-spark"); svg.setAttribute("aria-hidden", "true");
+  const base = document.createElementNS(ns, "line");
+  base.setAttribute("x1", 0); base.setAttribute("x2", w); base.setAttribute("y1", zero); base.setAttribute("y2", zero); base.setAttribute("class", "zero");
+  const line = document.createElementNS(ns, "polyline");
+  line.setAttribute("points", pts);
+  svg.append(base, line);
+  return svg;
+}
+
+function renderAdvWorld(d) {
+  const w = d.world || {};
+  const box = $("adv-world");
+  const ul = mk("ul", "adv-world-list");
+  for (const t of w.topics || []) {
+    const li = mk("li");
+    const lvl = t.state ? t.state.level : null;
+    li.append(mk("span", "adv-topic", t.label), toneSpark(t.series),
+      mk("span", `adv-lvl ${lvl === "angespannt" ? "down" : lvl === "ruhig" ? "up" : lvl ? "warn" : "flat"}`, lvl || "noch kein Verlauf"));
+    ul.append(li);
+  }
+  box.replaceChildren(
+    mk("p", "adv-world-level", w.level ? `Gesamt: ${w.level}` : "Gesamt: noch keine Einschätzung"),
+    ul,
+    mk("p", "small", "Tonfall weltweiter Nachrichten (GDELT, 65 Sprachen) der letzten 30 Tage; die Linie unter null heißt: überwiegend negativ berichtet. Die Weltlage fließt nicht in die Punktzahl ein, bis der Rückblick-Test zeigt, dass sie hilft. Dafür sammelt der Ratgeber ab jetzt mit."),
+  );
+}
+
+function renderAdvTest(d) {
+  const bt = d.backtest && d.backtest.score;
+  const box = $("adv-test");
+  if (!bt || bt.error) { box.replaceChildren(mk("p", "small", "Der Rückblick-Test liegt noch nicht vor.")); return; }
+  const tbl = mk("table", "scr-table");
+  const hr = mk("tr");
+  ["", "Fälle", "Ø nach 12 Monaten", "12 Monate im Plus", "Rückgang über 30 %"].forEach((h) => hr.append(mk("th", null, h)));
+  const th = mk("thead"); th.append(hr);
+  const body = mk("tbody");
+  for (const [kind, label] of [["etf", "ETFs"], ["aktie", "Aktien"]]) {
+    const k = bt[kind];
+    if (!k) continue;
+    const sec = mk("tr", "adv-sec"); const c = mk("td", null, label); c.colSpan = 5; sec.append(c); body.append(sec);
+    for (const g of ["interessant", "neutral", "vorsicht"]) {
+      const x = k[g]; if (!x) continue;
+      const tr = mk("tr");
+      tr.append(mk("td", null, GRADE_LABEL[g]), mk("td", null, new Intl.NumberFormat("de-DE").format(x.n)),
+        mk("td", trendClass(x["12M"] && x["12M"].mean), advPct(x["12M"] && x["12M"].mean, 1)),
+        mk("td", null, advShare(x["12M"] && x["12M"].pos_share)), mk("td", null, advShare(x.dd12_over30)));
+      body.append(tr);
+    }
+  }
+  tbl.append(th, body);
+  const wrap = mk("div", "table-wrap"); wrap.append(tbl);
+  const v = d.verdict || {};
+  const bench = bt.benchmark_12M && bt.benchmark_12M.mean;
+  const lines = mk("ul", "adv-lines");
+  lines.append(mk("li", null, v.score_beats_benchmark
+    ? "Werte mit „Interessant“ haben im Schnitt besser abgeschnitten als der MSCI World."
+    : `Werte mit „Interessant“ haben im Schnitt nicht besser abgeschnitten als der MSCI World (Ø ${advPct(bench, 1)} in 12 Monaten). Die Punktzahl taugt also nicht dazu, Gewinner herauszupicken.`));
+  lines.append(mk("li", null, v.risk_filter_works
+    ? "Sie trennt aber das Risiko: Bei „Vorsicht“ kam ein Einbruch über 30 % deutlich häufiger vor. Sie ist ein Warnsignal, kein Kaufsignal."
+    : "Auch beim Risiko trennt sie nicht klar."));
+  box.replaceChildren(wrap, lines,
+    mk("p", "small", `Monatsenden ${bt.months ? bt.months.join(" bis ") : ""}, ${bt.instruments || "?"} Werte. Kurse inklusive Dividenden, ohne Gebühren und Steuern. Getestet werden nur Werte, die es heute gibt; verschwundene Firmen fehlen, das lässt Einzelaktien besser aussehen. Vergangene Ergebnisse sagen künftige nicht sicher voraus.`));
+}
+
+function renderAdvMine(d) {
+  const box = $("adv-mine");
+  const pos = pf.data.positions || [];
+  if (!pos.length) {
+    box.replaceChildren(mk("p", "small", "Trage im Portfolio deine Positionen ein, dann siehst du hier ihre Einschätzung. Die Auswertung bleibt auf diesem Gerät."));
+    return;
+  }
+  const rows = pos.map((p) => ({ p, ...positionValue(p), v: p.id ? d.values[p.id] : null }));
+  const total = rows.reduce((a, r) => a + (r.value || 0), 0);
+  const parts = [];
+  const scored = rows.filter((r) => r.v && r.value);
+  if (total && scored.length) {
+    const wScore = scored.reduce((a, r) => a + r.v.s * r.value, 0) / scored.reduce((a, r) => a + r.value, 0);
+    const caution = scored.filter((r) => r.v.g === "vorsicht").reduce((a, r) => a + r.value, 0) / total;
+    const big = rows.filter((r) => r.value).sort((a, b) => b.value - a.value)[0];
+    const kpis = mk("div", "adv-mine-kpis");
+    const kpi = (label, val, sub) => { const k = mk("div", "kpi"); k.append(mk("span", "kpi-label", label), mk("span", "kpi-value", val), mk("span", "kpi-sub", sub || "")); return k; };
+    kpis.append(kpi("Ø Punktzahl (nach Wert gewichtet)", String(Math.round(wScore))),
+      kpi("Anteil „Vorsicht“", advShare(caution), caution > 0.25 ? "über einem Viertel des Depots" : ""),
+      kpi("Größte Position", advShare(big.value / total), big.e ? big.e.name : ""));
+    parts.push(kpis);
+    if (big.value / total > 0.25 && !(big.v && big.e && big.e.kind === "etf")) parts.push(mk("p", "small warn-text", "Klumpenrisiko: Eine Einzelposition macht mehr als 25 % aus."));
+  }
+  const list = mk("div", "adv-rows");
+  rows.sort((a, b) => (b.value || 0) - (a.value || 0));
+  for (const r of rows) {
+    if (r.v && r.p.id) list.append(advRow(r.p.id, r.v, d));
+    else list.append(mk("p", "small", `${r.e ? r.e.name : r.p.name || r.p.isin || r.p.id}: keine Bewertung (${r.e && (r.e.kind === "index" || r.e.kind === "devisen" || r.e.kind === "rohstoff") ? "wird nicht benotet" : "zu wenig Kursverlauf"}).`));
+  }
+  parts.push(list);
+  box.replaceChildren(...parts);
+}
+
+function renderAdvFilters(d) {
+  const kinds = [["alle", "Alle"], ["etf", "ETFs"], ["aktie", "Aktien"], ["krypto", "Krypto"]];
+  const grades = [["alle", "Alle Stufen"], ["interessant", "Interessant"], ["neutral", "Neutral"], ["vorsicht", "Vorsicht"]];
+  const bar = (boxId, opts, key) => {
+    const box = $(boxId);
+    box.replaceChildren(...opts.map(([k, label]) => {
+      const b = mk("button", "chip", label);
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(adv[key] === k));
+      b.addEventListener("click", () => { adv[key] = k; adv.page = 0; renderAdvFilters(d); renderAdvList(d); });
+      return b;
+    }));
+  };
+  bar("adv-kind", kinds, "kind");
+  bar("adv-grade", grades, "grade");
+}
+
+function advRow(id, v, d) {
+  const e = byId(id);
+  const row = mk("div", "adv-row");
+  const head = mk("button", "adv-row-head");
+  head.type = "button";
+  head.setAttribute("aria-expanded", String(adv.open.has(id)));
+  const nm = mk("span", "adv-name");
+  nm.append(mk("span", "adv-n1", e ? e.name : id), mk("span", "adv-n2", e ? `${e.ticker || e.id} · ${KIND_LABEL[e.kind] || ""}` : ""));
+  const flag = v.n && v.n.n >= 2 ? mk("span", "adv-news-flag", "Nachrichten") : mk("span", "adv-news-flag none");
+  if (v.n && v.n.n >= 2) flag.title = `${v.n.n} Negativ-Meldungen der letzten Tage gefunden`;
+  head.append(scorePill(v), nm, flag, mk("span", "adv-risk", `Risiko ${v.r}/5`), mk("span", `adv-dd ${v.dd >= 0.1 ? "down" : ""}`, v.dd < 0.005 ? "am Hoch" : `${advPct(-v.dd)} vom Hoch`));
+  row.append(head);
+  const detail = mk("div", "adv-detail");
+  detail.hidden = !adv.open.has(id);
+  head.addEventListener("click", () => {
+    if (adv.open.has(id)) adv.open.delete(id); else adv.open.add(id);
+    detail.hidden = !adv.open.has(id);
+    head.setAttribute("aria-expanded", String(!detail.hidden));
+    if (!detail.hidden && !detail.childElementCount) fillAdvDetail(detail, id, v, e, d);
+  });
+  if (!detail.hidden) fillAdvDetail(detail, id, v, e, d);
+  row.append(detail);
+  return row;
+}
+
+function fillAdvDetail(box, id, v, e, d) {
+  const grade = mk("p", "adv-grade-line", `${GRADE_LABEL[v.g]} · ${Math.round(v.s)} von 100 Punkten`);
+  const bars = mk("div", "adv-bars");
+  v.f.forEach((x, i) => {
+    const r = mk("div", "adv-bar");
+    const track = mk("span", "adv-track");
+    const fill = mk("span", "adv-fill");
+    fill.style.width = x == null ? "0" : `${Math.max(2, x)}%`;
+    track.append(fill);
+    const w = d.weights ? Object.values(d.weights)[i] : null;
+    r.append(mk("span", "adv-flabel", `${FACTOR_LABEL[i]}${w ? ` (${Math.round(w * 100)} %)` : ""}`), track, mk("span", "adv-fval", x == null ? "fehlt" : String(Math.round(x))));
+    bars.append(r);
+  });
+  const why = mk("ul", "adv-why");
+  for (const t of v.w || []) why.append(mk("li", null, t));
+  const parts = [grade, bars, why];
+  if (v.f[2] == null) parts.push(mk("p", "small", "Qualität und Bewertung fehlen (keine kostenlose Quelle); ihr Gewicht ist auf die übrigen Faktoren verteilt."));
+  if (v.n) {
+    const news = mk("div", "adv-news");
+    if (v.n.n && v.n.a && v.n.a.length) {
+      news.append(mk("p", "adv-news-title", v.n.n >= 2 ? "Negativ-Meldungen der letzten Tage (bitte selbst lesen):" : "Meldung der letzten Tage:"));
+      const ul = mk("ul", "adv-news-list");
+      for (const a of v.n.a) {
+        const li = mk("li");
+        const link = mk("a", null, a.t || a.d);
+        link.href = a.u; link.target = "_blank"; link.rel = "noopener noreferrer";
+        li.append(link, mk("span", "adv-src", ` ${a.d}${a.l && a.l !== "English" ? `, ${a.l}` : ""}`));
+        ul.append(li);
+      }
+      news.append(ul);
+    } else news.append(mk("p", "small", "Keine Meldungen zu Gewinnwarnung, Klage, Betrug, Insolvenz, Rückruf, Sanktionen oder Herabstufung gefunden."));
+    if (v.n.t) news.append(mk("p", "small", `Geprüft ${new Date(v.n.t * 1000).toLocaleString("de-DE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} (GDELT).`));
+    parts.push(news);
+  }
+  if (e) {
+    const b = mk("button", "secondary adv-chart-btn", "Chart öffnen");
+    b.type = "button";
+    b.addEventListener("click", () => openChart(e));
+    parts.push(b);
+  }
+  box.replaceChildren(...parts);
+}
+
+function renderAdvList(d) {
+  const q = norm(adv.q || "");
+  let ids = Object.keys(d.values).filter((id) => {
+    const e = byId(id);
+    if (!e) return false;
+    const v = d.values[id];
+    if (adv.kind !== "alle" && e.kind !== adv.kind) return false;
+    if (adv.grade !== "alle" && v.g !== adv.grade) return false;
+    if (q && !norm(`${e.name} ${e.ticker || ""} ${e.id} ${e.isin || ""} ${e.wkn || ""}`).includes(q)) return false;
+    return true;
+  });
+  const V = d.values;
+  const sorters = {
+    score: (a, b) => V[b].s - V[a].s,
+    risk: (a, b) => V[a].r - V[b].r || V[b].s - V[a].s,
+    dd: (a, b) => V[b].dd - V[a].dd,
+    name: (a, b) => advName(a).localeCompare(advName(b), "de"),
+  };
+  ids.sort(sorters[adv.sort] || sorters.score);
+  $("adv-count").textContent = `${ids.length} von ${Object.keys(V).length}`;
+  const pages = Math.max(1, Math.ceil(ids.length / ADV_PAGE));
+  adv.page = Math.min(adv.page, pages - 1);
+  const list = mk("div", "adv-rows");
+  for (const id of ids.slice(adv.page * ADV_PAGE, (adv.page + 1) * ADV_PAGE)) list.append(advRow(id, V[id], d));
+  if (!ids.length) list.append(mk("p", "small", "Keine Werte für diese Auswahl."));
+  $("adv-list").replaceChildren(list);
+  const pager = $("adv-pager");
+  if (pages <= 1) { pager.replaceChildren(); return; }
+  const prev = mk("button", null, "Zurück"); prev.type = "button"; prev.disabled = adv.page === 0;
+  const next = mk("button", null, "Weiter"); next.type = "button"; next.disabled = adv.page >= pages - 1;
+  prev.addEventListener("click", () => { adv.page--; renderAdvList(d); $("adv-list").scrollIntoView({ block: "start" }); });
+  next.addEventListener("click", () => { adv.page++; renderAdvList(d); $("adv-list").scrollIntoView({ block: "start" }); });
+  pager.replaceChildren(prev, mk("span", null, `Seite ${adv.page + 1} von ${pages}`), next);
+}
+
+$("adv-q").addEventListener("input", (ev) => { adv.q = ev.target.value; adv.page = 0; if (adv.data) renderAdvList(adv.data); });
+$("adv-sort").addEventListener("change", (ev) => { adv.sort = ev.target.value; adv.page = 0; if (adv.data) renderAdvList(adv.data); });

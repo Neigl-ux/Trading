@@ -560,3 +560,83 @@ main { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
 .dc-info .dc-when { color: var(--mute); }
 .dc-info b { font-weight: 600; }
 .dash-chart, .pf-chart { touch-action: pan-y; }
+
+/* ---------- Ratgeber ---------- */
+.adv-top { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
+@media (min-width: 900px) { .adv-top { grid-template-columns: 1.3fr 1fr; } }
+#view-advisor > #adv-body > .card { margin-bottom: 12px; }
+.adv-lines { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.adv-lines li { padding-left: 14px; position: relative; font-size: .92rem; }
+.adv-lines li::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 6px; border-radius: 50%; background: var(--mute); }
+.adv-lines li.warn::before { background: var(--warn); }
+.adv-plan-list { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 8px; }
+.adv-plan-list li { display: grid; grid-template-columns: 72px 1fr auto auto; align-items: center; gap: 10px; padding: 8px 10px; background: var(--panel-2); border-radius: 10px; }
+.adv-role { color: var(--mute); font-size: .8rem; }
+.adv-eur { font-variant-numeric: tabular-nums; font-size: 1.05rem; }
+.adv-link { background: none; border: 0; padding: 0; color: var(--ink); text-align: left; cursor: pointer; font: inherit; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adv-link:hover { color: var(--accent); }
+.adv-alt { margin: 6px 0; }
+.adv-alt summary { cursor: pointer; color: var(--accent); font-size: .88rem; margin-bottom: 8px; }
+.adv-score { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 26px; padding: 0 6px; border-radius: 8px; font-weight: 700; font-size: .88rem; font-variant-numeric: tabular-nums; }
+.adv-score.g-interessant { background: rgba(22, 199, 132, .16); color: var(--up); }
+.adv-score.g-neutral { background: rgba(134, 145, 163, .16); color: var(--ink); }
+.adv-score.g-vorsicht { background: rgba(234, 57, 67, .16); color: var(--down); }
+.adv-st-tbl td, .adv-st-tbl th { text-align: center; }
+.adv-st-tbl td:first-child, .adv-st-tbl th:first-child { text-align: left; white-space: normal; min-width: 120px; }
+.adv-st-on { color: var(--warn); font-weight: 600; }
+.adv-st-off { color: var(--mute); }
+.adv-st-eur td { color: var(--mute); font-size: .82rem; }
+.adv-honest { border-left: 3px solid var(--warn); padding-left: 10px; color: var(--ink); }
+.adv-world-level { margin: 0 0 8px; font-weight: 600; }
+.adv-world-list { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.adv-world-list li { display: grid; grid-template-columns: 1fr 120px 110px; align-items: center; gap: 10px; font-size: .88rem; }
+.adv-spark { width: 120px; height: 28px; }
+.adv-spark polyline { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+.adv-spark .zero { stroke: var(--line); stroke-dasharray: 3 3; }
+.adv-lvl { text-align: right; font-size: .82rem; }
+.adv-lvl.warn, .warn-text { color: var(--warn); }
+.adv-sec td { color: var(--mute); font-size: .8rem; padding-top: 10px; }
+.adv-mine-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 10px; }
+.adv-mine-kpis .kpi-value { font-size: 1.3rem; }
+.adv-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
+.adv-tools input[type=search] { flex: 1 1 220px; min-height: 36px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.adv-sort { min-width: 220px; }
+.adv-rows { display: grid; gap: 6px; }
+.adv-row { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.adv-row-head { width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) 96px 70px 104px; align-items: center; gap: 10px; padding: 8px 10px; background: none; border: 0; color: var(--ink); text-align: left; cursor: pointer; font: inherit; min-height: 48px; }
+.adv-row-head:hover { background: var(--panel-2); border-radius: 10px; }
+.adv-name { display: flex; flex-direction: column; min-width: 0; }
+.adv-n1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adv-n2 { color: var(--mute); font-size: .76rem; }
+.adv-dd { text-align: right; }
+.adv-risk, .adv-dd { color: var(--mute); font-size: .8rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.adv-dd.down { color: var(--down); }
+.adv-news-flag.none { visibility: hidden; }
+.adv-news-flag { justify-self: start; font-size: .7rem; color: var(--warn); border: 1px solid rgba(245, 176, 65, .5); border-radius: 5px; padding: 1px 6px; }
+.adv-detail { padding: 4px 12px 12px; border-top: 1px solid var(--line); }
+.adv-grade-line { margin: 8px 0; font-weight: 600; }
+.adv-bars { display: grid; gap: 4px; margin-bottom: 8px; max-width: 520px; }
+.adv-bar { display: grid; grid-template-columns: 170px 1fr 40px; align-items: center; gap: 8px; font-size: .82rem; }
+.adv-flabel { color: var(--mute); }
+.adv-track { height: 6px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
+.adv-fill { display: block; height: 100%; background: var(--accent); }
+.adv-fval { text-align: right; font-variant-numeric: tabular-nums; }
+.adv-why { margin: 0 0 8px; padding-left: 18px; font-size: .9rem; }
+.adv-news { border-left: 3px solid var(--warn); padding-left: 10px; margin-bottom: 8px; }
+.adv-news-title { margin: 0 0 4px; font-size: .88rem; }
+.adv-news-list { margin: 0; padding-left: 16px; font-size: .86rem; }
+.adv-news-list a { color: var(--accent); }
+.adv-src { color: var(--mute); font-size: .78rem; }
+.adv-chart-btn { width: auto; min-height: 36px; padding: 0 14px; }
+@media (max-width: 600px) {
+  .adv-row-head { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .adv-row-head .adv-risk, .adv-row-head .adv-news-flag { display: none; }
+  .adv-world-list li { grid-template-columns: 1fr 90px; }
+  .adv-world-list .adv-lvl { grid-column: 1 / -1; text-align: left; margin-top: -4px; }
+  .adv-spark { width: 90px; }
+  .adv-bar { grid-template-columns: 120px 1fr 34px; }
+  .adv-plan-list li { grid-template-columns: 1fr auto auto; }
+  .adv-plan-list .adv-role { grid-column: 1 / -1; }
+}
+.adv-report .card-head h3, .adv-plan .card-head h3 { white-space: normal; }
