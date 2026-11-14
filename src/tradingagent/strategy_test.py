@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import math
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -91,13 +91,14 @@ def _when(day: pd.Timestamp) -> datetime:
 
 
 def simulate(panel: Panel, entry: np.ndarray, exit_: np.ndarray, start: int, end: int, *,
-             rm: RiskManager, capital: float | None = None) -> dict[str, Any]:
+             rm: RiskManager, capital: float | None = None, min_hold: int = 0) -> dict[str, Any]:
     """Ein Konto (Halten über Nacht) vom Tag start bis end (ausschließlich)."""
     acc = rm.new_account("test", "ueber_nacht")
     if capital:
         acc.cash = acc.peak = acc.day_start = acc.week_start = capital
     idx = {i: j for j, i in enumerate(panel.ids)}
     last: dict[str, float] = {}
+    opened: dict[str, int] = {}             # Kalendertag des Kaufs (für die Mindesthaltedauer)
     equity = np.full(end - start, np.nan)
     invested = 0
     for d in range(start, end):
@@ -113,7 +114,7 @@ def simulate(panel: Panel, entry: np.ndarray, exit_: np.ndarray, start: int, end
             pos = acc.positions[vid]
             if op <= pos.stop:
                 rm.sell(acc, vid, Quote(op, t), now, last, reason="Stop (Eröffnung)", stop=True)
-            elif d > 0 and exit_[d - 1, j]:
+            elif d > 0 and exit_[d - 1, j] and d - opened.get(vid, d) >= min_hold:
                 rm.sell(acc, vid, Quote(op, t), now, last, reason="Verkaufssignal")
         # 3) Kaufsignale vom Vortag, nach Momentum sortiert
         if d > 0 and not acc.killed:
@@ -125,7 +126,8 @@ def simulate(panel: Panel, entry: np.ndarray, exit_: np.ndarray, start: int, end
                     if vid in acc.positions or len(acc.positions) >= rm.cfg.max_positions:
                         continue
                     q = Quote(panel.o[d, j], t, prev=panel.c[d - 1, j], jump_confirmed=True)
-                    rm.buy(acc, vid, panel.kinds[j], q, panel.atr[d - 1, j], now, last)
+                    if rm.buy(acc, vid, panel.kinds[j], q, panel.atr[d - 1, j], now, last).ok:
+                        opened[vid] = d
         # 4) Stops im Tagesverlauf (Tief), 5) Schluss: Stop nachziehen, Konto fortschreiben
         for vid in list(acc.positions):
             j = idx[vid]
@@ -176,13 +178,12 @@ def _score(s: dict[str, Any]) -> float:
 
 def cost_free(cfg: RiskConfig) -> RiskConfig:
     """Zum Vergleich: dieselben Regeln ohne Gebühr, Spread und Schlupf – zeigt, wie viel die Kosten ausmachen."""
-    from dataclasses import replace
-
     return replace(cfg, fee_stock=0.0, fee_crypto_pct=0.0, spread_pct=0.0, spread_crypto_pct=0.0,
                    slip_pct=0.0, slip_stop_pct=0.0, max_fee_pct=100.0)
 
 
-def walk_forward(panel: Panel, strat, test_years: list[int], rm: RiskManager, bench_years: dict[int, float]) -> dict[str, Any]:
+def walk_forward(panel: Panel, strat, test_years: list[int], rm: RiskManager, bench_years: dict[int, float],
+                 min_hold: int = 0) -> dict[str, Any]:
     cap = rm.cfg.start_capital
     sig = {i: signal_arrays(panel, strat.key, p) for i, p in enumerate(strat.params)}
     years, curve, all_trades, fees, kills, exposure = [], [], [], 0.0, [], []
@@ -192,11 +193,11 @@ def walk_forward(panel: Panel, strat, test_years: list[int], rm: RiskManager, be
         best, best_score = 0, -1e9
         if len(strat.params) > 1:
             for i in sig:
-                sc = _score(stats(simulate(panel, *sig[i], ts, te, rm=rm)["equity"], cap))
+                sc = _score(stats(simulate(panel, *sig[i], ts, te, rm=rm, min_hold=min_hold)["equity"], cap))
                 if sc > best_score:
                     best, best_score = i, sc
         s, e = year_bounds(panel, y)
-        r = simulate(panel, *sig[best], s, e, rm=rm)
+        r = simulate(panel, *sig[best], s, e, rm=rm, min_hold=min_hold)
         st = stats(r["equity"], cap, r["trades"])
         years.append({"jahr": y, "rendite": st["rendite"], "max_rueckgang": st["max_rueckgang"], "trades": st["trades"],
                       "einstellung": strat.params[best], "msci_world": bench_years.get(y), "gestoppt": r["kills"]})
@@ -304,11 +305,45 @@ def run(frames: dict[str, pd.DataFrame], meta: dict[str, dict[str, str]], *, rm:
         r["besser_als_zufall_prozent"] = float(np.mean([r["cagr"] > x for x in rand_cagr]) * 100)
     progress(f"  Zufall: Median {random['cagr_median']:+.1%} pro Jahr")
 
+    variants = []
+    for v in VARIANTS:
+        vrm = RiskManager(replace(rm.cfg, **v["regeln"]))
+        rows = []
+        for strat in STRATEGIES:
+            res = walk_forward(panel, strat, test_years, vrm, bench_years, min_hold=v["min_halten"])
+            rows.append({k: res[k] for k in ("key", "name", "cagr", "max_rueckgang", "trades", "trefferquote", "gebuehren",
+                                             "jahre_besser_als_msci", "gewinn_je_trade")} | {"kill_switch": len(res["kill_switch"])})
+        rc = []
+        rng_v = np.random.default_rng(42)
+        for k in range(RANDOM_SEEDS // 2):
+            en, ex = random_signals(panel, rng_v, p_entry=0.01, hold=20)
+            curve = []
+            for y in test_years:
+                s0, e0 = year_bounds(panel, y)
+                curve.append(simulate(panel, en, ex, s0, e0, rm=vrm, min_hold=v["min_halten"])["equity"] / cap)
+            rc.append(stats(_chain(curve) * cap, cap)["cagr"])
+        variants.append({"key": v["key"], "name": v["name"], "beschreibung": v["beschreibung"],
+                         "strategien": sorted(rows, key=lambda x: -x["cagr"]), "zufall_median": float(np.median(rc))})
+        best = max(rows, key=lambda x: x["cagr"])
+        progress(f"  Variante {v['name']}: beste {best['name']} {best['cagr']:+.1%} pro Jahr, {best['trades']} Trades")
+
     return {"erstellt": datetime.now(timezone.utc).isoformat(timespec="minutes"),
             "werte": len(panel.ids), "pruefjahre": [test_years[0], test_years[-1]], "lernjahre": TRAIN_YEARS,
             "startkapital": cap, "strategien": results, "msci_world": bench, "zufall": random,
-            "grenzen": LIMITS}
+            "grenzen": LIMITS, "varianten": variants}
 
+
+# Zusätzlich getestete Varianten der Regeln (nur Test, die freigegebenen Regeln aus Phase 4 bleiben unverändert)
+VARIANTS = [
+    {"key": "weniger", "name": "A: Weniger handeln", "min_halten": 20, "regeln": {},
+     "beschreibung": "Wie Phase 4, aber ein Verkaufssignal zählt erst nach 20 Handelstagen (rund 4 Wochen). Stops gelten immer."},
+    {"key": "groesser", "name": "B: Weniger, größere Positionen", "min_halten": 0,
+     "regeln": {"max_positions": 3, "max_pos_pct": 33.0, "risk_pct": 1.5},
+     "beschreibung": "Höchstens 3 Positionen mit bis zu 33 % des Kontos; damit sie wirklich größer werden, 1,5 % Risiko je Trade statt 1 %."},
+    {"key": "beides", "name": "A + B zusammen", "min_halten": 20,
+     "regeln": {"max_positions": 3, "max_pos_pct": 33.0, "risk_pct": 1.5},
+     "beschreibung": "Beide Änderungen gleichzeitig."},
+]
 
 LIMITS = [
     "Getestet werden Werte, die es heute gibt. Firmen, die pleitegingen oder verschwanden, fehlen. Das lässt Aktienstrategien eher zu gut aussehen.",
@@ -426,6 +461,14 @@ def report_markdown(r: dict[str, Any]) -> str:
     kills = [(s["name"], k) for s in r["strategien"] for k in s["kill_switch"]]
     lines += ["", "## Kill Switch", ""]
     lines += [f"- {n}: {k}" for n, k in kills] or ["- in keinem Prüfjahr ausgelöst"]
+    for v in r.get("varianten", []):
+        lines += ["", f"## Variante {v['name']}", "", v["beschreibung"], "",
+                  "| Strategie | pro Jahr | größter Rückgang | Trades | Gebühren gesamt | Jahre besser als MSCI World | Kill Switch |",
+                  "|---|---|---|---|---|---|---|"]
+        for s in v["strategien"]:
+            lines.append(f"| {s['name']} | {_p(s['cagr'])} | {_p(s['max_rueckgang'])} | {s['trades']} | {_eur(s['gebuehren'])} | "
+                         f"{s['jahre_besser_als_msci']} von {n_years} | {s['kill_switch']}× |")
+        lines.append(f"| Zufällige Käufe (Median) | {_p(v['zufall_median'])} | – | – | – | – | – |")
     lines += ["", "## Die Strategien", ""] + [f"- **{s['name']}:** {s['idee']}" for s in r["strategien"]]
     lines += ["", "## Grenzen des Tests", ""] + [f"- {x}" for x in r["grenzen"]]
     return "\n".join(lines) + "\n"

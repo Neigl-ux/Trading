@@ -79,3 +79,17 @@ def test_gesamtlauf_mit_vergleichen(capsys):
     assert r["msci_world"]["jahre"][0]["jahr"] == 2023
     md = st.report_markdown(r)
     assert "MSCI World" in md and "Grenzen des Tests" in md
+
+
+def test_mindesthaltedauer_ignoriert_fruehe_verkaufssignale():
+    df = _frame(300, seed=2, drift=0.003)  # steigt: kein Stop
+    panel = _panel({"A.DE": df})
+    en, ex = np.zeros((300, 1), bool), np.zeros((300, 1), bool)
+    en[100, 0] = True
+    ex[105, 0] = ex[125, 0] = True
+    rm = RiskManager(RiskConfig.load())
+    sells = lambda r: [e for e in r["log"] if e["side"] == "sell" and e["ok"]]  # noqa: E731
+    early = sells(st.simulate(panel, en, ex, 0, 300, rm=rm))
+    late = sells(st.simulate(panel, en, ex, 0, 300, rm=rm, min_hold=20))
+    assert early[0]["t"] == int(st._when(panel.dates[106]).timestamp())
+    assert late[0]["t"] == int(st._when(panel.dates[126]).timestamp())
