@@ -387,7 +387,7 @@ def worker() -> None:
                 inputs = load_inputs()
                 train(1, inputs)
                 predict(inputs)
-                state.update({"training": now.isoformat(), "stufen_erledigt": [1]})
+                state.update({"training": now.isoformat(), "stufen_erledigt": [1], "fehlversuche": {}})
             elif len(state.get("stufen_erledigt", [])) < len(LEVELS):
                 level = next(lv for lv in LEVELS if lv not in state.get("stufen_erledigt", []))
                 job = f"stufe {level}"
@@ -408,6 +408,11 @@ def worker() -> None:
             except Exception:  # noqa: BLE001
                 pass
             state[f"fehler_{job}"] = now.isoformat()
+            fails = state.setdefault("fehlversuche", {})
+            fails[job or "?"] = fails.get(job or "?", 0) + 1
+            if job and job.startswith("stufe") and fails[job] >= 2:  # z. B. zu wenig Arbeitsspeicher: Stufe überspringen
+                state.setdefault("stufen_erledigt", []).append(int(job.split()[-1]))
+                status("Fehler", None, f"{msg} – Stufe nach 2 Versuchen übersprungen (zu wenig Arbeitsspeicher?)")
             save()
             time.sleep(600)
 
