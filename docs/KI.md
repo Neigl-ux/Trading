@@ -8,7 +8,7 @@ Ziel: Wahrscheinlichkeit, dass ein Kauf zur Eröffnung des nächsten Handelstags
 | Modell | AUC | Brier | Brier Skill | Log Loss | ECE | Trefferquote | Precision | Recall | F1 |
 |---|---|---|---|---|---|---|---|---|---|
 | SVM | 0,600 | 0,198 | 0,021 | 0,583 | 0,019 | 71,3 % | 38,9 % | 3,7 % | 6,8 % |
-| Entscheidungsbaum | 0,602 | 0,197 | 0,025 | 0,581 | 0,016 | 71,2 % | 41,3 % | 6,0 % | 10,4 % |
+| Entscheidungsbaum | 0,603 | 0,197 | 0,025 | 0,581 | 0,018 | 71,2 % | 41,3 % | 6,0 % | 10,4 % |
 | Grundrate | 0,494 | 0,202 | 0,000 | 0,595 | 0,011 | 71,9 % | – | 0,0 % | – |
 
 Brier Skill > 0 heißt: besser als die Grundrate (immer dieselbe Wahrscheinlichkeit). ECE = mittlere Abweichung zwischen Prognose und Eintritt.
@@ -17,9 +17,9 @@ Brier Skill > 0 heißt: besser als die Grundrate (immer dieselbe Wahrscheinlichk
 
 | Strategie | pro Jahr | größter Rückgang | Sharpe | Sortino | Profit Factor | Trades | Treffer | Ø Haltedauer | Gebühren |
 |---|---|---|---|---|---|---|---|---|---|
-| SVM | -3,4 % | -32,5 % | -0,85 | -0,17 | 0,25 | 83 | 26,5 % | 6,1 Tage | 1.328 € |
+| SVM | -3,2 % | -31,5 % | -0,83 | -0,17 | 0,26 | 82 | 26,8 % | 6,2 Tage | 1.312 € |
 | Entscheidungsbaum | -0,5 % | -4,9 % | -0,40 | -0,04 | 0,24 | 11 | 36,4 % | 6,1 Tage | 176 € |
-| Beste Technik (Phase 5): Mehrheit aus allen sechs | -11,7 % | -75,0 % | -1,15 | -0,67 | 0,51 | 502 | 26,3 % | – | 8.032 € |
+| Beste Technik (Phase 5): Mehrheit aus allen sechs | -11,7 % | -74,9 % | -1,15 | -0,66 | 0,51 | 497 | 26,4 % | – | 7.952 € |
 | MSCI World halten | +11,3 % | -33,6 % | 0,78 | 0,71 | – | 1 je Jahr | – | – | – |
 | Zufällige Käufe (Median, beste 10 % ab) | -14,4 % (-13,6 %) | – | – | – | – | – | – | – | – |
 
@@ -27,25 +27,25 @@ Brier Skill > 0 heißt: besser als die Grundrate (immer dieselbe Wahrscheinlichk
 
 **SVM: Nicht freigegeben**
 
-- ✗ Genug Testentscheidungen: 83 (Grenze ≥ 100 Trades)
+- ✗ Genug Testentscheidungen: 82 (Grenze ≥ 100 Trades)
 - ✓ Trennschärfe (AUC): 0,600 (Grenze ≥ 0,52)
 - ✓ Besser als die Grundrate (Brier Skill): 0,021 (Grenze > 0,0)
 - ✓ Stabil über die Jahre: 0,909 (Grenze in ≥ 60% der Jahre besser als Grundrate)
 - ✓ Kalibrierung (ECE): 0,019 (Grenze ≤ 0,05)
-- ✗ Kalibrierung im Kaufbereich: 0,191 (Grenze Abweichung ≤ 0,1 bei ≥ 200 Fällen (hier 4957))
-- ✗ Rendite nach Kosten über MSCI World: -0,034 (Grenze > 0,113)
-- ✓ Besser als Zufall (beste 10 %): -0,034 (Grenze > -0,136)
-- ✓ Größter Rückgang: -0,325 (Grenze höchstens −35%)
+- ✗ Kalibrierung im Kaufbereich: 0,188 (Grenze Abweichung ≤ 0,1 bei ≥ 200 Fällen (hier 4989))
+- ✗ Rendite nach Kosten über MSCI World: -0,032 (Grenze > 0,113)
+- ✓ Besser als Zufall (beste 10 %): -0,032 (Grenze > -0,136)
+- ✓ Größter Rückgang: -0,315 (Grenze höchstens −35%)
 - ✗ Positive Jahre: 0,091 (Grenze ≥ 50%)
 
 **Entscheidungsbaum: Nicht freigegeben**
 
 - ✗ Genug Testentscheidungen: 11 (Grenze ≥ 100 Trades)
-- ✓ Trennschärfe (AUC): 0,602 (Grenze ≥ 0,52)
+- ✓ Trennschärfe (AUC): 0,603 (Grenze ≥ 0,52)
 - ✓ Besser als die Grundrate (Brier Skill): 0,025 (Grenze > 0,0)
 - ✓ Stabil über die Jahre: 0,909 (Grenze in ≥ 60% der Jahre besser als Grundrate)
-- ✓ Kalibrierung (ECE): 0,016 (Grenze ≤ 0,05)
-- ✗ Kalibrierung im Kaufbereich: 0,199 (Grenze Abweichung ≤ 0,1 bei ≥ 200 Fällen (hier 9172))
+- ✓ Kalibrierung (ECE): 0,018 (Grenze ≤ 0,05)
+- ✗ Kalibrierung im Kaufbereich: 0,200 (Grenze Abweichung ≤ 0,1 bei ≥ 200 Fällen (hier 9172))
 - ✗ Rendite nach Kosten über MSCI World: -0,005 (Grenze > 0,113)
 - ✓ Besser als Zufall (beste 10 %): -0,005 (Grenze > -0,136)
 - ✓ Größter Rückgang: -0,049 (Grenze höchstens −35%)
