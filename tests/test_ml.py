@@ -122,7 +122,8 @@ def test_versionen_champion_nur_bei_zulassung_und_besser(tmp_path):
 
 def test_zulassung_streng():
     cfg = load_config()
-    good_f = {"auc": 0.6, "brier_skill": 0.02, "anteil_jahre_brier_skill_positiv": 0.8, "ece": 0.02}
+    good_f = {"auc": 0.6, "brier_skill": 0.02, "anteil_jahre_brier_skill_positiv": 0.8, "ece": 0.02,
+              "kaufbereich": {"n": 500, "prognose": 0.6, "eingetreten": 0.56}}
     good_t = {"trades": 300, "cagr": 0.15, "max_rueckgang": -0.2, "anteil_positive_jahre": 0.7}
     a = ev.admission("svm", good_f, good_t, 0.11, 0.0, cfg)
     assert a["zugelassen"] and a["status"] == "Für Phase 7 zugelassen"
@@ -130,6 +131,8 @@ def test_zulassung_streng():
     assert not b["zugelassen"] and b["status"] == "Nicht freigegeben"
     c = ev.admission("svm", {**good_f, "ece": 0.09}, good_t, 0.11, 0.0, cfg)
     assert not c["zugelassen"]
+    d = ev.admission("svm", {**good_f, "kaufbereich": {"n": 500, "prognose": 0.6, "eingetreten": 0.38}}, good_t, 0.11, 0.0, cfg)
+    assert not d["zugelassen"] and not [x for x in d["pruefungen"] if x["pruefung"] == "Kalibrierung im Kaufbereich"][0]["ok"]
 
 
 class _FakeSource:

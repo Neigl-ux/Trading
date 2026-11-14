@@ -716,3 +716,28 @@ article.card.folded .card-head { margin-bottom: 0; }
 .st-years summary, .st-limits summary { cursor: pointer; color: var(--accent); font-size: .9rem; }
 .st-limits ul { margin: 6px 0 0; padding-left: 1.1em; display: grid; gap: 4px; }
 .up-txt { color: var(--up); } .down-txt { color: var(--down); }
+
+/* Phase 6: KI-Analyse */
+.sim-seg { margin: 4px 0 12px; }
+.ki-card { margin-top: 12px; }
+.ki-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.ki-grid .pc-item { display: flex; flex-direction: column; gap: 2px; }
+.ki-job { display: grid; gap: 6px; }
+.ki-bar { height: 8px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
+.ki-bar span { display: block; height: 100%; background: var(--accent); width: 0; transition: width .4s ease; }
+.ki-status { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: .78rem; font-weight: 600; }
+.ki-status.ok { background: rgba(22, 199, 132, .15); color: var(--up); }
+.ki-status.no { background: rgba(234, 57, 67, .14); color: var(--down); }
+.ki-status.info { background: var(--accent-soft); color: var(--ink); }
+.ki-model { margin-bottom: 12px; }
+.ki-model h4, .ki-sub { margin: 10px 0 6px; font-size: .95rem; }
+.ki-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .86rem; }
+.ki-checks li { display: grid; grid-template-columns: 18px 1fr auto; gap: 6px; align-items: baseline; }
+.ki-checks .val { color: var(--mute); font-variant-numeric: tabular-nums; text-align: right; }
+.ki-calib svg { width: 100%; max-width: 420px; height: auto; display: block; }
+.ki-list { margin: 6px 0 0; padding-left: 1.1em; display: grid; gap: 4px; font-size: .88rem; }
+.ki-warning { border-left: 3px solid var(--warn); padding: 6px 10px; margin: 6px 0; background: var(--panel-2); border-radius: 0 8px 8px 0; font-size: .9rem; }
+.ki-warning.strong { border-left-color: var(--down); }
+.ki-warning .meta { color: var(--mute); font-size: .78rem; margin-top: 2px; }
+.ki-pred td:nth-child(3), .ki-pred td:nth-child(4) { font-variant-numeric: tabular-nums; }
+.ki-pred .contra td { background: rgba(245, 158, 11, .07); }

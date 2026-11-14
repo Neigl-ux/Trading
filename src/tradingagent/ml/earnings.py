@@ -138,6 +138,7 @@ def calendar(meta: dict[str, dict[str, Any]], frames: dict[str, pd.DataFrame] | 
         for when, row in df.iterrows():
             delta = (when - now_ts).total_seconds() / 86400
             base = {"symbol": s, "id": meta[s].get("id", s), "name": name, "zeit": when.isoformat(),
+                    "nur_datum": when.hour == 0 and when.minute == 0,  # Quelle nennt nur den Tag, keine Uhrzeit
                     "branche": prof.get(s, {}).get("industry")}
             if 0 < delta <= 14:
                 upcoming.append({**base, "eps_erwartet": _num(row.get("eps_est"))})
@@ -184,12 +185,12 @@ def industry_warnings(upcoming: list[dict], reported: list[dict], prof: dict[str
             if kind == "veroeffentlicht":
                 strong = abs(r.get("kurs_prozent") or 0) >= 0.03 or (r.get("volumen_faktor") or 0) >= 2
                 text = (f"Branchenereignis: {ev['name']} hat Quartalszahlen veröffentlicht"
-                        + (f" (Kursreaktion {r['kurs_prozent'] * 100:+.1f} %" + (f", Volumen {r['volumen_faktor']:.1f}-fach" if r.get('volumen_faktor') else "") + ")" if r.get("kurs_prozent") is not None else "")
+                        + (f" (Kursreaktion {r['kurs_prozent'] * 100:+.1f} %".replace(".", ",") + (f", Volumen {r['volumen_faktor']:.1f}-fach".replace(".", ",") if r.get('volumen_faktor') else "") + ")" if r.get("kurs_prozent") is not None else "")
                         + f". Erhöhte Aufmerksamkeit für {', '.join(names[:5])} und vergleichbare Unternehmen empfohlen.")
             else:
                 strong = False
                 text = f"Bevorstehend: {ev['name']} meldet Quartalszahlen. Das kann auch {', '.join(names[:5])} bewegen."
-            out.append({"art": kind, "zeit": ev["zeit"], "ausloeser": ev["name"], "symbol": ev["symbol"], "branche": ev["branche"],
+            out.append({"art": kind, "zeit": ev["zeit"], "nur_datum": ev.get("nur_datum", False), "ausloeser": ev["name"], "symbol": ev["symbol"], "branche": ev["branche"],
                         "betroffen": [{"symbol": s, "id": meta[s].get("id", s), "name": meta[s].get("name") or s} for s in peers],
                         "stark": strong, "text": text})
     return out

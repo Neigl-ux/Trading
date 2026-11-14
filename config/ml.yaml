@@ -25,6 +25,9 @@ zulassung:                  # alle Punkte müssen erfüllt sein → „Für Phas
   min_brier_skill: 0.0                # besser als die einfache Grundrate (immer gleiche Wahrscheinlichkeit)
   min_anteil_jahre_brier_skill: 0.6   # in mindestens 60 % der Prüfjahre besser als die Grundrate
   max_ece: 0.05                       # Kalibrierung: 60 % Prognose ≈ 60 % Eintritt (mittlere Abweichung höchstens 5 Prozentpunkte)
+  # ergänzt am 14.11.2026 (verschärft, nicht gelockert): Kalibrierung genau dort, wo gekauft würde
+  min_faelle_kaufbereich: 200         # Prognosen ab der niedrigsten Kaufschwelle
+  max_abweichung_kaufbereich: 0.10    # vorhergesagte und eingetretene Quote dort höchstens 10 Prozentpunkte auseinander
   besser_als_msci: true               # Rendite nach allen Kosten über MSCI World halten
   besser_als_zufall_p90: true         # über den besten 10 % der Zufallskäufe
   max_rueckgang: 0.35                 # größter Rückgang höchstens 35 %

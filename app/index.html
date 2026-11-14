@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=40">
+  <link rel="stylesheet" href="style.css?v=41">
   <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
-  <script type="module" src="app.js?v=40"></script>
+  <script type="module" src="app.js?v=41"></script>
 </head>
 <body>
   <!-- Entsperren -->
@@ -316,6 +316,49 @@
     <!-- Simulator -->
     <section id="view-sim" class="view" hidden>
       <h2>Simulator</h2>
+      <div class="seg sim-seg" role="tablist" aria-label="Bereich wählen">
+        <button type="button" role="tab" id="sim-tab-sim" aria-selected="true" aria-pressed="true">Strategien &amp; Risiko</button>
+        <button type="button" role="tab" id="sim-tab-ki" aria-selected="false" aria-pressed="false">KI-Analyse</button>
+      </div>
+      <div id="ki-area" hidden>
+        <article class="card ki-card">
+          <header class="card-head"><h3>KI-Übersicht</h3></header>
+          <div id="ki-overview" class="ki-grid"></div>
+          <p id="ki-overview-note" class="small"></p>
+        </article>
+        <article class="card ki-card">
+          <header class="card-head"><h3>Modelltraining</h3></header>
+          <div id="ki-job" class="ki-job"></div>
+          <details class="st-years"><summary>Letzte Läufe</summary><div class="table-wrap"><table class="scr-table st-table"><thead><tr><th>Aufgabe</th><th>Beginn</th><th>Dauer</th><th>Ergebnis</th></tr></thead><tbody id="ki-runs"></tbody></table></div></details>
+        </article>
+        <article class="card ki-card">
+          <header class="card-head"><h3>Modellzulassung</h3></header>
+          <div id="ki-admission"></div>
+        </article>
+        <article class="card ki-card">
+          <header class="card-head"><h3>Modellvergleich</h3></header>
+          <p id="ki-cmp-note" class="small"></p>
+          <div class="table-wrap"><table class="scr-table st-table"><thead><tr><th>Strategie</th><th>pro Jahr</th><th>größter Rückgang</th><th>Trades</th><th>Treffer</th><th>AUC</th><th>Brier Skill</th></tr></thead><tbody id="ki-cmp"></tbody></table></div>
+          <h4 class="ki-sub">Kalibrierung: sagt das Modell 30 %, tritt es dann in 30 % der Fälle ein?</h4>
+          <div id="ki-calib" class="ki-calib"></div>
+          <details class="st-years"><summary>Ergebnis je Prüfjahr</summary><div class="table-wrap"><table class="scr-table"><thead id="ki-yhead"></thead><tbody id="ki-ybody"></tbody></table></div></details>
+        </article>
+        <article class="card ki-card">
+          <header class="card-head"><h3>Prognosen</h3></header>
+          <p id="ki-pred-note" class="small"></p>
+          <div class="table-wrap"><table class="scr-table st-table ki-pred"><thead><tr><th>Wert</th><th>Kurs</th><th>SVM</th><th>Baum</th><th>Übereinstimmung</th><th>Status</th><th>Daten</th></tr></thead><tbody id="ki-pred"></tbody></table></div>
+          <button type="button" id="ki-pred-more" class="chip" hidden>Alle anzeigen</button>
+        </article>
+        <article class="card ki-card">
+          <header class="card-head"><h3>Branchenwarnungen und Quartalszahlen</h3></header>
+          <div id="ki-warn"></div>
+          <details class="st-years"><summary>Bevorstehende Quartalszahlen (14 Tage)</summary><ul id="ki-upcoming" class="ki-list"></ul></details>
+          <details class="st-years"><summary>Zuletzt veröffentlicht (5 Tage)</summary><ul id="ki-reported" class="ki-list"></ul></details>
+          <p id="ki-warn-note" class="small"></p>
+        </article>
+        <details class="card ki-card st-limits"><summary>So wird getestet und Grenzen</summary><div id="ki-limits" class="small"></div></details>
+      </div>
+      <div id="sim-area">
       <p class="placeholder">Der Simulator handelt ab Phase 7 selbstständig mit Spielgeld. Jede seiner Order muss dann durch die Risikoregeln unten.</p>
       <article class="card st-card">
         <header class="card-head"><h3>Strategien im Rückblick (Phase 5)</h3></header>
@@ -355,6 +398,7 @@
           <li>Keine Leerverkäufe, kein Hebel, kein Kredit</li>
         </ul>
       </article>
+          </div>
     </section>
 
     <!-- Status -->

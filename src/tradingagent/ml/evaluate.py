@@ -127,6 +127,11 @@ def walk_forward(data: pd.DataFrame, cfg: dict, *, level: int = 1, kinds: tuple[
         brier_base = float(np.mean((br - sel["y"].to_numpy()) ** 2))
         met["brier_grundrate"], met["brier_skill"] = brier_base, 1 - met["brier"] / brier_base
         met["anteil_jahre_brier_skill_positiv"] = float(np.mean([(x["brier_skill"] or 0) > 0 for x in per_year[k]]))
+        # Kalibrierung genau dort, wo gekauft würde (hohe Prognosen) – die Gesamt-ECE kann das verdecken
+        lo = min(cfg["handel"]["schwellen"])
+        hi = sel[sel["p"] >= lo]
+        met["kaufbereich"] = {"ab": lo, "n": int(len(hi)), "prognose": float(hi["p"].mean()) if len(hi) else None,
+                              "eingetreten": float(hi["y"].mean()) if len(hi) else None}
         overall[k] = met
     return {"jahre": [y for y in years if any(x["jahr"] == y for x in per_year[kinds[0]])],
             "je_jahr": per_year, "gesamt": overall, "einstellungen": chosen, "prognosen": allp}
@@ -203,6 +208,7 @@ def admission(kind: str, forecast: dict[str, Any], trading: dict[str, Any], msci
         ("Stabil über die Jahre", forecast.get("anteil_jahre_brier_skill_positiv"), f"in ≥ {z['min_anteil_jahre_brier_skill']:.0%} der Jahre besser als Grundrate",
          (forecast.get("anteil_jahre_brier_skill_positiv") or 0) >= z["min_anteil_jahre_brier_skill"]),
         ("Kalibrierung (ECE)", forecast.get("ece"), f"≤ {z['max_ece']}", (forecast.get("ece") if forecast.get("ece") is not None else 1) <= z["max_ece"]),
+        _buy_zone_check(forecast.get("kaufbereich") or {}, z),
         ("Rendite nach Kosten über MSCI World", trading.get("cagr"), f"> {msci_cagr:.3f}" if msci_cagr is not None else "MSCI fehlt",
          msci_cagr is not None and trading.get("cagr", -1) > msci_cagr if z["besser_als_msci"] else True),
         ("Besser als Zufall (beste 10 %)", trading.get("cagr"), f"> {random_p90:.3f}" if random_p90 is not None else "Zufall fehlt",
@@ -210,10 +216,18 @@ def admission(kind: str, forecast: dict[str, Any], trading: dict[str, Any], msci
         ("Größter Rückgang", trading.get("max_rueckgang"), f"höchstens −{z['max_rueckgang']:.0%}", trading.get("max_rueckgang", -1) >= -z["max_rueckgang"]),
         ("Positive Jahre", trading.get("anteil_positive_jahre"), f"≥ {z['min_anteil_positive_jahre']:.0%}", trading.get("anteil_positive_jahre", 0) >= z["min_anteil_positive_jahre"]),
     ]
-    rows = [{"pruefung": n, "wert": (None if v is None or (isinstance(v, float) and math.isnan(v)) else v), "grenze": g, "ok": bool(ok)}
+    rows = [{"pruefung": n, "wert": (None if v is None or (isinstance(v, float) and math.isnan(v)) else v), "grenze": g.replace(".", ","), "ok": bool(ok)}
             for n, v, g, ok in checks]
     passed = all(r["ok"] for r in rows)
     return {"modell": kind, "status": "Für Phase 7 zugelassen" if passed else "Nicht freigegeben", "zugelassen": passed, "pruefungen": rows}
+
+
+def _buy_zone_check(kb: dict[str, Any], z: dict) -> tuple:
+    """Prognosen ab der Kaufschwelle: tritt ein, was vorhergesagt wird? (mind. N Fälle, Abweichung begrenzt)"""
+    n, p, y = kb.get("n", 0), kb.get("prognose"), kb.get("eingetreten")
+    gap = abs(p - y) if p is not None and y is not None else None
+    ok = n >= z["min_faelle_kaufbereich"] and gap is not None and gap <= z["max_abweichung_kaufbereich"]
+    return ("Kalibrierung im Kaufbereich", gap, f"Abweichung ≤ {z['max_abweichung_kaufbereich']} bei ≥ {z['min_faelle_kaufbereich']} Fällen (hier {n})", ok)
 
 
 def leak_check(data: pd.DataFrame, cfg: dict, years: list[int]) -> dict[str, Any]:

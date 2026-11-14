@@ -226,6 +226,10 @@ def _p(x: Any, sign: bool = True) -> str:
     return (f"{x * 100:+.1f} %" if sign else f"{x * 100:.1f} %").replace(".", ",")
 
 
+def _eur(x: float) -> str:
+    return f"{x:,.0f} €".replace(",", ".")
+
+
 def _f(x: Any, nd: int = 3) -> str:
     return "–" if x is None else f"{x:.{nd}f}".replace(".", ",")
 
@@ -247,10 +251,10 @@ def markdown(r: dict[str, Any]) -> str:
           "| Strategie | pro Jahr | größter Rückgang | Sharpe | Sortino | Profit Factor | Trades | Treffer | Ø Haltedauer | Gebühren |", "|---|---|---|---|---|---|---|---|---|---|"]
     for k, t in r["handel"].items():
         L.append(f"| {MODEL_NAMES[k]} | {_p(t['cagr'])} | {_p(t['max_rueckgang'])} | {_f(t['sharpe'], 2)} | {_f(t['sortino'], 2)} | {_f(t.get('profit_factor'), 2)} | "
-                 f"{t['trades']} | {_p(t['trefferquote'], False)} | {_f(t['haltedauer_tage'], 1)} Tage | {t['gebuehren']:,.0f} € |".replace(",0f", ""))
+                 f"{t['trades']} | {_p(t['trefferquote'], False)} | {_f(t['haltedauer_tage'], 1)} Tage | {_eur(t['gebuehren'])} |")
     v = r["vergleich"]
     tb = v["technisch_beste"]
-    L.append(f"| Beste Technik (Phase 5): {tb['name']} | {_p(tb['cagr'])} | {_p(tb['max_rueckgang'])} | {_f(tb['sharpe'], 2)} | {_f(tb['sortino'], 2)} | {_f(tb.get('profit_factor'), 2)} | {tb['trades']} | {_p(tb['trefferquote'], False)} | – | {tb['gebuehren']:,.0f} € |")
+    L.append(f"| Beste Technik (Phase 5): {tb['name']} | {_p(tb['cagr'])} | {_p(tb['max_rueckgang'])} | {_f(tb['sharpe'], 2)} | {_f(tb['sortino'], 2)} | {_f(tb.get('profit_factor'), 2)} | {tb['trades']} | {_p(tb['trefferquote'], False)} | – | {_eur(tb['gebuehren'])} |")
     if v["msci_world"]:
         mw = v["msci_world"]
         L.append(f"| MSCI World halten | {_p(mw['cagr'])} | {_p(mw['max_rueckgang'])} | {_f(mw['sharpe'], 2)} | {_f(mw['sortino'], 2)} | – | 1 je Jahr | – | – | – |")
@@ -304,7 +308,9 @@ def predict(inputs: tuple | None = None) -> dict[str, Any]:
         quality = "ausreichend" if age <= 4 else "veraltet"
         ps, pt = (P.get("svm", [None] * len(X))[i], P.get("tree", [None] * len(X))[i])
         base = P["base"][i] if "base" in P else 0.5
-        agree = None if ps is None or pt is None else ((ps >= 0.5) == (pt >= 0.5))
+        # Übereinstimmung gemessen an der Grundrate (typische Wahrscheinlichkeit): beide darüber, beide darunter oder uneins
+        agree = None if ps is None or pt is None else ((ps >= base) == (pt >= base))
+        side = "überdurchschnittlich" if ps is not None and ps >= base else "unterdurchschnittlich"
         sig = []
         for k, p in (("svm", ps), ("tree", pt)):
             if p is None:
@@ -319,7 +325,7 @@ def predict(inputs: tuple | None = None) -> dict[str, Any]:
             "symbol": sym, "id": meta.get(sym, {}).get("id", sym), "name": meta.get(sym, {}).get("name", sym),
             "kurs": float(frames[sym]["close"].iloc[-1]), "datum": str(r["date"].date()),
             "zeitraum": f"{cfg['ziel']['horizont_tage']} Handelstage ab Eröffnung des nächsten Handelstags",
-            "grundrate": float(base), "signale": sig, "uebereinstimmung": "einig" if agree else "widersprüchlich" if agree is False else "–",
+            "grundrate": float(base), "signale": sig, "uebereinstimmung": f"einig: {side}" if agree else "widersprüchlich" if agree is False else "–",
             "status": ("Kaufsignal" if buy and allowed else "Kaufsignal (Modell nicht freigegeben – nur Beobachtung)" if buy else "kein Signal"),
             "datenqualitaet": quality,
         })

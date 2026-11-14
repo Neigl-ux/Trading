@@ -69,7 +69,7 @@ const shift = (sec) => sec + berlinOffset(sec);
 // Datenquelle: zuerst dein Server (alle 5 Minuten frisch, Einstellungen → Server-Adresse),
 // fällt er aus, automatisch GitHub (alle 15–60 Minuten). Beide sind gleich verschlüsselt.
 // ---------- App-Version: zeigt an, wenn eine neuere Fassung veröffentlicht ist ----------
-const APP_VERSION = 40;
+const APP_VERSION = 41;
 let versionSeen = null;
 async function checkVersion() {
   try {
@@ -552,7 +552,7 @@ function showTab(tab, sub = "list", active = tab) {
   if (tab === "advisor") renderAdvisor();
   if (tab === "chat") renderChat();
   if (tab === "status") renderSettings();
-  if (tab === "sim") renderStrategies();
+  if (tab === "sim") (simPane === "ki" ? renderKI() : renderStrategies());
   if (tab === "markets") {
     renderCatBars();
     if (sub === "movers") renderMovers();
@@ -4399,4 +4399,230 @@ function drawStrategyChart(strat, b) {
   if (b) add("MSCI World halten", b.verlauf, "#16c784", 3);
   strat.forEach((s, k) => add(s.name, s.verlauf, ST_COLORS[k % ST_COLORS.length], 1));
   st5.chart.timeScale().fitContent();
+}
+
+
+// =====================================================================
+// Phase 6: KI-Analyse (Server zuerst, sonst die Fassung aus der App). Nur echte Daten, nichts erfunden.
+// =====================================================================
+let simPane = "sim";
+const ki = { report: null, preds: null, earn: null, status: null, timer: null, showAll: false, loadedAt: 0 };
+function setSimPane(pane) {
+  simPane = pane;
+  for (const [id, p] of [["sim-tab-sim", "sim"], ["sim-tab-ki", "ki"]]) {
+    $(id).setAttribute("aria-selected", String(p === pane));
+    $(id).setAttribute("aria-pressed", String(p === pane));
+  }
+  $("ki-area").hidden = pane !== "ki";
+  $("sim-area").hidden = pane !== "sim";
+  if (pane === "ki") renderKI(); else { clearInterval(ki.timer); renderStrategies(); }
+}
+$("sim-tab-sim").addEventListener("click", () => setSimPane("sim"));
+$("sim-tab-ki").addEventListener("click", () => setSimPane("ki"));
+$("ki-pred-more").addEventListener("click", () => { ki.showAll = !ki.showAll; renderKIPredictions(); });
+
+async function kiFetch(name) {
+  const srv = serverUrl();
+  const got = [];
+  if (srv) got.push(await fetchRaw(`${srv}/${name}`, 8000).catch(() => null));
+  got.push(await fetchRaw(name, 15000).catch(() => null));
+  const ok = got.filter(Boolean);
+  ok.sort((a, b) => String(b.erstellt || b.stand || b.zeit).localeCompare(String(a.erstellt || a.stand || a.zeit)));
+  return ok[0] || null;
+}
+const kiPct = (x, d = 1) => (x === null || x === undefined ? "–" : `${(d === 0 ? nfInt : nf1).format(x * 100)} %`);
+const kiNum = (x, d = 3) => (x === null || x === undefined ? "–" : new Intl.NumberFormat("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d }).format(x));
+const kiDay = (t) => (t.nur_datum ? new Date(t.zeit.slice(0, 10) + "T12:00:00").toLocaleDateString("de-DE") : kiTime(t.zeit));
+const kiTime = (iso) => { if (!iso) return "–"; const d = new Date(iso); return `${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}`; };
+const el = (tag, cls, text) => { const x = document.createElement(tag); if (cls) x.className = cls; if (text !== undefined) x.textContent = text; return x; };
+const MODEL_DE = { svm: "SVM", tree: "Entscheidungsbaum", base: "Grundrate" };
+
+async function renderKI() {
+  if (!ki.report || Date.now() - ki.loadedAt > 10 * 60 * 1000) {
+    $("ki-overview-note").textContent = "Lade KI-Daten …";
+    [ki.report, ki.preds, ki.earn, ki.status] = await Promise.all(["ki.json", "ki_prognosen.json", "ki_quartale.json", "ki_status.json"].map(kiFetch));
+    ki.loadedAt = Date.now();
+  }
+  renderKIOverview(); renderKIJob(); renderKIAdmission(); renderKICompare(); renderKIPredictions(); renderKIWarnings(); renderKILimits();
+  clearInterval(ki.timer);
+  ki.timer = setInterval(async () => {
+    if (document.hidden || $("ki-area").hidden || $("view-sim").hidden) return;
+    const st = await kiFetch("ki_status.json");
+    if (st) { const changed = ki.status && st.aufgabe !== ki.status.aufgabe && st.aufgabe === "bereit"; ki.status = st; renderKIJob(); if (changed) { ki.loadedAt = 0; renderKI(); } }
+  }, 20000);
+}
+
+function renderKIOverview() {
+  const box = $("ki-overview"); box.textContent = "";
+  const r = ki.report, p = ki.preds;
+  if (!r) { $("ki-overview-note").textContent = "Noch kein Training vorhanden. Der Server startet es selbstständig."; return; }
+  const m = r.modelle || {};
+  const item = (label, value) => { const d = el("div", "pc-item"); d.append(el("span", "pc-label", label), el("span", "pc-value", value)); return d; };
+  const signals = p ? p.prognosen.filter((x) => x.status.startsWith("Kaufsignal")).length : null;
+  const admitted = Object.values(r.zulassung || {}).filter((a) => a.zugelassen).length;
+  box.append(
+    item("Modellversionen gespeichert", String((m.versionen || []).length)),
+    item("Zugelassen für Phase 7", `${admitted} von ${Object.keys(r.zulassung || {}).length}`),
+    item("Letztes Training", kiTime(r.erstellt)),
+    item("Analysierte Werte", String(r.werte)),
+    item("Aktuelle Kaufsignale", signals === null ? "–" : String(signals)),
+    item("Datenzeilen", nfInt.format(r.zeilen)),
+  );
+  const act = Object.entries(m.champion || {}).map(([k, v]) => `${MODEL_DE[k]}: ${v ? `Champion ${v}` : `kein Champion (aktuell ${m.aktuell?.[k] || "–"})`}`);
+  $("ki-overview-note").textContent = `Ausbaustufe ${r.stufe}. ${act.join(" · ")}. Prognoseziel: Kauf zur Eröffnung des nächsten Handelstags, nach ${r.ziel.horizont_tage} Handelstagen mindestens +${r.ziel.mindestbewegung_prozent} %.` +
+    (p ? ` Prognosen auf Kursen vom ${new Date(p.stand_kurse).toLocaleDateString("de-DE")}.` : " Noch keine Prognosen.");
+}
+
+function renderKIJob() {
+  const box = $("ki-job"); box.textContent = "";
+  const s = ki.status;
+  if (!s) { box.append(el("p", "small", "Kein Status vom Server. Läuft der Dienst ta-ml?")); }
+  else {
+    const head = el("div");
+    head.append(el("span", `ki-status ${s.aufgabe === "Fehler" ? "no" : s.aufgabe === "bereit" ? "ok" : "info"}`, s.aufgabe === "bereit" ? "bereit" : s.aufgabe), el("span", "small", `  Stand ${kiTime(s.zeit)}`));
+    box.append(head);
+    if (typeof s.fortschritt === "number" && s.aufgabe !== "bereit") {
+      const bar = el("div", "ki-bar"); const fill = el("span"); fill.style.width = `${Math.round(s.fortschritt * 100)}%`; bar.append(fill); box.append(bar);
+    }
+    if (s.meldung) box.append(el("p", "small", s.meldung));
+  }
+  const runs = $("ki-runs"); runs.textContent = "";
+  for (const r of ki.report?.modelle?.laeufe || []) {
+    const tr = el("tr");
+    tr.append(el("td", "", r.job), el("td", "", kiTime(r.started)), el("td", "", `${Math.round((r.seconds || 0) / 60)} min`), el("td", r.ok ? "up-txt" : "down-txt", r.ok ? "ok" : `Fehler: ${r.message}`));
+    runs.append(tr);
+  }
+}
+
+function renderKIAdmission() {
+  const box = $("ki-admission"); box.textContent = "";
+  const z = ki.report?.zulassung;
+  if (!z) { box.append(el("p", "small", "Noch keine Prüfung.")); return; }
+  for (const [k, a] of Object.entries(z)) {
+    const wrap = el("div", "ki-model");
+    const h = el("h4"); h.append(`${MODEL_DE[k]} `, el("span", `ki-status ${a.zugelassen ? "ok" : "no"}`, a.status));
+    const ul = el("ul", "ki-checks");
+    for (const c of a.pruefungen) {
+      const li = el("li");
+      const v = typeof c.wert === "number" ? (Math.abs(c.wert) < 1.5 && !/Trades/.test(c.grenze) ? kiNum(c.wert) : nfInt.format(c.wert)) : (c.wert ?? "–");
+      li.append(el("span", c.ok ? "up-txt" : "down-txt", c.ok ? "✓" : "✗"), el("span", "", `${c.pruefung} (Grenze ${c.grenze})`), el("span", "val", String(v)));
+      ul.append(li);
+    }
+    wrap.append(h, ul);
+    box.append(wrap);
+  }
+  const lk = ki.report.leckpruefung;
+  if (lk) box.append(el("p", "small", `Gegenprobe auf Datenlecks: ${lk.ok ? "unauffällig" : "AUFFÄLLIG"} (AUC mit vertauschter Zielgröße ${lk.ergebnisse.map((x) => kiNum(x.auc)).join(" / ")}, erwartet ≈ 0,500). Die Zulassung erlaubt nur Tests im Simulator, keinen echten Handel.`));
+}
+
+function renderKICompare() {
+  const r = ki.report; const body = $("ki-cmp"); body.textContent = "";
+  if (!r) return;
+  $("ki-cmp-note").textContent = `Prüfjahre ${r.pruefjahre[0]}–${r.pruefjahre[1]}, je Jahr ${nfInt.format(5000)} € Spielgeld, alle Kosten und Risikoregeln aus Phase 4. AUC 0,5 = Münzwurf; Brier Skill > 0 = besser als die Grundrate.`;
+  const td = (txt, cls) => el("td", cls, txt);
+  const cls = (x) => (x > 0 ? "up-txt" : x < 0 ? "down-txt" : "");
+  const row = (name, t, f) => {
+    const tr = el("tr");
+    tr.append(td(name), td(pctTxt(t?.cagr), cls(t?.cagr)), td(pctTxt(t?.max_rueckgang)), td(t?.trades ?? "–"), td(t?.trefferquote != null ? kiPct(t.trefferquote) : "–"),
+      td(f ? kiNum(f.auc) : "–"), td(f ? kiNum(f.brier_skill) : "–", f ? cls(f.brier_skill) : ""));
+    body.append(tr);
+  };
+  row("SVM", r.handel.svm, r.prognose.svm);
+  row("Entscheidungsbaum", r.handel.tree, r.prognose.tree);
+  row(`Technik: ${r.vergleich.technisch_beste.name}`, r.vergleich.technisch_beste, null);
+  if (r.vergleich.msci_world) row("MSCI World halten", { ...r.vergleich.msci_world, trades: "1 je Jahr" }, null);
+  row("Zufällige Käufe (Median)", { cagr: r.vergleich.zufall.cagr_median }, null);
+  row("Grundrate (Messlatte)", null, r.prognose.base);
+  drawCalibration(r);
+  const yh = $("ki-yhead"), yb = $("ki-ybody"); yh.textContent = ""; yb.textContent = "";
+  const hr = el("tr"); for (const h of ["Jahr", "SVM AUC", "Baum AUC", "SVM Rendite", "Baum Rendite", "MSCI World"]) hr.append(el("th", "", h)); yh.append(hr);
+  r.prognose.svm.je_jahr.forEach((y, k) => {
+    const tr = el("tr");
+    const ms = r.vergleich.msci_world?.jahre?.find((x) => x.jahr === y.jahr);
+    const hs = r.handel.svm.jahre.find((x) => x.jahr === y.jahr), ht = r.handel.tree.jahre.find((x) => x.jahr === y.jahr);
+    tr.append(td(String(y.jahr)), td(kiNum(y.auc)), td(kiNum(r.prognose.tree.je_jahr[k]?.auc)), td(pctTxt(hs?.rendite), cls(hs?.rendite)), td(pctTxt(ht?.rendite), cls(ht?.rendite)), td(pctTxt(ms?.rendite), cls(ms?.rendite)));
+    yb.append(tr);
+  });
+}
+
+function drawCalibration(r) {
+  const box = $("ki-calib"); box.textContent = "";
+  const W = 420, H = 260, L = 56, B = 34, T = 10, R = 14;
+  const css = getComputedStyle(document.documentElement);
+  const col = (v) => css.getPropertyValue(v).trim();
+  const max = 0.8;
+  const x = (v) => L + (v / max) * (W - L - R), y = (v) => H - B - (v / max) * (H - B - T);
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("role", "img"); svg.setAttribute("aria-label", "Kalibrierung: Prognose gegen tatsächliche Eintrittsrate");
+  const add = (tag, attrs, text) => { const e = document.createElementNS(ns, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (text) e.textContent = text; svg.append(e); return e; };
+  for (const t of [0, 0.2, 0.4, 0.6, 0.8]) {
+    add("line", { x1: L, x2: W - R, y1: y(t), y2: y(t), stroke: col("--grid"), "stroke-width": 1 });
+    add("text", { x: L - 6, y: y(t) + 4, "text-anchor": "end", "font-size": 11, fill: col("--mute") }, `${t * 100} %`);
+    add("text", { x: x(t), y: H - B + 16, "text-anchor": "middle", "font-size": 11, fill: col("--mute") }, `${t * 100} %`);
+  }
+  add("text", { x: (L + W) / 2, y: H - 4, "text-anchor": "middle", "font-size": 11, fill: col("--mute") }, "Prognose");
+  add("text", { x: 10, y: (T + H - B) / 2, "text-anchor": "middle", "font-size": 11, fill: col("--mute"), transform: `rotate(-90 12 ${(T + H - B) / 2})` }, "eingetreten");
+  add("line", { x1: x(0), y1: y(0), x2: x(max), y2: y(max), stroke: col("--mute"), "stroke-dasharray": "4 4", "stroke-width": 1 });
+  const colors = { svm: "#3b82f6", tree: "#f59e0b" };
+  const legend = el("div", "st-legend");
+  for (const k of ["svm", "tree"]) {
+    const pts = (r.prognose[k].kalibrierung || []).filter((b) => b.anzahl >= 200 && b.prognose <= max);
+    if (!pts.length) continue;
+    add("polyline", { points: pts.map((b) => `${x(b.prognose)},${y(Math.min(max, b.eingetreten))}`).join(" "), fill: "none", stroke: colors[k], "stroke-width": 2 });
+    for (const b of pts) add("circle", { cx: x(b.prognose), cy: y(Math.min(max, b.eingetreten)), r: 3.5, fill: colors[k] });
+    const sp = el("span", "", `${MODEL_DE[k]} (ECE ${kiNum(r.prognose[k].ece)})`); sp.style.setProperty("--c", colors[k]); legend.append(sp);
+  }
+  const sp = el("span", "", "perfekt kalibriert"); sp.style.setProperty("--c", col("--mute")); legend.append(sp);
+  box.append(svg, legend);
+}
+
+function renderKIPredictions() {
+  const p = ki.preds; const body = $("ki-pred"); body.textContent = "";
+  const note = $("ki-pred-note");
+  if (!p || !p.prognosen?.length) { note.textContent = p?.fehler || "Noch keine Prognosen."; $("ki-pred-more").hidden = true; return; }
+  note.textContent = `Kurse vom ${new Date(p.stand_kurse).toLocaleDateString("de-DE")}. Wahrscheinlichkeit für mindestens +${ki.report?.ziel?.mindestbewegung_prozent ?? 2} % in ${ki.report?.ziel?.horizont_tage ?? 5} Handelstagen. ` +
+    `Typisch sind etwa ${kiPct(p.prognosen[0].grundrate, 0)}. Kaufsignal ab ${kiPct(p.schwelle, 0)}. ${p.hinweis}`;
+  const list = ki.showAll ? p.prognosen : p.prognosen.slice(0, 25);
+  for (const r of list) {
+    const tr = el("tr");
+    if (r.uebereinstimmung === "widersprüchlich") tr.className = "contra";
+    const sv = r.signale.find((s) => s.modell === "SVM"), tb = r.signale.find((s) => s.modell === "Entscheidungsbaum");
+    const name = el("td"); const a = el("a", "", r.name); a.href = `#chart/${encodeURIComponent(r.id)}`; name.append(a);
+    tr.append(name, el("td", "", `${numFmt(r.kurs)} €`), el("td", "", sv ? kiPct(sv.p_positiv) : "–"), el("td", "", tb ? kiPct(tb.p_positiv) : "–"),
+      el("td", r.uebereinstimmung === "widersprüchlich" ? "down-txt" : "", r.uebereinstimmung), el("td", "", r.status), el("td", "", r.datenqualitaet));
+    body.append(tr);
+  }
+  const more = $("ki-pred-more");
+  more.hidden = p.prognosen.length <= 25;
+  more.textContent = ki.showAll ? "Weniger anzeigen" : `Alle ${p.prognosen.length} anzeigen`;
+}
+
+function renderKIWarnings() {
+  const q = ki.earn; const box = $("ki-warn"); box.textContent = "";
+  const up = $("ki-upcoming"), rep = $("ki-reported"); up.textContent = ""; rep.textContent = "";
+  if (!q) { box.append(el("p", "small", "Noch keine Quartalszahlen abgerufen.")); return; }
+  if (q.fehler) box.append(el("p", "down-txt", q.fehler));
+  if (!q.warnungen?.length) box.append(el("p", "small", "Zurzeit keine Branchenereignisse."));
+  for (const w of q.warnungen || []) {
+    const d = el("div", `ki-warning${w.stark ? " strong" : ""}`);
+    d.append(el("div", "", w.text), el("div", "meta", `${w.art === "bevorstehend" ? "Bevorstehend" : "Veröffentlicht"} ${kiDay(w)} · Branche laut Yahoo: ${w.branche}`));
+    box.append(d);
+  }
+  for (const t of q.termine || []) up.append(el("li", "", `${kiDay(t)} – ${t.name}${t.eps_erwartet != null ? ` (erwarteter Gewinn je Aktie ${kiNum(t.eps_erwartet, 2)})` : ""}`));
+  for (const t of q.veroeffentlicht || []) {
+    const extra = [t.eps_gemeldet != null ? `Gewinn je Aktie ${kiNum(t.eps_gemeldet, 2)}` : null, t.ueberraschung_prozent != null ? `Überraschung ${kiNum(t.ueberraschung_prozent, 1)} %` : null,
+      t.reaktion?.kurs_prozent != null ? `Kurs ${pctTxt(t.reaktion.kurs_prozent)}` : null].filter(Boolean).join(", ");
+    rep.append(el("li", "", `${kiDay(t)} – ${t.name}${extra ? ` (${extra})` : ""}`));
+  }
+  if (!up.childElementCount) up.append(el("li", "", "keine"));
+  if (!rep.childElementCount) rep.append(el("li", "", "keine"));
+  $("ki-warn-note").textContent = `Quelle: ${q.quelle}, Stand ${kiTime(q.stand)}. ${q.hinweis || ""}`;
+}
+
+function renderKILimits() {
+  const box = $("ki-limits"); box.textContent = "";
+  const r = ki.report; if (!r) return;
+  box.append(el("p", "", `Je Prüfjahr lernen die Modelle ${3} Jahre, werden am folgenden Jahr eingestellt und kalibriert und erst danach am Prüfjahr gemessen, das sie nie gesehen haben. Zwischen den Zeiträumen werden Zeilen entfernt, deren Ergebnis in den nächsten Zeitraum reicht. Eingangsgrößen: ${r.features.join(", ")}.`));
+  const ul = el("ul"); for (const g of r.grenzen) ul.append(el("li", "", g)); box.append(ul);
 }
