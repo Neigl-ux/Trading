@@ -1,0 +1,26 @@
+[Unit]
+Description=Trading-Agent: Phase 6 – Lernmodelle (Dauerdienst, rechnet rund um die Uhr mit niedrigster Priorität)
+After=network-online.target ta-collect.timer
+
+[Service]
+Type=simple
+User=trading
+EnvironmentFile=/etc/trading-agent.env
+Environment=PYTHONPATH=/opt/trading-agent/src
+Environment=TA_EXPORT_DIR=/var/lib/trading-agent/site/data
+Environment=TA_QUOTES_FILE=/var/lib/trading-agent/quotes.json
+Environment=TA_MODEL_DIR=/var/lib/trading-agent/models
+Environment=OMP_NUM_THREADS=2
+WorkingDirectory=/var/lib/trading-agent
+ExecStart=/opt/trading-agent/.venv/bin/python -m tradingagent ml worker
+# Sammeln, Live-Kurse und Radar haben immer Vorrang: niedrigste CPU- und Festplatten-Priorität
+Nice=19
+CPUWeight=10
+IOSchedulingClass=idle
+# Nie mehr als 9 von 12 GB, damit der Server stabil bleibt
+MemoryMax=9G
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

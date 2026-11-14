@@ -32,7 +32,11 @@ fi
 
 echo "== Benutzer und Programm =="
 id -u trading >/dev/null 2>&1 || useradd --system --create-home --home-dir /var/lib/trading-agent --shell /usr/sbin/nologin trading
-if [ -d "$DIR/.git" ]; then git -c safe.directory="$DIR" -C "$DIR" pull -q; else git clone -q "$REPO_URL" "$DIR"; fi
+OLD_HEAD=""
+if [ -d "$DIR/.git" ]; then OLD_HEAD=$(git -c safe.directory="$DIR" -C "$DIR" rev-parse HEAD); git -c safe.directory="$DIR" -C "$DIR" pull -q; else git clone -q "$REPO_URL" "$DIR"; fi
+# Lernmodelle nur neu starten, wenn sich Programm oder Einstellungen geändert haben (laufendes Training nicht grundlos abbrechen)
+CODE_CHANGED=1
+if [ -n "$OLD_HEAD" ] && git -c safe.directory="$DIR" -C "$DIR" diff --quiet "$OLD_HEAD" HEAD -- src config requirements.txt server; then CODE_CHANGED=0; fi
 python3 -m venv "$DIR/.venv"
 "$DIR/.venv/bin/pip" install -q --upgrade pip
 "$DIR/.venv/bin/pip" install -q -r "$DIR/requirements.txt"
@@ -65,7 +69,7 @@ fi
 
 echo "== Ordner =="
 install -d -o trading -g trading -m 755 /var/lib/trading-agent /var/lib/trading-agent/site /var/lib/trading-agent/site/data
-install -d -o trading -g trading -m 750 /var/lib/trading-agent/data
+install -d -o trading -g trading -m 750 /var/lib/trading-agent/data /var/lib/trading-agent/models
 
 echo "== Webserver mit HTTPS (Caddy, Zertifikat von Let's Encrypt, kostenlos) =="
 IP=$(curl -fsS https://api.ipify.org || true)
@@ -95,9 +99,12 @@ echo "== Dienste =="
 install -m 644 "$DIR/server/ta-trigger.service" "$DIR/server/ta-trigger.timer" \
                "$DIR/server/ta-radar.service" "$DIR/server/ta-update.service" "$DIR/server/ta-update.timer" \
                "$DIR/server/ta-collect.service" "$DIR/server/ta-collect.timer" \
-               "$DIR/server/ta-strategien.service" "$DIR/server/ta-strategien.timer" /etc/systemd/system/
+               "$DIR/server/ta-strategien.service" "$DIR/server/ta-strategien.timer" \
+               "$DIR/server/ta-ml.service" /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now ta-trigger.timer ta-update.timer ta-collect.timer ta-strategien.timer >/dev/null
+systemctl enable ta-ml.service >/dev/null
+if [ "$CODE_CHANGED" = 1 ] || ! systemctl is-active --quiet ta-ml.service; then systemctl restart ta-ml.service; fi
 systemctl enable ta-radar.service >/dev/null
 systemctl restart ta-radar.service || true
 

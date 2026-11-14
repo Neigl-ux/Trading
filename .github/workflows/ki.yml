@@ -1,0 +1,44 @@
+# Phase 6: Lernmodelle prüfen (Walk-Forward, Zulassung), Prognosen und Quartalszahlen.
+# Ergebnis: docs/KI.md, status/ki*.json, app/ki*.json. Wöchentlich (Sonntag) und manuell;
+# der Dauerbetrieb läuft auf dem Server (ta-ml.service).
+name: KI-Modelle prüfen
+
+on:
+  schedule:
+    - cron: "41 4 * * 0"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [src/tradingagent/ml/**, config/ml.yaml, .github/workflows/ki.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ki
+  cancel-in-progress: true
+
+jobs:
+  ki:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Training, Prüfung, Prognosen, Quartalszahlen
+        run: python -m tradingagent ml all | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Ergebnis speichern
+        run: |
+          git config user.name "trading-agent-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/KI.md status/ki*.json app/ki*.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Phase 6: KI-Prüfung aktualisiert"
+            for i in 1 2 3; do git pull --rebase -q && git push -q && break; sleep 5; done
+          fi

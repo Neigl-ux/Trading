@@ -1,0 +1,31 @@
+# Phase 6 – Lernmodelle. Freigegeben mit Phase 6 am 14.11.2026.
+# WICHTIG: Die Zulassungsgrenzen werden nicht nachträglich gelockert, damit ein schwaches Modell nicht
+# künstlich gut aussieht. Jede Änderung hier steht in der Git-Historie.
+
+ziel:
+  horizont_tage: 5          # Prognosezeitraum: Kauf zur Eröffnung des nächsten Handelstags, Bewertung am Schluss nach 5 Handelstagen
+  mindestbewegung_prozent: 2.0  # „positiv“ erst ab +2 % – kleiner wäre nach Kosten (≈ 1,8 % je Trade) kein Gewinn
+
+training:
+  lernjahre: 3              # Modell lernt 3 Jahre …
+  kalibrierjahre: 1         # … und wird am folgenden Jahr kalibriert und eingestellt; geprüft wird das Jahr danach
+  max_trainingszeilen: 80000
+  neu_trainieren_nach_tagen: 7
+  mindestens_neue_handelstage: 5
+  zufallssaat: 42
+
+handel:
+  schwellen: [0.55, 0.60, 0.65]   # Kaufsignal ab dieser Wahrscheinlichkeit; gewählt am Vorjahr (bereits geprüfte Prognosen)
+  start_schwelle: 0.60
+  verkauf_unter: 0.50
+
+zulassung:                  # alle Punkte müssen erfüllt sein → „Für Phase 7 zugelassen“
+  min_trades: 100                     # genug Testentscheidungen über alle Prüfjahre
+  min_auc: 0.52                       # Trennschärfe besser als Münzwurf
+  min_brier_skill: 0.0                # besser als die einfache Grundrate (immer gleiche Wahrscheinlichkeit)
+  min_anteil_jahre_brier_skill: 0.6   # in mindestens 60 % der Prüfjahre besser als die Grundrate
+  max_ece: 0.05                       # Kalibrierung: 60 % Prognose ≈ 60 % Eintritt (mittlere Abweichung höchstens 5 Prozentpunkte)
+  besser_als_msci: true               # Rendite nach allen Kosten über MSCI World halten
+  besser_als_zufall_p90: true         # über den besten 10 % der Zufallskäufe
+  max_rueckgang: 0.35                 # größter Rückgang höchstens 35 %
+  min_anteil_positive_jahre: 0.5      # in mindestens der Hälfte der Prüfjahre im Plus

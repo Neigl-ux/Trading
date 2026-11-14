@@ -91,7 +91,8 @@ def _when(day: pd.Timestamp) -> datetime:
 
 
 def simulate(panel: Panel, entry: np.ndarray, exit_: np.ndarray, start: int, end: int, *,
-             rm: RiskManager, capital: float | None = None, min_hold: int = 0) -> dict[str, Any]:
+             rm: RiskManager, capital: float | None = None, min_hold: int = 0,
+             rank: np.ndarray | None = None) -> dict[str, Any]:
     """Ein Konto (Halten über Nacht) vom Tag start bis end (ausschließlich)."""
     acc = rm.new_account("test", "ueber_nacht")
     if capital:
@@ -120,7 +121,8 @@ def simulate(panel: Panel, entry: np.ndarray, exit_: np.ndarray, start: int, end
         if d > 0 and not acc.killed:
             cand = np.flatnonzero(entry[d - 1] & ~np.isnan(panel.o[d]))
             if len(cand):
-                order = cand[np.argsort(-np.nan_to_num(panel.mom[d - 1, cand], nan=-9))][:MAX_CANDIDATES]
+                score = (rank if rank is not None else panel.mom)[d - 1, cand]  # Phase 6: nach Wahrscheinlichkeit
+                order = cand[np.argsort(-np.nan_to_num(score, nan=-9))][:MAX_CANDIDATES]
                 for j in order:
                     vid = panel.ids[j]
                     if vid in acc.positions or len(acc.positions) >= rm.cfg.max_positions:
@@ -162,10 +164,16 @@ def stats(equity: np.ndarray, capital: float, trades: list[float] | None = None)
     dd = (np.concatenate([[capital], eq]) / peak - 1).min()
     daily = np.diff(np.concatenate([[capital], eq])) / np.concatenate([[capital], eq])[:-1]
     sharpe = float(daily.mean() / daily.std() * math.sqrt(252)) if daily.std() > 0 else 0.0
-    out = {"rendite": ret, "cagr": (1 + ret) ** (1 / years) - 1 if years > 0 and ret > -1 else -1.0,
-           "max_rueckgang": float(dd), "sharpe": sharpe}
+    down = daily[daily < 0]
+    sortino = float(daily.mean() / np.sqrt((down ** 2).mean()) * math.sqrt(252)) if len(down) else 0.0
+    cagr = (1 + ret) ** (1 / years) - 1 if years > 0 and ret > -1 else -1.0
+    out = {"rendite": ret, "cagr": cagr, "max_rueckgang": float(dd), "sharpe": sharpe, "sortino": sortino,
+           "calmar": float(cagr / -dd) if dd < 0 else None}
     if trades is not None:
-        out.update({"trades": len(trades), "trefferquote": (sum(1 for x in trades if x > 0) / len(trades)) if trades else None})
+        wins, losses = [x for x in trades if x > 0], [x for x in trades if x <= 0]
+        out.update({"trades": len(trades), "trefferquote": (len(wins) / len(trades)) if trades else None,
+                    "mittel_gewinn": float(np.mean(wins)) if wins else None, "mittel_verlust": float(np.mean(losses)) if losses else None,
+                    "profit_factor": float(sum(wins) / -sum(losses)) if losses and sum(losses) < 0 else None})
     return out
 
 

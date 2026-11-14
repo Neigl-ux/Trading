@@ -5,6 +5,7 @@ requests>=2.31
 PyYAML>=6.0
 cryptography>=42
 yfinance>=0.2.50
+scikit-learn>=1.4   # Phase 6: SVM und Entscheidungsbaum (enthält joblib)
 
 # Tests
 pytest>=8
