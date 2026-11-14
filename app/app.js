@@ -69,7 +69,7 @@ const shift = (sec) => sec + berlinOffset(sec);
 // Datenquelle: zuerst dein Server (alle 5 Minuten frisch, Einstellungen → Server-Adresse),
 // fällt er aus, automatisch GitHub (alle 15–60 Minuten). Beide sind gleich verschlüsselt.
 // ---------- App-Version: zeigt an, wenn eine neuere Fassung veröffentlicht ist ----------
-const APP_VERSION = 39;
+const APP_VERSION = 40;
 let versionSeen = null;
 async function checkVersion() {
   try {
@@ -4342,7 +4342,34 @@ async function renderStrategies() {
   const ul = document.createElement("ul");
   for (const g of r.grenzen || []) { const li = document.createElement("li"); li.textContent = g; ul.append(li); }
   lim.append(p1, ul);
+  renderStrategyVariants(r);
   drawStrategyChart(strat, b);
+}
+function renderStrategyVariants(r) {
+  const box = $("st-variants");
+  box.textContent = "";
+  for (const v of r.varianten || []) {
+    const h = document.createElement("h4"); h.textContent = v.name;
+    const p = document.createElement("p"); p.className = "small"; p.textContent = v.beschreibung;
+    const wrap = document.createElement("div"); wrap.className = "table-wrap";
+    const table = document.createElement("table"); table.className = "scr-table st-table";
+    const head = document.createElement("tr");
+    for (const x of ["Strategie", "pro Jahr", "größter Rückgang", "Trades", "Gebühren"]) { const th = document.createElement("th"); th.textContent = x; head.append(th); }
+    const thead = document.createElement("thead"); thead.append(head);
+    const tbody = document.createElement("tbody");
+    const td = (txt, cls) => { const x = document.createElement("td"); x.textContent = txt; if (cls) x.className = cls; return x; };
+    const cls = (x) => (x > 0 ? "up-txt" : x < 0 ? "down-txt" : "");
+    for (const s of v.strategien) {
+      const tr = document.createElement("tr");
+      tr.append(td(s.name), td(pctTxt(s.cagr), cls(s.cagr)), td(pctTxt(s.max_rueckgang)), td(String(s.trades)), td(`${nfInt.format(s.gebuehren)} €`));
+      tbody.append(tr);
+    }
+    const tr = document.createElement("tr");
+    tr.append(td("Zufällige Käufe (Median)"), td(pctTxt(v.zufall_median), cls(v.zufall_median)), td("–"), td("–"), td("–"));
+    tbody.append(tr);
+    table.append(thead, tbody); wrap.append(table);
+    box.append(h, p, wrap);
+  }
 }
 function drawStrategyChart(strat, b) {
   const el = $("st-chart");
