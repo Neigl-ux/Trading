@@ -1,6 +1,6 @@
 # Nachrichten-Rückblick
 
-Tageswerte aus GDELT 1.0 von 2013-04-01 bis 2026-11-13 (4951 Tage). Signal = 20-Tage-Mittel im Vergleich zum Jahr davor; Q5 = die 20 % der Monate mit der schlechtesten Nachrichtenlage, Q1 = die besten. „Korrelation“ > 0 hieße: schlechtere Lage → höhere Rendite danach.
+Tageswerte aus GDELT 1.0 von 2013-04-01 bis 2026-11-14 (4952 Tage). Signal = 20-Tage-Mittel im Vergleich zum Jahr davor; Q5 = die 20 % der Monate mit der schlechtesten Nachrichtenlage, Q1 = die besten. „Korrelation“ > 0 hieße: schlechtere Lage → höhere Rendite danach.
 
 ## S&P 500
 
@@ -16,21 +16,6 @@ Alle Monate: Ø 1 Monat +0,7 %, 3 Monate +2,0 %, 12 Monate +8,2 %, Ø größter 
 | Gegenprobe: Kursverlauf 20 Tage | 1176 | +2,3 % | +2,9 % | +10,9 % | +7,7 % | −4,7 % | −5,8 % | 0,019 |
 
 Nur Monate, in denen der Kurs vorher NICHT stark gefallen war: nach schlechtem Tonfall (18 Monate) 3 Monate +0,8 %, Rückgang −6,5 %; nach gutem Tonfall (19 Monate) +4,5 %, Rückgang −3,0 %
-
-## MSCI World (Euro-ETF)
-
-Alle Monate: Ø 1 Monat +1,1 %, 3 Monate +3,2 %, 12 Monate +12,7 %, Ø größter Rückgang in 3 Monaten −4,1 %.
-
-| Signal | Monate | 3 M nach Q1 (beste Lage) | 3 M nach Q5 (schlechteste) | 12 M nach Q1 | 12 M nach Q5 | Rückgang 3 M Q1 | Rückgang 3 M Q5 | Korrelation 3 M |
-|---|---|---|---|---|---|---|---|---|
-| Tonfall weltweit | 156 | +4,3 % | +1,8 % | +16,9 % | +8,8 % | −2,7 % | −5,1 % | -0,045 |
-| Konfliktanteil weltweit | 156 | +2,3 % | +3,2 % | +12,1 % | +11,3 % | −4,8 % | −5,0 % | 0,108 |
-| Tonfall USA | 156 | +4,3 % | +2,8 % | +18,8 % | +8,6 % | −3,9 % | −4,9 % | -0,073 |
-| Tonfall Europa | 156 | +3,0 % | +2,9 % | +12,6 % | +10,8 % | −4,4 % | −4,6 % | -0,054 |
-| Tonfall China | 156 | +5,0 % | +1,1 % | +15,9 % | +8,4 % | −2,5 % | −5,7 % | -0,143 |
-| Gegenprobe: Kursverlauf 20 Tage | 195 | +3,5 % | +3,5 % | +11,1 % | +12,0 % | −2,9 % | −5,1 % | 0,045 |
-
-Nur Monate, in denen der Kurs vorher NICHT stark gefallen war: nach schlechtem Tonfall (19 Monate) 3 Monate +1,8 %, Rückgang −5,2 %; nach gutem Tonfall (20 Monate) +3,9 %, Rückgang −2,8 %
 
 ## DAX
 
