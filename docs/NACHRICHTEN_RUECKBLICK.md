@@ -1,6 +1,6 @@
 # Nachrichten-Rückblick
 
-Tageswerte aus GDELT 1.0 von 2013-04-01 bis 2026-11-15 (4953 Tage). Signal = 20-Tage-Mittel im Vergleich zum Jahr davor; Q5 = die 20 % der Monate mit der schlechtesten Nachrichtenlage, Q1 = die besten. „Korrelation“ > 0 hieße: schlechtere Lage → höhere Rendite danach.
+Tageswerte aus GDELT 1.0 von 2013-04-01 bis 2026-11-16 (4954 Tage). Signal = 20-Tage-Mittel im Vergleich zum Jahr davor; Q5 = die 20 % der Monate mit der schlechtesten Nachrichtenlage, Q1 = die besten. „Korrelation“ > 0 hieße: schlechtere Lage → höhere Rendite danach.
 
 ## S&P 500
 
@@ -28,7 +28,7 @@ Alle Monate: Ø 1 Monat +1,1 %, 3 Monate +3,2 %, 12 Monate +12,7 %, Ø größter
 | Tonfall USA | 156 | +4,3 % | +2,8 % | +18,8 % | +8,6 % | −3,9 % | −4,9 % | -0,073 |
 | Tonfall Europa | 156 | +3,0 % | +2,9 % | +12,6 % | +10,8 % | −4,4 % | −4,6 % | -0,054 |
 | Tonfall China | 156 | +5,2 % | +1,1 % | +15,2 % | +8,4 % | −2,4 % | −5,7 % | -0,143 |
-| Gegenprobe: Kursverlauf 20 Tage | 195 | +3,5 % | +3,5 % | +11,1 % | +12,0 % | −2,9 % | −5,1 % | 0,045 |
+| Gegenprobe: Kursverlauf 20 Tage | 195 | +3,5 % | +3,2 % | +11,1 % | +11,4 % | −2,9 % | −5,2 % | 0,045 |
 
 Nur Monate, in denen der Kurs vorher NICHT stark gefallen war: nach schlechtem Tonfall (19 Monate) 3 Monate +1,8 %, Rückgang −5,2 %; nach gutem Tonfall (20 Monate) +3,9 %, Rückgang −2,8 %
 
@@ -43,7 +43,7 @@ Alle Monate: Ø 1 Monat +0,9 %, 3 Monate +2,6 %, 12 Monate +10,7 %, Ø größter
 | Tonfall USA | 156 | +4,8 % | +0,5 % | +18,0 % | +3,2 % | −5,2 % | −6,4 % | -0,131 |
 | Tonfall Europa | 156 | +1,8 % | +1,5 % | +10,8 % | +6,8 % | −6,3 % | −6,6 % | -0,095 |
 | Tonfall China | 156 | +4,3 % | −0,5 % | +8,6 % | +4,2 % | −3,5 % | −7,8 % | -0,175 |
-| Gegenprobe: Kursverlauf 20 Tage | 456 | +3,0 % | +2,6 % | +9,4 % | +6,8 % | −5,7 % | −7,9 % | -0,006 |
+| Gegenprobe: Kursverlauf 20 Tage | 456 | +2,9 % | +2,6 % | +9,5 % | +6,8 % | −5,7 % | −7,9 % | -0,006 |
 
 Nur Monate, in denen der Kurs vorher NICHT stark gefallen war: nach schlechtem Tonfall (15 Monate) 3 Monate +0,4 %, Rückgang −5,9 %; nach gutem Tonfall (21 Monate) +5,0 %, Rückgang −4,2 %
 
