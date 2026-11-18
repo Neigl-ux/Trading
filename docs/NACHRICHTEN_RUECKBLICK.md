@@ -1,6 +1,6 @@
 # Nachrichten-Rückblick
 
-Tageswerte aus GDELT 1.0 von 2013-04-01 bis 2026-11-16 (4954 Tage). Signal = 20-Tage-Mittel im Vergleich zum Jahr davor; Q5 = die 20 % der Monate mit der schlechtesten Nachrichtenlage, Q1 = die besten. „Korrelation“ > 0 hieße: schlechtere Lage → höhere Rendite danach.
+Tageswerte aus GDELT 1.0 von 2013-04-01 bis 2026-11-17 (4955 Tage). Signal = 20-Tage-Mittel im Vergleich zum Jahr davor; Q5 = die 20 % der Monate mit der schlechtesten Nachrichtenlage, Q1 = die besten. „Korrelation“ > 0 hieße: schlechtere Lage → höhere Rendite danach.
 
 ## S&P 500
 
