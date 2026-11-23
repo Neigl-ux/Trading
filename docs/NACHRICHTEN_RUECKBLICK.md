@@ -1,6 +1,6 @@
 # Nachrichten-Rückblick
 
-Tageswerte aus GDELT 1.0 von 2013-04-01 bis 2026-11-21 (4959 Tage). Signal = 20-Tage-Mittel im Vergleich zum Jahr davor; Q5 = die 20 % der Monate mit der schlechtesten Nachrichtenlage, Q1 = die besten. „Korrelation“ > 0 hieße: schlechtere Lage → höhere Rendite danach.
+Tageswerte aus GDELT 1.0 von 2013-04-01 bis 2026-11-22 (4960 Tage). Signal = 20-Tage-Mittel im Vergleich zum Jahr davor; Q5 = die 20 % der Monate mit der schlechtesten Nachrichtenlage, Q1 = die besten. „Korrelation“ > 0 hieße: schlechtere Lage → höhere Rendite danach.
 
 ## S&P 500
 
@@ -45,7 +45,7 @@ Alle Monate: Ø 1 Monat +0,9 %, 3 Monate +2,6 %, 12 Monate +10,7 %, Ø größter
 | Tonfall China | 156 | +4,3 % | −0,5 % | +8,6 % | +4,2 % | −3,5 % | −7,8 % | -0,175 |
 | Gegenprobe: Kursverlauf 20 Tage | 456 | +2,9 % | +2,6 % | +9,5 % | +6,8 % | −5,7 % | −7,9 % | -0,006 |
 
-Nur Monate, in denen der Kurs vorher NICHT stark gefallen war: nach schlechtem Tonfall (15 Monate) 3 Monate +0,4 %, Rückgang −5,9 %; nach gutem Tonfall (20 Monate) +5,0 %, Rückgang −4,2 %
+Nur Monate, in denen der Kurs vorher NICHT stark gefallen war: nach schlechtem Tonfall (15 Monate) 3 Monate +0,4 %, Rückgang −5,9 %; nach gutem Tonfall (21 Monate) +5,0 %, Rückgang −4,2 %
 
 ## Grenzen
 
