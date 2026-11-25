@@ -1,6 +1,6 @@
 # Nachrichten-Rückblick
 
-Tageswerte aus GDELT 1.0 von 2013-04-01 bis 2026-11-23 (4961 Tage). Signal = 20-Tage-Mittel im Vergleich zum Jahr davor; Q5 = die 20 % der Monate mit der schlechtesten Nachrichtenlage, Q1 = die besten. „Korrelation“ > 0 hieße: schlechtere Lage → höhere Rendite danach.
+Tageswerte aus GDELT 1.0 von 2013-04-01 bis 2026-11-24 (4962 Tage). Signal = 20-Tage-Mittel im Vergleich zum Jahr davor; Q5 = die 20 % der Monate mit der schlechtesten Nachrichtenlage, Q1 = die besten. „Korrelation“ > 0 hieße: schlechtere Lage → höhere Rendite danach.
 
 ## S&P 500
 
@@ -17,21 +17,6 @@ Alle Monate: Ø 1 Monat +0,7 %, 3 Monate +2,0 %, 12 Monate +8,2 %, Ø größter 
 
 Nur Monate, in denen der Kurs vorher NICHT stark gefallen war: nach schlechtem Tonfall (18 Monate) 3 Monate +0,8 %, Rückgang −6,5 %; nach gutem Tonfall (19 Monate) +4,5 %, Rückgang −3,0 %
 
-## MSCI World (Euro-ETF)
-
-Alle Monate: Ø 1 Monat +1,1 %, 3 Monate +3,2 %, 12 Monate +12,7 %, Ø größter Rückgang in 3 Monaten −4,1 %.
-
-| Signal | Monate | 3 M nach Q1 (beste Lage) | 3 M nach Q5 (schlechteste) | 12 M nach Q1 | 12 M nach Q5 | Rückgang 3 M Q1 | Rückgang 3 M Q5 | Korrelation 3 M |
-|---|---|---|---|---|---|---|---|---|
-| Tonfall weltweit | 156 | +4,3 % | +1,8 % | +16,9 % | +8,8 % | −2,7 % | −5,1 % | -0,045 |
-| Konfliktanteil weltweit | 156 | +2,3 % | +3,2 % | +12,1 % | +11,3 % | −4,8 % | −5,0 % | 0,108 |
-| Tonfall USA | 156 | +4,3 % | +2,8 % | +18,8 % | +8,6 % | −3,9 % | −4,9 % | -0,073 |
-| Tonfall Europa | 156 | +3,0 % | +3,0 % | +12,6 % | +11,1 % | −4,4 % | −4,5 % | -0,054 |
-| Tonfall China | 156 | +5,2 % | +1,1 % | +15,2 % | +8,4 % | −2,4 % | −5,7 % | -0,143 |
-| Gegenprobe: Kursverlauf 20 Tage | 195 | +3,5 % | +3,2 % | +11,1 % | +11,4 % | −2,9 % | −5,2 % | 0,045 |
-
-Nur Monate, in denen der Kurs vorher NICHT stark gefallen war: nach schlechtem Tonfall (19 Monate) 3 Monate +1,8 %, Rückgang −5,2 %; nach gutem Tonfall (20 Monate) +3,9 %, Rückgang −2,8 %
-
 ## DAX
 
 Alle Monate: Ø 1 Monat +0,9 %, 3 Monate +2,6 %, 12 Monate +10,7 %, Ø größter Rückgang in 3 Monaten −6,4 %.
@@ -43,7 +28,7 @@ Alle Monate: Ø 1 Monat +0,9 %, 3 Monate +2,6 %, 12 Monate +10,7 %, Ø größter
 | Tonfall USA | 156 | +4,8 % | +0,5 % | +18,0 % | +3,2 % | −5,2 % | −6,4 % | -0,131 |
 | Tonfall Europa | 156 | +1,8 % | +1,4 % | +10,8 % | +6,8 % | −6,3 % | −6,5 % | -0,095 |
 | Tonfall China | 156 | +4,3 % | −0,5 % | +8,6 % | +4,2 % | −3,5 % | −7,8 % | -0,175 |
-| Gegenprobe: Kursverlauf 20 Tage | 456 | +2,9 % | +2,6 % | +9,5 % | +6,8 % | −5,7 % | −7,9 % | -0,006 |
+| Gegenprobe: Kursverlauf 20 Tage | 456 | +2,9 % | +2,5 % | +9,5 % | +6,7 % | −5,7 % | −7,9 % | -0,006 |
 
 Nur Monate, in denen der Kurs vorher NICHT stark gefallen war: nach schlechtem Tonfall (15 Monate) 3 Monate +0,4 %, Rückgang −5,9 %; nach gutem Tonfall (20 Monate) +5,0 %, Rückgang −4,2 %
 
